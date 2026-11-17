@@ -310,7 +310,10 @@ function init() {
   map.addControl(new maplibregl.AttributionControl({ compact: true, customAttribution:
     'Roads © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>, surface model HeiGIT · Elevation Google GEM-15 · Rain Google WeatherNext 2 · Regions geoBoundaries' }), "bottom-right");
 
+  // the container can still be unsized when the map starts (e.g. a linked stylesheet still loading): re-measure and re-fit
+  new ResizeObserver(() => map.resize()).observe(document.getElementById("map"));
   map.on("load", async () => {
+    map.resize(); map.fitBounds(ETH, { padding: 20, duration: 0 });
     const hb = SUMMARY.hillshade_bounds;
     map.addSource("hs", { type: "image", url: "data/hillshade.png", coordinates: [[hb[0], hb[3]], [hb[2], hb[3]], [hb[2], hb[1]], [hb[0], hb[1]]] });
     map.addLayer({ id: "hs", type: "raster", source: "hs", paint: { "raster-opacity": ["interpolate", ["linear"], ["zoom"], 5, 0.45, 9, 0.8], "raster-fade-duration": 0 } });
