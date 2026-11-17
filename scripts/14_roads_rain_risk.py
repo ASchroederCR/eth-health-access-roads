@@ -28,8 +28,10 @@ Method (illustrative thresholds, not calibrated against observed travel times)
   R, so light rain alone cannot make a road Severe; no forecast rain (R = 0) = Normal.
   Flat roads give the same tiers as before (unpaved: Minor/Elevated/Severe for low/moderate/high rain;
   paved one lower); steep ground adds up to two tiers.
-  Separate flag slide_exposure: R >= 2 and the steepest ~110 m cell along the road >= 26.6 deg - places
-  where rock fall, slips or wash-outs could block the road, not just slow it.
+  Separate slip / rock-fall exposure, judged on each ~110 m piece of road (not the whole segment): the piece's own
+  0.25 deg rain cell has R >= 2, and either ground slope >= 26.6 deg with NASA global landslide susceptibility
+  (Stanley & Kirschbaum, 2023 map, data/raw/landslide/) moderate or higher, or susceptibility very high on ground
+  >= 14 deg. slide_km = length of exposed pieces; places where slips, rock fall or wash-outs could block the road.
   Assumed speed factors: Minor 0.9, Elevated 0.75, Severe 0.5 (may be impassable).
   Footpaths, tracks under construction etc. are dropped; only vehicle roads are scored.
   Also dropped: ~5,200 km of seismic survey cut-lines around the Calub / Hilala gas fields (44-45.5 E,
@@ -42,6 +44,7 @@ Outputs (<init> = run date)
   charts/ETH_roads_rain_risk_factors.png  how surface and steepness change the tier, km by factor combination
   data/processed/roads/eth_roads_rain_risk_<init>.gpkg   scored segments (tier Minor+), for GIS
   data/processed/roads/eth_roads_scored_<init>.parquet   every vehicle segment with tier + speed factor (routing)
+  data/processed/roads/eth_slip_pieces_<init>.parquet    exposed ~110 m pieces (slip / rock fall), as lines
   data/processed/tables/eth_roads_rain_risk_adm1_<init>.csv
 
     python scripts\\14_roads_rain_risk.py [--init 2026-11-17]
@@ -127,6 +130,7 @@ def hazard(arr):
 
 DEM = os.path.join(ROOT, "data", "raw", "dem", "gem15_eth_0p001.tif")
 HF = os.path.join(ROOT, "data", "health_facilities", "ethiopian-health-facilities.csv")
+SUSC = os.path.join(ROOT, "data", "raw", "landslide", "global-landslide-susceptibility-map-2-27-23.tif")
 TERRAIN = ["flat/rolling", "mountainous", "escarpment"]
 
 
@@ -152,7 +156,43 @@ def terrain(geoms, length_m):
     smean = np.bincount(seg[ok], s[ok], minlength=len(geoms)) / np.maximum(cnt, 1)
     smax = np.zeros(len(geoms), "float32"); np.maximum.at(smax, seg[ok], s[ok])
     elev_mean = np.bincount(seg[ok], z[ok], minlength=len(geoms)) / np.maximum(cnt, 1)
-    return grade, smean, smax, elev_mean, (elev, tr)
+    samples = {"seg": seg, "x": shapely.get_x(pts), "y": shapely.get_y(pts), "slope": np.where(ok, s, 0), "n": n}
+    return grade, smean, smax, elev_mean, (elev, tr), samples
+
+
+def susceptibility(x, y):
+    """NASA global landslide susceptibility (Stanley & Kirschbaum; 2023 map, ~1 km): 1 very low .. 5 very high, 0 none."""
+    import rasterio
+    from rasterio.windows import from_bounds
+    with rasterio.open(SUSC) as d:
+        w = from_bounds(32.5, 2.5, 48.5, 15.5, d.transform); a = d.read(1, window=w); tr = d.window_transform(w)
+    col = np.clip(((x - tr.c) / tr.a).astype(int), 0, a.shape[1] - 1)
+    row = np.clip(((y - tr.f) / tr.e).astype(int), 0, a.shape[0] - 1)
+    v = a[row, col].astype(int)
+    return np.where((v >= 1) & (v <= 5), v, 0)
+
+
+def slip_pieces(smp, H, length_m):
+    """Slip / rock-fall exposure judged on each ~110 m piece of road, not the whole segment.
+    A sample point is exposed when the forecast rain at its own 0.25 deg cell is moderate or high (R >= 2) and
+      (ground slope >= 26.6 deg and NASA susceptibility >= 3 moderate)  or  (susceptibility 5 very high and slope >= 14 deg).
+    A piece between two consecutive samples counts half its length per exposed end, so exposed km follows the
+    exposed stretch only. Returns per-segment exposed km and max susceptibility, plus exposed pieces as lines."""
+    seg, x, y, s = smp["seg"], smp["x"], smp["y"], smp["slope"]
+    r, c = to_cell(x, y); R = H[r, c]
+    su = susceptibility(x, y)
+    e = (R >= 2) & (((s >= 26.6) & (su >= 3)) | ((su == 5) & (s >= 14)))
+    nseg = len(smp["n"])
+    piece_km = np.where(smp["n"] > 1, length_m / 1000 / (smp["n"] - 1), 0)
+    same = seg[1:] == seg[:-1]
+    wt = 0.5 * (e[1:].astype(float) + e[:-1].astype(float)) * same
+    slide_km = np.bincount(seg[1:], wt * piece_km[seg[1:]], minlength=nseg)
+    sumax = np.zeros(nseg, int); np.maximum.at(sumax, seg, su)
+    k = np.flatnonzero(same & (e[1:] | e[:-1]))
+    lines = shapely.linestrings(np.stack([np.c_[x[k], y[k]], np.c_[x[k + 1], y[k + 1]]], axis=1))
+    pieces = gpd.GeoDataFrame({"seg": seg[k], "km": piece_km[seg[k]] * 0.5 * (e[k].astype(float) + e[k + 1])},
+                              geometry=lines, crs="EPSG:4326")
+    return slide_km, sumax, pieces
 
 
 def to_cell(x, y):
@@ -195,7 +235,8 @@ if __name__ == "__main__":
     hz = H[r, c]
     unp = (g.surface_class == "unpaved").values
     S = unp.astype(int) + g.smoothness.isin(BAD).values.astype(int)
-    grade, smean, smax, elev_mean, (DEMA, DEMT) = terrain(g.geometry.values, g.osm_length.values)
+    grade, smean, smax, elev_mean, (DEMA, DEMT), SMP = terrain(g.geometry.values, g.osm_length.values)
+    slide_km, sumax, PIECES = slip_pieces(SMP, H, g.osm_length.values)
     T = np.where((smean >= 26.6) | (grade >= 10), 2, np.where((smean >= 14) | (grade >= 5), 1, 0))
     tier = np.clip(hz + S + T - 1, 0, 3)
     tier = np.where(hz == 0, 0, np.minimum(tier, hz + 1))
@@ -204,7 +245,9 @@ if __name__ == "__main__":
     g["terrain_class"] = np.array(TERRAIN)[T]
     g["road_grade_pct"], g["terrain_slope_mean_deg"] = grade.round(1), smean.round(1)
     g["terrain_slope_max_deg"], g["elev_mean_m"] = smax.round(1), elev_mean.round(0)
-    g["slide_exposure"] = (hz >= 2) & (smax >= 26.6)
+    g["slide_km"] = slide_km.round(3)
+    g["slide_exposure"] = slide_km > 0
+    g["landslide_susc_max"] = sumax
     g["tier"] = pd.Categorical(np.array(TIERS)[tier], TIERS, ordered=True)
     g["tier_without_terrain"] = np.array(TIERS)[tier_flat]
     g["speed_factor"] = g.tier.map(SPEED).astype(float)
@@ -221,14 +264,14 @@ if __name__ == "__main__":
     # --- tables & GIS -----------------------------------------------------------------
     tab = pd.crosstab(g.region, g.tier, values=km, aggfunc="sum").reindex(columns=TIERS).fillna(0).round(0)
     tab["share_slowed_%"] = (100 * tab[TIERS[1:]].sum(1) / tab.sum(1)).round(1)
-    tab["slide_exposure_km"] = km[g.slide_exposure].groupby(g.region[g.slide_exposure]).sum().reindex(tab.index).fillna(0).round(0)
+    tab["slide_exposure_km"] = g.slide_km.groupby(g.region).sum().reindex(tab.index).fillna(0).round(0)
     tab["raised_by_terrain_km"] = km[tier > tier_flat].groupby(g.region[tier > tier_flat]).sum().reindex(tab.index).fillna(0).round(0)
     tab = tab.sort_values("share_slowed_%", ascending=False)
     tab.to_csv(os.path.join(wn.TB, f"eth_roads_rain_risk_adm1_{tag}.csv"))
     flag = g[g.tier != "Normal"].copy(); flag["tier"] = flag.tier.astype(str)
     flag.drop(columns=["surf_known"]).to_file(os.path.join(PROC, f"eth_roads_rain_risk_{tag}.gpkg"),
                                               layer="roads_rain_risk", driver="GPKG", engine="pyogrio")
-    full = g[["highway", "surface_class", "osm_length", "tier", "tier_without_terrain", "speed_factor", "slide_exposure",
+    full = g[["highway", "surface_class", "osm_length", "tier", "tier_without_terrain", "speed_factor", "slide_exposure", "slide_km",
               "region", "geometry"]].copy()
     full["tier"] = full.tier.astype(str)
     full.to_parquet(os.path.join(PROC, f"eth_roads_scored_{tag}.parquet"))       # every segment, for routing (17_)
@@ -237,7 +280,10 @@ if __name__ == "__main__":
     print(tot.round(0).to_string()); print(f"surface known for {known:.0%} of length")
     print(tab.to_string())
     print("terrain class km:", km.groupby(g.terrain_class).sum().round(0).to_dict())
-    print(f"raised by terrain: {km[tier > tier_flat].sum():,.0f} km; slide exposure {km[g.slide_exposure].sum():,.0f} km")
+    print(f"raised by terrain: {km[tier > tier_flat].sum():,.0f} km; slip / rock-fall exposed {g.slide_km.sum():,.0f} km "
+          f"on {int(g.slide_exposure.sum()):,} segments ({km[g.slide_exposure].sum():,.0f} km of whole segments)")
+    PIECES["region"] = g.region.values[PIECES.seg.values]
+    PIECES.to_parquet(os.path.join(PROC, f"eth_slip_pieces_{tag}.parquet"))
     print("without terrain:", km.groupby(tier_flat).sum().round(0).to_dict())
 
     # --- map: national + hotspot zoom ---------------------------------------------------
@@ -273,8 +319,9 @@ if __name__ == "__main__":
             if len(sub): lines(ax, sub, TCOL[t], TLW[t] * (1 if k == 0 else 1.8), TIERS.index(t) + 1)
         wn.draw_outline(ax); wn.mapax(ax)
     ax = axs[1]; ax.set_xlim(box[0], box[2]); ax.set_ylim(box[1], box[3])
-    sl = g.slide_exposure.values & (mx > box[0]) & (mx < box[2]) & (my > box[1]) & (my < box[3])
-    ax.scatter(mx[sl], my[sl], marker="^", s=16, color=INK, edgecolor=SURF, linewidth=0.5, zorder=8)
+    pz = PIECES.cx[box[0]:box[2], box[1]:box[3]]               # exposed stretches only, dark with a light casing
+    if len(pz):
+        lines(ax, pz, SURF, 3.2, 8); lines(ax, pz, INK, 1.7, 8.5)
     # health facilities (approved hospitals / health centres) from the national register
     hf = pd.read_csv(HF, usecols=["Type", "Status", "Latitude", "Longitude"])
     hf = hf[(hf.Status == "Approved")]
@@ -283,8 +330,7 @@ if __name__ == "__main__":
     ax.scatter(inb(hc).Longitude, inb(hc).Latitude, marker="o", s=15, facecolor=SURF, edgecolor=INK, linewidth=0.8, zorder=9)
     ax.scatter(inb(hosp).Longitude, inb(hosp).Latitude, marker="P", s=70, color=INK, edgecolor=SURF, linewidth=0.7, zorder=10)
     axs[0].scatter(hosp.Longitude, hosp.Latitude, marker="P", s=11, color=INK, edgecolor=SURF, linewidth=0.3, zorder=9)
-    ax.legend(handles=[Line2D([], [], marker="^", ls="", color=INK, markeredgecolor=SURF, markersize=6,
-                              label=f"slip / rock-fall exposure ({km[g.slide_exposure].sum():,.0f} km nationally)"),
+    ax.legend(handles=[Line2D([], [], color=INK, lw=2.2, label=f"slip / rock-fall exposed stretch ({g.slide_km.sum():,.0f} km nationally)"),
                        Line2D([], [], marker="P", ls="", color=INK, markeredgecolor=SURF, markersize=8, label="hospital (both maps)"),
                        Line2D([], [], marker="o", ls="", markerfacecolor=SURF, markeredgecolor=INK, markersize=5, label="health centre")],
               loc="upper left", bbox_to_anchor=(0, -0.01), fontsize=8.5, frameon=False)
@@ -317,7 +363,8 @@ if __name__ == "__main__":
                  "capped at one tier above the rain hazard; no rain = Normal.\nRain: high = half the members give a day ≥ 20 mm or the "
                  "wettest 3 days average ≥ 40 mm; moderate = a day ≥ 10 mm or 3 days ≥ 20 mm; low = 15-day mean ≥ 10 mm. "
                  "Steepness: mountainous = terrain ≥ 14° or road grade ≥ 5 %; escarpment = ≥ 26.6° or ≥ 10 %.\n"
-                 "Slip / rock-fall exposure: moderate+ rain and a ≥ 26.6° cell along the road. Speed factors are illustrative, not calibrated. "
+                 "Slip / rock-fall exposure, per ~110 m piece: moderate+ rain and either ground ≥ 26.6° with NASA landslide susceptibility moderate+, "
+                 "or very high susceptibility on ground ≥ 14°. Speed factors are illustrative, not calibrated. "
                  f"Roads: HeiGIT Mapillary road surface (OSM, Nov 2024); surface known for {known:.0%} of length, the rest inferred from road class.\n"
                  f"Health facilities: approved hospitals and health centres from the Ethiopian health facility register. "
                  f"Terrain: Google GEM-15 bare-earth model, slope from 15 m averaged to ~110 m, sampled every ~110 m along each road. "

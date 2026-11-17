@@ -9,7 +9,7 @@
   "Elevated": 66298,
   "Severe": 17130
  },
- "slide_km": 8149,
+ "slide_km": 1499,
  "raised_km": 82539,
  "regions": [
   {
@@ -19,7 +19,7 @@
    "Elevated": 14961,
    "Severe": 8891,
    "share": 62.7,
-   "slide": 4162,
+   "slide": 899,
    "bbox": [
     35.258,
     8.716,
@@ -34,7 +34,7 @@
    "Elevated": 20036,
    "Severe": 5572,
    "share": 37.0,
-   "slide": 2722,
+   "slide": 503,
    "bbox": [
     34.878,
     4.441,
@@ -49,7 +49,7 @@
    "Elevated": 27544,
    "Severe": 2130,
    "share": 30.8,
-   "slide": 846,
+   "slide": 54,
    "bbox": [
     34.14,
     3.511,
@@ -64,7 +64,7 @@
    "Elevated": 3170,
    "Severe": 209,
    "share": 27.1,
-   "slide": 203,
+   "slide": 17,
    "bbox": [
     36.452,
     12.256,
@@ -79,7 +79,7 @@
    "Elevated": 259,
    "Severe": 136,
    "share": 24.0,
-   "slide": 98,
+   "slide": 3,
    "bbox": [
     33.002,
     6.282,
@@ -94,7 +94,7 @@
    "Elevated": 194,
    "Severe": 187,
    "share": 7.6,
-   "slide": 114,
+   "slide": 23,
    "bbox": [
     34.101,
     8.951,
@@ -109,7 +109,7 @@
    "Elevated": 97,
    "Severe": 5,
    "share": 1.9,
-   "slide": 4,
+   "slide": 0,
    "bbox": [
     39.651,
     8.842,

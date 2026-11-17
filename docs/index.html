@@ -17,6 +17,7 @@
   --minor: #f2b33d; --elev: #e0701f; --sev: #a8320f; --slip: #1d211f; --ctx: #8e9590; --adm: #5d635f;
   --r1: #e6effa; --r2: #cde2fb; --r3: #9ec5f4; --r4: #6da7ec; --r5: #3987e5; --r6: #256abf;
   --hs-min: 0; --focus: #2a6fb8;
+  --outside: #ffffff;
   --d0: #d4d3cc; --d1: #f6cf7a; --d2: #ec9a3b; --d3: #c95a1c; --d4: #7d2a0c; --hfring: #fbfbf9;
   --f-display: "Barlow Condensed", "Arial Narrow", "Segoe UI", sans-serif;
   --f-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
@@ -28,7 +29,7 @@
     --mapbg: #1f2321; --chip: #232826;
     --minor: #e3a83f; --elev: #f2812f; --sev: #ff5a3c; --slip: #f4f6f3; --ctx: #66706a; --adm: #a2aaa4;
     --r1: #1d2a37; --r2: #213651; --r3: #24456d; --r4: #285b93; --r5: #2f74bd; --r6: #4691dc;
-    --hs-min: 0.32; --d0: #4d5450; --d1: #6e5a24; --d2: #a8661f; --d3: #e27b33; --d4: #ffb07a; --hfring: #141716; --focus: #6aa8ec; color-scheme: dark;
+    --hs-min: 0.32; --outside: #141716; --d0: #4d5450; --d1: #6e5a24; --d2: #a8661f; --d3: #e27b33; --d4: #ffb07a; --hfring: #141716; --focus: #6aa8ec; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
@@ -36,7 +37,7 @@
   --mapbg: #1f2321; --chip: #232826;
   --minor: #e3a83f; --elev: #f2812f; --sev: #ff5a3c; --slip: #f4f6f3; --ctx: #66706a; --adm: #a2aaa4;
   --r1: #1d2a37; --r2: #213651; --r3: #24456d; --r4: #285b93; --r5: #2f74bd; --r6: #4691dc;
-  --hs-min: 0.32; --d0: #4d5450; --d1: #6e5a24; --d2: #a8661f; --d3: #e27b33; --d4: #ffb07a; --hfring: #141716; --focus: #6aa8ec; color-scheme: dark;
+  --hs-min: 0.32; --outside: #141716; --d0: #4d5450; --d1: #6e5a24; --d2: #a8661f; --d3: #e27b33; --d4: #ffb07a; --hfring: #141716; --focus: #6aa8ec; color-scheme: dark;
 }
 html, body { height: 100%; }
 body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 14px; line-height: 1.45; }
@@ -143,7 +144,7 @@ section { display: flex; flex-direction: column; gap: 6px; }
     <header>
       <div class="eyebrow" id="runline">WeatherNext 2 · run 17 Nov 2026 00Z</div>
       <h1>Ethiopia roads under the next 15 days of rain</h1>
-      <p class="lede" id="lede">Each road segment is scored on forecast rain, road surface and how steep the ground is, and each health facility on how much longer its referral trip takes. Hover or tap a road or facility for details.</p>
+      <p class="lede" id="lede">Each road segment is scored on forecast rain, road surface and how steep the ground is, and each health facility on how much longer its referral trip takes. Click or tap a road or facility for details.</p>
     </header>
 
     <section aria-labelledby="h-tier">
@@ -166,7 +167,7 @@ section { display: flex; flex-direction: column; gap: 6px; }
       <div class="switches">
         <label class="sw-row" for="opt-terrain"><span>Include terrain in the score<small>Off shows rain and surface only</small></span><input type="checkbox" class="toggle" id="opt-terrain" checked></label>
         <label class="sw-row" for="opt-hf"><span>Health facilities<small>Coloured by added travel time; health posts from zoom 7</small></span><input type="checkbox" class="toggle" id="opt-hf" checked></label>
-        <label class="sw-row" for="opt-slip"><span>Slip / rock-fall exposure<small>Moderate+ rain on ground ≥ 26.6°</small></span><input type="checkbox" class="toggle" id="opt-slip" checked></label>
+        <label class="sw-row" for="opt-slip"><span>Slip / rock-fall exposure<small>Exposed stretches: moderate+ rain on steep, landslide-prone ground</small></span><input type="checkbox" class="toggle" id="opt-slip" checked></label>
         <label class="sw-row" for="opt-rain"><span>Forecast rain, 15-day total</span><input type="checkbox" class="toggle" id="opt-rain" checked></label>
         <label class="sw-row" for="opt-hs"><span>Hillshade (GEM-15)</span><input type="checkbox" class="toggle" id="opt-hs" checked></label>
         <label class="sw-row" for="opt-ctx"><span>Main road network</span><input type="checkbox" class="toggle" id="opt-ctx" checked></label>
@@ -185,6 +186,7 @@ section { display: flex; flex-direction: column; gap: 6px; }
       <p class="note">Tier = rain (0–3) + surface (paved 0, unpaved 1, +1 if mapped in bad condition) + steepness (0–2) − 1, kept to 0–3 and at most one tier above the rain score. No forecast rain means Normal. Speed losses (Minor ~10%, Elevated ~25%, Severe ~50%) are illustrative assumptions, not measured.</p>
       <p class="note">Rain: high = half the 64 ensemble members give a day ≥ 20 mm, or the wettest 3 days average ≥ 40 mm; moderate = a day ≥ 10 mm or 3 days ≥ 20 mm; low = 15-day mean ≥ 10 mm. Steepness after the Ethiopian Roads Authority terrain classes: mountainous ≥ 14° ground or ≥ 5 % road grade, escarpment ≥ 26.6° or ≥ 10 %.</p>
       <p class="note">Health access: shortest road travel time from each facility to the nearest hospital (health posts: nearest health centre) at normal speeds by road class (trunk 70 … track 15 km/h, unpaved × 0.7), then to that same facility with each road slowed by its tier. A hospital's linked facilities are the health centres and posts for which it is the nearest hospital by road; this is a road-network grouping, not a population catchment or the official referral pathway. Facilities are approved hospitals, health centres and health posts from the Ethiopian health facility register.</p>
+      <p class="note">Slip / rock-fall exposure is judged on each ~110 m piece of road: moderate or high forecast rain over that piece, and either ground ≥ 26.6° where NASA's global landslide susceptibility map rates it moderate or higher, or very high susceptibility on ground ≥ 14°. Only the exposed stretches are drawn and counted.</p>
       <p class="note">Surface is mapped (OSM tag or Mapillary image model) for about a quarter of road length; the rest is inferred from road class. Road grades come from a ~110 m elevation grid and run high where roads cut across hillsides.</p>
     </section>
   </aside>
@@ -216,7 +218,7 @@ const SUMMARY = {
   "Elevated": 66298,
   "Severe": 17130
  },
- "slide_km": 8149,
+ "slide_km": 1499,
  "raised_km": 82539,
  "regions": [
   {
@@ -226,7 +228,7 @@ const SUMMARY = {
    "Elevated": 14961,
    "Severe": 8891,
    "share": 62.7,
-   "slide": 4162,
+   "slide": 899,
    "bbox": [
     35.258,
     8.716,
@@ -241,7 +243,7 @@ const SUMMARY = {
    "Elevated": 20036,
    "Severe": 5572,
    "share": 37.0,
-   "slide": 2722,
+   "slide": 503,
    "bbox": [
     34.878,
     4.441,
@@ -256,7 +258,7 @@ const SUMMARY = {
    "Elevated": 27544,
    "Severe": 2130,
    "share": 30.8,
-   "slide": 846,
+   "slide": 54,
    "bbox": [
     34.14,
     3.511,
@@ -271,7 +273,7 @@ const SUMMARY = {
    "Elevated": 3170,
    "Severe": 209,
    "share": 27.1,
-   "slide": 203,
+   "slide": 17,
    "bbox": [
     36.452,
     12.256,
@@ -286,7 +288,7 @@ const SUMMARY = {
    "Elevated": 259,
    "Severe": 136,
    "share": 24.0,
-   "slide": 98,
+   "slide": 3,
    "bbox": [
     33.002,
     6.282,
@@ -301,7 +303,7 @@ const SUMMARY = {
    "Elevated": 194,
    "Severe": 187,
    "share": 7.6,
-   "slide": 114,
+   "slide": 23,
    "bbox": [
     34.101,
     8.951,
@@ -316,7 +318,7 @@ const SUMMARY = {
    "Elevated": 97,
    "Severe": 5,
    "share": 1.9,
-   "slide": 4,
+   "slide": 0,
    "bbox": [
     39.651,
     8.842,
@@ -644,7 +646,6 @@ function applyFilter() {
   map.setFilter("roads", ["in", ["get", prop], ["literal", on]]);
   map.setPaintProperty("roads", "line-color", tierColor());
   map.setLayoutProperty("roads", "line-sort-key", ["get", prop]);
-  map.setFilter("slip", ["all", ["==", ["get", "sl"], 1], ["in", ["get", prop], ["literal", on]]]);
 }
 function applyTheme() {
   if (!map) return;
@@ -654,6 +655,7 @@ function applyTheme() {
   if (has("hs")) map.setPaintProperty("hs", "raster-brightness-min", parseFloat(css("--hs-min")) || 0);
   if (has("ctx")) map.setPaintProperty("ctx", "line-color", css("--ctx"));
   if (has("adm")) map.setPaintProperty("adm", "line-color", css("--adm"));
+  if (has("mask")) map.setPaintProperty("mask", "fill-color", css("--outside"));
   if (has("slip")) map.setPaintProperty("slip", "line-color", css("--slip"));
   if (has("roads")) map.setPaintProperty("roads", "line-color", tierColor());
   ["hf-hp", "hf-main"].forEach(id => { if (has(id)) { map.setPaintProperty(id, "circle-color", hfColor());
@@ -683,6 +685,9 @@ function init() {
     map.addSource("rain", { type: "geojson", data: rain });
     map.addLayer({ id: "rain", type: "fill", source: "rain", paint: { "fill-opacity": 0.55, "fill-antialias": false } });
     map.addSource("adm", { type: "geojson", data: adm });
+    const mask = await getJSON("data/mask.geojson").catch(() => null);
+    if (mask) { map.addSource("mask", { type: "geojson", data: mask });
+      map.addLayer({ id: "mask", type: "fill", source: "mask", paint: { "fill-color": css("--outside"), "fill-antialias": false } }); }
     map.addLayer({ id: "adm", type: "line", source: "adm", paint: { "line-width": 0.8, "line-opacity": 0.7 } });
     applyTheme(); sync();
 
@@ -703,10 +708,13 @@ function init() {
     const w = (a, b) => ["interpolate", ["linear"], ["zoom"], 5, ["match", ["get", state.terrain ? "t" : "tw"], 3, a * 1.6, 2, a * 1.15, a], 11, ["match", ["get", "t"], 3, b * 1.4, 2, b * 1.15, b]];
     map.addLayer({ id: "roads", type: "line", source: "roads", layout: { "line-cap": "round", "line-join": "round", "line-sort-key": ["get", "t"] },
       paint: { "line-color": tierColor(), "line-width": w(0.55, 3) } });
-    map.addLayer({ id: "slip", type: "line", source: "roads", filter: ["==", ["get", "sl"], 1],
+    const slipD = await getJSON("data/slip.json").catch(() => null);
+    map.addSource("slip", { type: "geojson", data: { type: "FeatureCollection", features: slipD ? decode(slipD) : [] } });
+    map.addLayer({ id: "slip", type: "line", source: "slip", layout: { "line-cap": "butt" },
       paint: { "line-color": css("--slip"), "line-width": ["interpolate", ["linear"], ["zoom"], 5, 0.35, 8, 0.9, 11, 1.8],
-        "line-opacity": ["interpolate", ["linear"], ["zoom"], 5, 0.45, 8, 0.9], "line-dasharray": [1.2, 1.4] } });
+        "line-opacity": ["interpolate", ["linear"], ["zoom"], 5, 0.7, 8, 1], "line-dasharray": [1.2, 1.4] } });
     if (map.getLayer("ctx")) map.moveLayer("ctx", "roads");
+    if (map.getLayer("mask")) { map.moveLayer("mask"); map.moveLayer("adm"); }
     try {
       const hfd = await getJSON("data/facilities.geojson");
       map.addSource("hf", { type: "geojson", data: hfd });
@@ -753,7 +761,7 @@ function popupHTML(p) {
       <span class="k">Surface</span><span class="v">${p.sf} (${p.sk ? "mapped" : "inferred from road class"})${cond}</span><span class="s">S ${p.S}</span>
       <span class="k">Terrain</span><span class="v">${esc(p.tc)}: grade ${p.gr}%, ground slope ${p.sm}° mean, ${p.sx}° max, ${fmt(p.el)} m</span><span class="s">T ${p.T}</span>
     </div>
-    <div class="pp-foot">Wettest forecast day ${esc(p.pk)}${p.sl ? " · <b>slip / rock-fall exposure</b>" : ""}</div>`;
+    <div class="pp-foot">Wettest forecast day ${esc(p.pk)}${p.sl ? ` · <b>slip / rock-fall exposure</b> on ${p.slk >= 1 ? p.slk.toFixed(1) : Math.round(p.slk * 1000)} ${p.slk >= 1 ? "km" : "m"}` : ""}${p.su ? ` · NASA landslide susceptibility ${["", "very low", "low", "moderate", "high", "very high"][p.su]}` : ""}</div>`;
 }
 const TYN = ["Health post", "Health centre", "Hospital"];
 const hrs = m => m == null ? "–" : m >= 90 ? `${(m / 60).toFixed(1)} h` : `${m} min`;
@@ -770,7 +778,7 @@ function facilityHTML(p) {
   return `<div class="pp-h">${esc(p.n)}</div><div class="pp-sub">${TYN[p.ty]} · ${esc(p.a3)}, ${esc(p.a2)}</div>
     ${p.ty !== 2 ? `<span class="pill"><i style="background:var(${tok})"></i>+${p.d ?? "–"} min to reach ${esc(target)}</span>` : ""}
     <div class="pp-grid">${rows}</div>
-    <div class="pp-foot">${p.off ? `${p.gap} km from the nearest mapped road · ` : ""}${p.sl ? "<b>slip / rock-fall exposure</b> within 5 km" : "no slip-exposed road within 5 km"}</div>`;
+    <div class="pp-foot">${p.off ? `${p.gap} km from the nearest mapped road · ` : ""}${p.sl ? "<b>slip / rock-fall exposed road</b> within 5 km" : "no slip-exposed road within 5 km"}</div>`;
 }
 let openFacility = () => {};
 function wirePopup() {
@@ -788,11 +796,9 @@ function wirePopup() {
     const f = map.querySourceFeatures("hf", { filter: ["==", ["get", "n"], name] })[0];
     if (f) { pinned = true; pop.setLngLat([x, y]).setHTML(facilityHTML(f.properties)).addTo(map); }
   };
-  map.on("mousemove", e => {
-    const f = hit(e);
-    map.getCanvas().style.cursor = f ? "pointer" : "";
-    if (pinned) return;
-    if (f) pop.setLngLat(e.lngLat).setHTML(f.html).addTo(map); else pop.remove();
+  map.on("mousemove", e => {                         // hover only changes the cursor; details open on click
+    const q = map.queryRenderedFeatures(box(e), { layers: hfLayers().concat(["roads"]) });
+    map.getCanvas().style.cursor = q.length ? "pointer" : "";
   });
   map.on("click", e => {
     const f = hit(e);

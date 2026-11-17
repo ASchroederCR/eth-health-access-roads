@@ -7,6 +7,8 @@ GEM-15 elevation (15_fetch_gem15_dem.py) and the ADM1 boundaries, and writes com
   roads_context.json       trunk / primary / secondary roads (all tiers) as a light base network
   rain.geojson             0.25 deg forecast cells: 15-day mean, wettest 3 days, P(day >= 20 mm), hazard
   adm1.geojson             region outlines
+  slip.json                slip / rock-fall exposed road stretches (compact, as the road files)
+  mask.geojson             everything outside Ethiopia, drawn white on the map
   facilities.geojson       hospitals, health centres, health posts with access results (17_health_access.py)
   hillshade.png            GEM-15 hillshade at 0.01 deg, transparent outside Ethiopia
   summary.json             run, totals by tier, by region, slip exposure
@@ -72,11 +74,14 @@ if __name__ == "__main__":
     g["km"] = (g.osm_length / 1000).round(2)
     g["pk"] = pd.to_datetime(g.peak_day).dt.strftime("%d %b")
     g["sl"] = g.slide_exposure.astype(int)
+    g["slide_km"] = g.slide_km.astype(float).round(2)
+    g["landslide_susc_max"] = g.landslide_susc_max.astype(int)
     g["tw"] = g.tier_without_terrain.map({t: i for i, t in enumerate(TIERS)})
     props = {"t": "t", "tw": "tw", "hw": "highway", "nm": "nm", "sf": "sf", "sk": "sk", "cond": "bad", "km": "km",
              "tc": "terrain_class", "gr": "road_grade_pct", "sm": "terrain_slope_mean_deg", "sx": "terrain_slope_max_deg",
              "el": "elev_mean_m", "r15": "rain_15d_mm", "r3": "wettest_3d_mm", "p20": "p_day_ge20mm", "pk": "pk",
-             "sl": "sl", "rg": "region", "R": "rain_hazard", "S": "surface_score", "T": "steep_score"}
+             "sl": "sl", "slk": "slide_km", "su": "landslide_susc_max", "rg": "region", "R": "rain_hazard",
+             "S": "surface_score", "T": "steep_score"}
     for c_, nd in [("km", 2), ("road_grade_pct", 1), ("terrain_slope_mean_deg", 1), ("terrain_slope_max_deg", 1),
                    ("rain_15d_mm", 1), ("wettest_3d_mm", 1), ("p_day_ge20mm", 2)]:
         g[c_] = g[c_].astype(float).round(nd)
@@ -96,6 +101,21 @@ if __name__ == "__main__":
     ctx["c"] = ctx.highway.map({"motorway": 0, "trunk": 0, "primary": 1, "secondary": 2})
     n, mb = dump(os.path.join(OUT, "roads_context.json"), ctx.reset_index(drop=True), {"c": "c"})
     print(f"context: {n} segments, {mb:.1f} MB")
+
+    # --- slip / rock-fall exposed stretches (14_) ---------------------------------------------
+    pcs = gpd.read_parquet(os.path.join(ROOT, "data", "processed", "roads", f"eth_slip_pieces_{tag}.parquet"))
+    pcs = pcs.dissolve(by="seg", aggfunc={"km": "sum"}).reset_index()           # join pieces of one segment
+    pcs["geometry"] = shapely.line_merge(pcs.geometry.values)
+    pcs = pcs.explode(index_parts=False).reset_index(drop=True)
+    pcs["km"] = pcs.km.round(2)
+    n, mb = dump(os.path.join(OUT, "slip.json"), pcs, {"km": "km"})
+    print(f"slip stretches: {n}, {mb:.1f} MB")
+
+    # --- outside-Ethiopia mask -------------------------------------------------------------------
+    import importlib.util as _iu
+    eth = shapely.union_all([gm.buffer(0) for gm in rr.wn.GEOMS]).buffer(0.002).simplify(0.002)
+    mask = shapely.box(20, -5, 60, 25).difference(eth)
+    gpd.GeoDataFrame(geometry=[mask], crs="EPSG:4326").to_file(os.path.join(OUT, "mask.geojson"), driver="GeoJSON", engine="pyogrio")
 
     # --- rain cells ----------------------------------------------------------------------
     arr, mask = z["precip"], z["mask"]

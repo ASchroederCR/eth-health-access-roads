@@ -22,7 +22,7 @@ The current outputs are for the **17 Nov 2026 00Z** forecast run, covering 17 No
 |---|---|
 | Vehicle road network scored | ~447,000 km |
 | Severe / Elevated / Minor slowdown | 17,130 / 66,367 / 53,515 km |
-| Roads exposed to slips / rock fall | ~8,150 km |
+| Road stretches exposed to slips / rock fall | ~1,500 km |
 | Health centres taking 30+ min longer to reach their nearest hospital | 366 of ~3,600 (187 take an hour or more) |
 | Health posts taking 30+ min longer to reach their nearest health centre | 231 |
 
@@ -40,7 +40,7 @@ Each road segment's tier is **rain (0–3) + surface (0–2) + steepness (0–2)
 | Steepness | Based on the Ethiopian Roads Authority terrain classes:<br>**mountainous:** ground slope ≥ 14° or road grade ≥ 5%<br>**escarpment:** ground slope ≥ 26.6° or road grade ≥ 10% |
 
 - **Tiers and assumed speeds:** Normal, Minor (~10% slower), Elevated (~25% slower), Severe (~50% slower, may be impassable).
-- **Slip / rock-fall exposure flag:** moderate or heavier rain, and a ≥ 26.6° cell along the road.
+- **Slip / rock-fall exposure:** judged on each ~110 m piece of road, not the whole segment. A piece is exposed when the forecast rain over it is moderate or high, and either the ground is ≥ 26.6° where NASA's global landslide susceptibility map rates it moderate or higher, or susceptibility is very high on ground ≥ 14°. Only the exposed stretches are counted (km) and drawn on the maps. The flag is reported separately and doesn't change the slowdown tier.
 - **Removed:** about 5,200 km of seismic survey cut-lines in the Ogaden that OSM maps as tracks.
 
 ### Health facility access
@@ -56,6 +56,7 @@ Each road segment's tier is **rain (0–3) + surface (0–2) + steepness (0–2)
 - Thresholds and speed factors are illustrative and haven't been checked against observed travel times or closures.
 - Road grades come from a ~110 m elevation grid, so they run high where roads cut across hillsides.
 - In an earlier check, WeatherNext 2 under-forecast observed rainfall (Google PARDIG) in early November 2026. Treat rain amounts as conservative.
+- The landslide susceptibility map is ~1 km, so it describes the hillside setting, not the road cut itself.
 - Routing is by road only. Seasonal river crossings, ferries and closures aren't modelled.
 
 ## Repository layout
@@ -89,11 +90,13 @@ python scripts/18_build_webmap.py
 These inputs aren't included; place them under `data/` first:
 - `data/raw/roads/heigit_eth_roadsurface_lines.geojson`: [HeiGIT road surface, Ethiopia](https://downloads.ohsome.org/hdx/mapillary_road_surface/heigit_eth_roadsurface_lines.geojson) (HDX).
 - `data/raw/boundaries/geoboundaries_adm1/ETH_ADM1.geojson`: [geoBoundaries](https://www.geoboundaries.org/) Ethiopia ADM1.
+- `data/raw/landslide/global-landslide-susceptibility-map-2-27-23.tif`: [NASA global landslide susceptibility map](https://gpm.nasa.gov/sites/default/files/downloads/global-landslide-susceptibility-map-2-27-23.tif) (2023 version).
 - `data/health_facilities/ethiopian-health-facilities.csv`: Ethiopian health facility register, with columns `Id, Name, Latitude, Longitude, Type, Status, admin1Name, admin2Name, admin3Name, …`.
 
 ## Data sources and attribution
 - Roads: © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), available under the ODbL. The road surface model is by HeiGIT (Heidelberg Institute for Geoinformation Technology). The road data in `docs/data/` is derived from OSM and is under the ODbL.
 - Elevation: Google GEM-15 (Earth Engine, `projects/climate-and-sustainability/assets/gem-15_v1`).
+- Landslide susceptibility: NASA Goddard Space Flight Center global landslide susceptibility map (Stanley & Kirschbaum, 2017, *Natural Hazards*; 2023 update), from the [GPM landslides page](https://gpm.nasa.gov/landslides/projects.html).
 - Rain forecast: Google WeatherNext 2 (Earth Engine, `projects/gcp-public-data-weathernext/assets/weathernext_2_0_0`).
 - Region boundaries: geoBoundaries (CC BY 4.0).
 - Health facilities: Ethiopian health facility register.

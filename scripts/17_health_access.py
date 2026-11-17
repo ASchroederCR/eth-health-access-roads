@@ -21,7 +21,8 @@ Method
   * Linked facilities: the health centres / posts for which a hospital is the nearest by road at normal speeds. This is
     a road-network grouping, not a population catchment or the official referral pathway. Hospitals are ranked by how
     many linked facilities take >= 30 minutes longer to reach them.
-  * Local exposure: share of road length within 5 km that is Elevated or Severe, and the tier of the nearest road.
+  * Local exposure: share of road length within 5 km that is Elevated or Severe, the tier of the nearest road, and
+    km of slip / rock-fall exposed road stretches within 5 km (eth_slip_pieces_<init>.parquet from 14_).
   Counted: approved Hospitals, Health Centers and Health Posts. Clinics and pharmacies are left out of the ranking.
 
 Outputs (<init> = forecast run date)
@@ -174,11 +175,17 @@ if __name__ == "__main__":
     hf["share_elev_severe_5km"] = np.where(tot > 0, badk / np.maximum(tot, 1e-9), np.nan).round(2)
     _, ns = mt.query(np.c_[hf.Longitude.values * COSLAT, hf.Latitude.values])
     hf["nearest_road_tier"] = g.tier.values[ns]
-    hf["slip_within_5km"] = [bool(g.slide_exposure.values[i].any()) for i in nb]
+    # slip / rock-fall: exposed ~110 m stretches (from 14_), not whole segments
+    pcs = gpd.read_parquet(os.path.join(PROC, f"eth_slip_pieces_{tag}.parquet"))
+    pm = shapely.line_interpolate_point(pcs.geometry.values, 0.5, normalized=True)
+    ptree = cKDTree(np.c_[shapely.get_x(pm) * COSLAT, shapely.get_y(pm)])
+    near = ptree.query_ball_point(np.c_[hf.Longitude.values * COSLAT, hf.Latitude.values], r=5 / 111.32)
+    hf["slip_within_5km"] = [len(i) > 0 for i in near]
+    hf["slip_km_within_5km"] = [round(float(pcs.km.values[i].sum()), 2) for i in near]
 
     cols = ["Id", "Name", "Type", "Ownership", "admin1Name", "admin2Name", "admin3Name", "Latitude", "Longitude",
             "road_gap_km", "off_network", "to_hosp_min", "to_hosp_fc_min", "to_hosp_added_min", "to_hc_min", "to_hc_fc_min",
-            "to_hc_added_min", "nearest_hospital", "nearest_health_centre", "hosp_idx", "nearest_road_tier", "share_elev_severe_5km", "slip_within_5km", "roads_5km_km"]
+            "to_hc_added_min", "nearest_hospital", "nearest_health_centre", "hosp_idx", "nearest_road_tier", "share_elev_severe_5km", "slip_within_5km", "slip_km_within_5km", "roads_5km_km"]
     hf["road_gap_km"] = hf.road_gap_km.round(2)
     res = hf[cols].copy()
     res.to_csv(os.path.join(wn.TB, f"eth_health_access_{tag}.csv"), index=False)
