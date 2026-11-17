@@ -1,0 +1,12 @@
+earthengine-api
+numpy
+pandas
+xarray
+geopandas
+pyogrio
+pyarrow
+shapely>=2.0
+rasterio
+scipy
+matplotlib
+pillow

@@ -1,0 +1,10 @@
+# inputs and intermediate files (large / re-creatable)
+/data/
+webmap/data/*
+!webmap/data/summary.json
+webmap/index.html
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+desktop.ini

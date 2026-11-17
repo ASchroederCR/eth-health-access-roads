@@ -1,0 +1,358 @@
+{
+ "init": "17 Nov 2026",
+ "start": "17 Nov",
+ "end": "01 Dec 2026",
+ "total_km": 441218,
+ "tiers": {
+  "Normal": 304505,
+  "Minor": 53285,
+  "Elevated": 66298,
+  "Severe": 17130
+ },
+ "slide_km": 8149,
+ "raised_km": 82539,
+ "regions": [
+  {
+   "name": "Amhara",
+   "Normal": 23129,
+   "Minor": 15003,
+   "Elevated": 14961,
+   "Severe": 8891,
+   "share": 62.7,
+   "slide": 4162,
+   "bbox": [
+    35.258,
+    8.716,
+    40.213,
+    13.769
+   ]
+  },
+  {
+   "name": "SNNPR",
+   "Normal": 58137,
+   "Minor": 8577,
+   "Elevated": 20036,
+   "Severe": 5572,
+   "share": 37.0,
+   "slide": 2722,
+   "bbox": [
+    34.878,
+    4.441,
+    39.133,
+    8.459
+   ]
+  },
+  {
+   "name": "Oromia",
+   "Normal": 124195,
+   "Minor": 25543,
+   "Elevated": 27544,
+   "Severe": 2130,
+   "share": 30.8,
+   "slide": 846,
+   "bbox": [
+    34.14,
+    3.511,
+    42.981,
+    10.388
+   ]
+  },
+  {
+   "name": "Tigray",
+   "Normal": 16408,
+   "Minor": 2733,
+   "Elevated": 3170,
+   "Severe": 209,
+   "share": 27.1,
+   "slide": 203,
+   "bbox": [
+    36.452,
+    12.256,
+    39.992,
+    14.846
+   ]
+  },
+  {
+   "name": "Gambela",
+   "Normal": 4171,
+   "Minor": 921,
+   "Elevated": 259,
+   "Severe": 136,
+   "share": 24.0,
+   "slide": 98,
+   "bbox": [
+    33.002,
+    6.282,
+    35.393,
+    8.71
+   ]
+  },
+  {
+   "name": "Beneshangul Gumu",
+   "Normal": 8641,
+   "Minor": 333,
+   "Elevated": 194,
+   "Severe": 187,
+   "share": 7.6,
+   "slide": 114,
+   "bbox": [
+    34.101,
+    8.951,
+    36.693,
+    11.985
+   ]
+  },
+  {
+   "name": "Afar",
+   "Normal": 7090,
+   "Minor": 33,
+   "Elevated": 97,
+   "Severe": 5,
+   "share": 1.9,
+   "slide": 4,
+   "bbox": [
+    39.651,
+    8.842,
+    42.356,
+    14.499
+   ]
+  },
+  {
+   "name": "Somali",
+   "Normal": 52034,
+   "Minor": 142,
+   "Elevated": 37,
+   "Severe": 0,
+   "share": 0.3,
+   "slide": 0,
+   "bbox": [
+    39.094,
+    3.4,
+    47.959,
+    11.082
+   ]
+  },
+  {
+   "name": "Addis Ababa",
+   "Normal": 8462,
+   "Minor": 0,
+   "Elevated": 0,
+   "Severe": 0,
+   "share": 0.0,
+   "slide": 0,
+   "bbox": [
+    38.64,
+    8.835,
+    38.907,
+    9.099
+   ]
+  },
+  {
+   "name": "Hareri",
+   "Normal": 915,
+   "Minor": 0,
+   "Elevated": 0,
+   "Severe": 0,
+   "share": 0.0,
+   "slide": 0,
+   "bbox": [
+    42.06,
+    9.187,
+    42.273,
+    9.39
+   ]
+  },
+  {
+   "name": "Dire Dawa",
+   "Normal": 1323,
+   "Minor": 0,
+   "Elevated": 0,
+   "Severe": 0,
+   "share": 0.0,
+   "slide": 0,
+   "bbox": [
+    41.729,
+    9.472,
+    42.341,
+    9.785
+   ]
+  }
+ ],
+ "hillshade_bounds": [
+  33.0,
+  3.0,
+  48.0,
+  15.0
+ ],
+ "health": {
+  "hc_n": 3639,
+  "hc_30": 366,
+  "hc_60": 187,
+  "hp_n": 15539,
+  "hp_30": 231,
+  "top_hc": [
+   {
+    "n": "Liwarie Health Center",
+    "a2": "North Gondar",
+    "h0": 348,
+    "h1": 685,
+    "x": 38.5091099,
+    "y": 13.2328929
+   },
+   {
+    "n": "Akile Health Center",
+    "a2": "West Gojam",
+    "h0": 337,
+    "h1": 671,
+    "x": 37.6319071,
+    "y": 11.0922925
+   },
+   {
+    "n": "Asandabo Health Center",
+    "a2": "Ilu Aba Bora",
+    "h0": 375,
+    "h1": 693,
+    "x": 35.5194349,
+    "y": 7.9337228
+   },
+   {
+    "n": "Dliybza Health Center",
+    "a2": "North Gondar",
+    "h0": 288,
+    "h1": 569,
+    "x": 38.4403121,
+    "y": 13.1181669
+   },
+   {
+    "n": "Chago health center",
+    "a2": "Sheka",
+    "h0": 300,
+    "h1": 580,
+    "x": 35.5409373,
+    "y": 7.7102785
+   },
+   {
+    "n": "Qeja health center",
+    "a2": "Sheka",
+    "h0": 300,
+    "h1": 559,
+    "x": 35.4584893,
+    "y": 7.8079981
+   },
+   {
+    "n": "Jembelew Health Center",
+    "a2": "North Gondar",
+    "h0": 264,
+    "h1": 523,
+    "x": 38.3639714,
+    "y": 13.0991121
+   },
+   {
+    "n": "Degele health center",
+    "a2": "Sheka",
+    "h0": 306,
+    "h1": 564,
+    "x": 35.3919973,
+    "y": 7.8068033
+   },
+   {
+    "n": "Gulie Health Center",
+    "a2": "West Gojam",
+    "h0": 257,
+    "h1": 511,
+    "x": 37.2962679,
+    "y": 11.0734676
+   },
+   {
+    "n": "Washera Health Center",
+    "a2": "West Gojam",
+    "h0": 246,
+    "h1": 489,
+    "x": 37.5606471,
+    "y": 11.1131847
+   }
+  ],
+  "top_h": [
+   {
+    "n": "Wacha Primary Hosiptal",
+    "a2": "Kefa",
+    "cf": 238,
+    "c30": 142,
+    "x": 35.7979102,
+    "y": 7.1454717
+   },
+   {
+    "n": "Darimu Primary Hospital",
+    "a2": "Ilu Aba Bora",
+    "cf": 190,
+    "c30": 130,
+    "x": 35.5074709,
+    "y": 8.585586
+   },
+   {
+    "n": "Dembi Dollo Compernsive Specialized Hospital",
+    "a2": "Kelem Wellega",
+    "cf": 154,
+    "c30": 115,
+    "x": 34.807909,
+    "y": 8.521316000000002
+   },
+   {
+    "n": "Setema Primary Hospital",
+    "a2": "Jimma",
+    "cf": 125,
+    "c30": 105,
+    "x": 36.2035673,
+    "y": 7.9820519
+   },
+   {
+    "n": "Mekane Eyesus Primary Hospital",
+    "a2": "South Gondar",
+    "cf": 115,
+    "c30": 85,
+    "x": 38.0519795,
+    "y": 11.6047319
+   },
+   {
+    "n": "Teppi General Hospital",
+    "a2": "Sheka",
+    "cf": 112,
+    "c30": 83,
+    "x": 35.426415,
+    "y": 7.1966211
+   },
+   {
+    "n": "Mizan Teppi university Teaching Hospital",
+    "a2": "Bench Sheko",
+    "cf": 87,
+    "c30": 74,
+    "x": 35.5486578,
+    "y": 6.9519356
+   },
+   {
+    "n": "Debre tabor Comperhensive Specialized  Hospital",
+    "a2": "South Gondar",
+    "cf": 83,
+    "c30": 67,
+    "x": 38.0229,
+    "y": 11.8565826
+   },
+   {
+    "n": "Gida Ayana General Hospital",
+    "a2": "East Wellega",
+    "cf": 145,
+    "c30": 64,
+    "x": 36.6217331,
+    "y": 9.8787112
+   },
+   {
+    "n": "Janamora Primary Hospital",
+    "a2": "North Gondar",
+    "cf": 60,
+    "c30": 56,
+    "x": 38.1128117,
+    "y": 13.0101177
+   }
+  ]
+ }
+}

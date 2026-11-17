@@ -1,0 +1,808 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ethiopia Roads Under Rain</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<style>
+/* Layout: one-screen field tool - fixed panel (summary, filters, regions) beside a full-height map; stacks on phones */
+:root {
+  --bg: #f3f4f1; --panel: #fbfbf9; --ink: #1d211f; --ink2: #4a504c; --muted: #737a75; --rule: #dcdfd9;
+  --mapbg: #e6e8e3; --chip: #eceee9;
+  --minor: #f2b33d; --elev: #e0701f; --sev: #a8320f; --slip: #1d211f; --ctx: #8e9590; --adm: #5d635f;
+  --r1: #e6effa; --r2: #cde2fb; --r3: #9ec5f4; --r4: #6da7ec; --r5: #3987e5; --r6: #256abf;
+  --hs-min: 0; --focus: #2a6fb8;
+  --d0: #d4d3cc; --d1: #f6cf7a; --d2: #ec9a3b; --d3: #c95a1c; --d4: #7d2a0c; --hfring: #fbfbf9;
+  --f-display: "Barlow Condensed", "Arial Narrow", "Segoe UI", sans-serif;
+  --f-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --f-data: "JetBrains Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141716; --panel: #1a1e1c; --ink: #e8ebe7; --ink2: #b8beb9; --muted: #8b928d; --rule: #2d3330;
+    --mapbg: #1f2321; --chip: #232826;
+    --minor: #e3a83f; --elev: #f2812f; --sev: #ff5a3c; --slip: #f4f6f3; --ctx: #66706a; --adm: #a2aaa4;
+    --r1: #1d2a37; --r2: #213651; --r3: #24456d; --r4: #285b93; --r5: #2f74bd; --r6: #4691dc;
+    --hs-min: 0.32; --d0: #4d5450; --d1: #6e5a24; --d2: #a8661f; --d3: #e27b33; --d4: #ffb07a; --hfring: #141716; --focus: #6aa8ec; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141716; --panel: #1a1e1c; --ink: #e8ebe7; --ink2: #b8beb9; --muted: #8b928d; --rule: #2d3330;
+  --mapbg: #1f2321; --chip: #232826;
+  --minor: #e3a83f; --elev: #f2812f; --sev: #ff5a3c; --slip: #f4f6f3; --ctx: #66706a; --adm: #a2aaa4;
+  --r1: #1d2a37; --r2: #213651; --r3: #24456d; --r4: #285b93; --r5: #2f74bd; --r6: #4691dc;
+  --hs-min: 0.32; --d0: #4d5450; --d1: #6e5a24; --d2: #a8661f; --d3: #e27b33; --d4: #ffb07a; --hfring: #141716; --focus: #6aa8ec; color-scheme: dark;
+}
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 14px; line-height: 1.45; }
+.app { display: grid; grid-template-columns: minmax(300px, 380px) 1fr; height: 100%; }
+.panel { background: var(--panel); border-right: 1px solid var(--rule); overflow-y: auto; min-width: 0;
+  display: flex; flex-direction: column; gap: 18px; padding-block: 18px 24px;
+  padding-left: max(18px, env(safe-area-inset-left, 0px)); padding-right: 18px; }
+.mapwrap { position: relative; min-width: 0; }
+#map { position: absolute; inset: 0; background: var(--mapbg); }
+@media (max-width: 760px) {
+  .app { grid-template-columns: 1fr; grid-template-rows: 62vh auto; height: auto; }
+  html, body { height: auto; }
+  .mapwrap { order: -1; height: 62vh; }
+  .panel { border-right: 0; border-top: 1px solid var(--rule); overflow: visible;
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+}
+.eyebrow { font-family: var(--f-data); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--f-display); font-weight: 700; font-size: 30px; line-height: 1.02; margin: 4px 0 6px; text-wrap: balance; letter-spacing: .005em; }
+.lede { color: var(--ink2); margin: 0; max-width: 60ch; }
+h2 { font-family: var(--f-display); font-weight: 600; font-size: 17px; letter-spacing: .04em; text-transform: uppercase; margin: 0 0 8px; color: var(--ink); }
+section { display: flex; flex-direction: column; gap: 6px; }
+.num { font-family: var(--f-data); font-variant-numeric: tabular-nums; }
+/* tier filters */
+.tiers { display: flex; flex-direction: column; gap: 4px; }
+.tier { display: grid; grid-template-columns: 22px 1fr auto; align-items: center; gap: 10px; padding: 7px 10px 7px 8px;
+  border-radius: 6px; cursor: pointer; border: 1px solid transparent; user-select: none; }
+.tier:hover { background: var(--chip); }
+.tier input { position: absolute; opacity: 0; pointer-events: none; }
+.tier .sw { width: 22px; height: 6px; border-radius: 3px; }
+.tier .lbl b { font-weight: 600; }
+.tier .lbl span { color: var(--muted); font-size: 12.5px; margin-left: 4px; }
+.tier .km { font-family: var(--f-data); font-size: 12.5px; color: var(--ink2); }
+.tier.off { opacity: .42; }
+.tier.off .sw { background: var(--rule) !important; }
+.tier:focus-within { outline: 2px solid var(--focus); outline-offset: 1px; }
+/* switches */
+.switches { display: flex; flex-direction: column; gap: 2px; }
+.sw-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 2px; cursor: pointer; }
+.sw-row span small { display: block; color: var(--muted); font-size: 12px; }
+.toggle { appearance: none; width: 34px; height: 20px; border-radius: 10px; background: var(--rule); position: relative; cursor: pointer; flex: none; transition: background .15s; }
+.toggle::after { content: ""; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: var(--panel); transition: transform .15s; }
+.toggle:checked { background: var(--ink2); }
+.toggle:checked::after { transform: translateX(14px); }
+.toggle:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.note { font-size: 12.5px; color: var(--muted); margin: 0; }
+/* region list */
+.regions { display: flex; flex-direction: column; }
+.reg { display: grid; grid-template-columns: 1fr 92px 42px; gap: 10px; align-items: center; padding: 6px 4px; border: 0;
+  background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; border-bottom: 1px solid var(--rule); border-radius: 0; }
+.reg:hover { background: var(--chip); }
+.reg:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.reg .bar { display: flex; height: 8px; border-radius: 2px; overflow: hidden; background: var(--chip); }
+.reg .bar i { display: block; height: 100%; }
+.reg .pct { font-family: var(--f-data); font-size: 12px; text-align: right; color: var(--ink2); }
+.reg-head { display: grid; grid-template-columns: 1fr 92px 42px; gap: 10px; font-size: 11.5px; color: var(--muted); padding: 0 4px 2px; }
+/* legend on map */
+.legend { position: absolute; left: max(12px, env(safe-area-inset-left, 0px)); top: 12px; background: var(--panel); color: var(--ink);
+  border: 1px solid var(--rule); border-radius: 8px; padding: 9px 11px; font-size: 12px; display: flex; flex-direction: column; gap: 6px; max-width: calc(100% - 24px); }
+.legend .ramp { display: flex; }
+.legend .ramp i { width: 26px; height: 8px; display: block; }
+.legend .ticks { display: flex; font-family: var(--f-data); font-size: 10.5px; color: var(--muted); }
+.legend .ticks span { width: 26px; text-align: left; transform: translateX(-3px); }
+.legend .slip { display: flex; align-items: center; gap: 6px; }
+.legend .slip i { width: 22px; height: 0; border-top: 2px dashed var(--slip); display: block; }
+.status { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); background: var(--panel); color: var(--ink2);
+  border: 1px solid var(--rule); border-radius: 999px; padding: 5px 14px; font-size: 12.5px; font-family: var(--f-data); white-space: nowrap; }
+/* popup */
+.maplibregl-popup-content { background: var(--panel); color: var(--ink); border-radius: 8px; padding: 12px 14px 10px;
+  box-shadow: 0 6px 24px rgba(0,0,0,.18); font-family: var(--f-body); font-size: 13px; min-width: 250px; }
+.maplibregl-popup-tip { border-top-color: var(--panel) !important; border-bottom-color: var(--panel) !important; }
+.maplibregl-popup-close-button { color: var(--muted); font-size: 18px; padding: 2px 8px; }
+.pp-h { font-family: var(--f-display); font-weight: 600; font-size: 17px; line-height: 1.1; margin: 0 18px 2px 0; }
+.pp-sub { color: var(--muted); font-size: 12px; margin-bottom: 8px; }
+.pill { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 12px; padding: 2px 8px 2px 6px; border-radius: 999px; background: var(--chip); }
+.pill i { width: 9px; height: 9px; border-radius: 50%; display: block; }
+.pp-grid { display: grid; grid-template-columns: auto 1fr auto; gap: 3px 10px; margin-top: 8px; align-items: baseline; }
+.pp-grid .k { color: var(--muted); font-size: 12px; }
+.pp-grid .v { font-size: 12.5px; }
+.pp-grid .s { font-family: var(--f-data); font-size: 11px; color: var(--ink2); text-align: right; }
+.pp-foot { margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--rule); font-size: 12px; color: var(--ink2); }
+.maplibregl-ctrl-attrib { background: color-mix(in srgb, var(--panel) 85%, transparent) !important; color: var(--muted); font-size: 10.5px; }
+.maplibregl-ctrl-attrib a { color: var(--ink2); }
+.maplibregl-ctrl-group { background: var(--panel); }
+.maplibregl-ctrl-group button + button { border-top-color: var(--rule); }
+.hlist { display: flex; flex-direction: column; }
+.hrow { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: baseline; padding: 6px 4px; border: 0; border-bottom: 1px solid var(--rule);
+  background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.hrow:hover { background: var(--chip); }
+.hrow:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.hrow small { display: block; color: var(--muted); font-size: 12px; }
+.hrow .num { font-size: 12.5px; color: var(--ink2); white-space: nowrap; }
+.subh { font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin: 8px 0 0; font-family: var(--f-data); }
+.legend .dots { display: flex; gap: 8px; flex-wrap: wrap; font-family: var(--f-data); font-size: 10.5px; color: var(--muted); }
+.legend .dots span { display: inline-flex; align-items: center; gap: 3px; }
+.legend .dots i { width: 9px; height: 9px; border-radius: 50%; display: block; }
+@media (prefers-reduced-motion: reduce) { .toggle, .toggle::after { transition: none; } }
+</style>
+
+<style>* { box-sizing: border-box; } body { margin: 0; } [hidden] { display: none !important; }</style>
+</head>
+<body>
+<div class="app">
+  <aside class="panel" aria-label="Summary and filters">
+    <header>
+      <div class="eyebrow" id="runline">WeatherNext 2 · run 17 Nov 2026 00Z</div>
+      <h1>Ethiopia roads under the next 15 days of rain</h1>
+      <p class="lede" id="lede">Each road segment is scored on forecast rain, road surface and how steep the ground is, and each health facility on how much longer its referral trip takes. Hover or tap a road or facility for details.</p>
+    </header>
+
+    <section aria-labelledby="h-tier">
+      <h2 id="h-tier">Slowdown tier</h2>
+      <div class="tiers" id="tiers"></div>
+      <p class="note" id="totline"></p>
+    </section>
+
+    <section aria-labelledby="h-hf">
+      <h2 id="h-hf">Health facility access</h2>
+      <p class="note" id="hfline"></p>
+      <div class="subh">Hospitals that become hardest to reach</div>
+      <div class="hlist" id="toph"></div>
+      <div class="subh">Health centres with the biggest added trip time</div>
+      <div class="hlist" id="tophc"></div>
+    </section>
+
+    <section aria-labelledby="h-layers">
+      <h2 id="h-layers">Map layers</h2>
+      <div class="switches">
+        <label class="sw-row" for="opt-terrain"><span>Include terrain in the score<small>Off shows rain and surface only</small></span><input type="checkbox" class="toggle" id="opt-terrain" checked></label>
+        <label class="sw-row" for="opt-hf"><span>Health facilities<small>Coloured by added travel time; health posts from zoom 7</small></span><input type="checkbox" class="toggle" id="opt-hf" checked></label>
+        <label class="sw-row" for="opt-slip"><span>Slip / rock-fall exposure<small>Moderate+ rain on ground ≥ 26.6°</small></span><input type="checkbox" class="toggle" id="opt-slip" checked></label>
+        <label class="sw-row" for="opt-rain"><span>Forecast rain, 15-day total</span><input type="checkbox" class="toggle" id="opt-rain" checked></label>
+        <label class="sw-row" for="opt-hs"><span>Hillshade (GEM-15)</span><input type="checkbox" class="toggle" id="opt-hs" checked></label>
+        <label class="sw-row" for="opt-ctx"><span>Main road network</span><input type="checkbox" class="toggle" id="opt-ctx" checked></label>
+      </div>
+    </section>
+
+    <section aria-labelledby="h-reg">
+      <h2 id="h-reg">By region</h2>
+      <div class="reg-head"><span>Region · tap to zoom</span><span>Tier mix</span><span style="text-align:right">Slowed</span></div>
+      <div class="regions" id="regions"></div>
+      <button class="reg" id="reg-all" style="border-bottom:0"><span>Whole country</span><span></span><span></span></button>
+    </section>
+
+    <section aria-labelledby="h-how">
+      <h2 id="h-how">How the score works</h2>
+      <p class="note">Tier = rain (0–3) + surface (paved 0, unpaved 1, +1 if mapped in bad condition) + steepness (0–2) − 1, kept to 0–3 and at most one tier above the rain score. No forecast rain means Normal. Speed losses (Minor ~10%, Elevated ~25%, Severe ~50%) are illustrative assumptions, not measured.</p>
+      <p class="note">Rain: high = half the 64 ensemble members give a day ≥ 20 mm, or the wettest 3 days average ≥ 40 mm; moderate = a day ≥ 10 mm or 3 days ≥ 20 mm; low = 15-day mean ≥ 10 mm. Steepness after the Ethiopian Roads Authority terrain classes: mountainous ≥ 14° ground or ≥ 5 % road grade, escarpment ≥ 26.6° or ≥ 10 %.</p>
+      <p class="note">Health access: shortest road travel time from each facility to the nearest hospital (health posts: nearest health centre) at normal speeds by road class (trunk 70 … track 15 km/h, unpaved × 0.7), then to that same facility with each road slowed by its tier. A hospital's linked facilities are the health centres and posts for which it is the nearest hospital by road; this is a road-network grouping, not a population catchment or the official referral pathway. Facilities are approved hospitals, health centres and health posts from the Ethiopian health facility register.</p>
+      <p class="note">Surface is mapped (OSM tag or Mapillary image model) for about a quarter of road length; the rest is inferred from road class. Road grades come from a ~110 m elevation grid and run high where roads cut across hillsides.</p>
+    </section>
+  </aside>
+
+  <div class="mapwrap">
+    <div id="map" role="region" aria-label="Map of Ethiopian roads coloured by slowdown tier"></div>
+    <div class="status" id="status">Loading roads…</div>
+    <div class="legend" aria-hidden="true">
+      <div>15-day rain, mm</div>
+      <div class="ramp" id="ramp"></div>
+      <div class="ticks"><span>5</span><span>10</span><span>25</span><span>50</span><span>100</span><span>150</span></div>
+      <div class="slip" id="leg-slip"><i></i>slip / rock-fall exposure</div>
+      <div id="leg-hf">Facilities: added minutes</div>
+      <div class="dots" id="leg-hf2"><span><i style="background:var(--d0)"></i>&lt;5</span><span><i style="background:var(--d1)"></i>5–15</span><span><i style="background:var(--d2)"></i>15–30</span><span><i style="background:var(--d3)"></i>30–60</span><span><i style="background:var(--d4)"></i>60+</span></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script>
+const SUMMARY = {
+ "init": "17 Nov 2026",
+ "start": "17 Nov",
+ "end": "01 Dec 2026",
+ "total_km": 441218,
+ "tiers": {
+  "Normal": 304505,
+  "Minor": 53285,
+  "Elevated": 66298,
+  "Severe": 17130
+ },
+ "slide_km": 8149,
+ "raised_km": 82539,
+ "regions": [
+  {
+   "name": "Amhara",
+   "Normal": 23129,
+   "Minor": 15003,
+   "Elevated": 14961,
+   "Severe": 8891,
+   "share": 62.7,
+   "slide": 4162,
+   "bbox": [
+    35.258,
+    8.716,
+    40.213,
+    13.769
+   ]
+  },
+  {
+   "name": "SNNPR",
+   "Normal": 58137,
+   "Minor": 8577,
+   "Elevated": 20036,
+   "Severe": 5572,
+   "share": 37.0,
+   "slide": 2722,
+   "bbox": [
+    34.878,
+    4.441,
+    39.133,
+    8.459
+   ]
+  },
+  {
+   "name": "Oromia",
+   "Normal": 124195,
+   "Minor": 25543,
+   "Elevated": 27544,
+   "Severe": 2130,
+   "share": 30.8,
+   "slide": 846,
+   "bbox": [
+    34.14,
+    3.511,
+    42.981,
+    10.388
+   ]
+  },
+  {
+   "name": "Tigray",
+   "Normal": 16408,
+   "Minor": 2733,
+   "Elevated": 3170,
+   "Severe": 209,
+   "share": 27.1,
+   "slide": 203,
+   "bbox": [
+    36.452,
+    12.256,
+    39.992,
+    14.846
+   ]
+  },
+  {
+   "name": "Gambela",
+   "Normal": 4171,
+   "Minor": 921,
+   "Elevated": 259,
+   "Severe": 136,
+   "share": 24.0,
+   "slide": 98,
+   "bbox": [
+    33.002,
+    6.282,
+    35.393,
+    8.71
+   ]
+  },
+  {
+   "name": "Beneshangul Gumu",
+   "Normal": 8641,
+   "Minor": 333,
+   "Elevated": 194,
+   "Severe": 187,
+   "share": 7.6,
+   "slide": 114,
+   "bbox": [
+    34.101,
+    8.951,
+    36.693,
+    11.985
+   ]
+  },
+  {
+   "name": "Afar",
+   "Normal": 7090,
+   "Minor": 33,
+   "Elevated": 97,
+   "Severe": 5,
+   "share": 1.9,
+   "slide": 4,
+   "bbox": [
+    39.651,
+    8.842,
+    42.356,
+    14.499
+   ]
+  },
+  {
+   "name": "Somali",
+   "Normal": 52034,
+   "Minor": 142,
+   "Elevated": 37,
+   "Severe": 0,
+   "share": 0.3,
+   "slide": 0,
+   "bbox": [
+    39.094,
+    3.4,
+    47.959,
+    11.082
+   ]
+  },
+  {
+   "name": "Addis Ababa",
+   "Normal": 8462,
+   "Minor": 0,
+   "Elevated": 0,
+   "Severe": 0,
+   "share": 0.0,
+   "slide": 0,
+   "bbox": [
+    38.64,
+    8.835,
+    38.907,
+    9.099
+   ]
+  },
+  {
+   "name": "Hareri",
+   "Normal": 915,
+   "Minor": 0,
+   "Elevated": 0,
+   "Severe": 0,
+   "share": 0.0,
+   "slide": 0,
+   "bbox": [
+    42.06,
+    9.187,
+    42.273,
+    9.39
+   ]
+  },
+  {
+   "name": "Dire Dawa",
+   "Normal": 1323,
+   "Minor": 0,
+   "Elevated": 0,
+   "Severe": 0,
+   "share": 0.0,
+   "slide": 0,
+   "bbox": [
+    41.729,
+    9.472,
+    42.341,
+    9.785
+   ]
+  }
+ ],
+ "hillshade_bounds": [
+  33.0,
+  3.0,
+  48.0,
+  15.0
+ ],
+ "health": {
+  "hc_n": 3639,
+  "hc_30": 366,
+  "hc_60": 187,
+  "hp_n": 15539,
+  "hp_30": 231,
+  "top_hc": [
+   {
+    "n": "Liwarie Health Center",
+    "a2": "North Gondar",
+    "h0": 348,
+    "h1": 685,
+    "x": 38.5091099,
+    "y": 13.2328929
+   },
+   {
+    "n": "Akile Health Center",
+    "a2": "West Gojam",
+    "h0": 337,
+    "h1": 671,
+    "x": 37.6319071,
+    "y": 11.0922925
+   },
+   {
+    "n": "Asandabo Health Center",
+    "a2": "Ilu Aba Bora",
+    "h0": 375,
+    "h1": 693,
+    "x": 35.5194349,
+    "y": 7.9337228
+   },
+   {
+    "n": "Dliybza Health Center",
+    "a2": "North Gondar",
+    "h0": 288,
+    "h1": 569,
+    "x": 38.4403121,
+    "y": 13.1181669
+   },
+   {
+    "n": "Chago health center",
+    "a2": "Sheka",
+    "h0": 300,
+    "h1": 580,
+    "x": 35.5409373,
+    "y": 7.7102785
+   },
+   {
+    "n": "Qeja health center",
+    "a2": "Sheka",
+    "h0": 300,
+    "h1": 559,
+    "x": 35.4584893,
+    "y": 7.8079981
+   },
+   {
+    "n": "Jembelew Health Center",
+    "a2": "North Gondar",
+    "h0": 264,
+    "h1": 523,
+    "x": 38.3639714,
+    "y": 13.0991121
+   },
+   {
+    "n": "Degele health center",
+    "a2": "Sheka",
+    "h0": 306,
+    "h1": 564,
+    "x": 35.3919973,
+    "y": 7.8068033
+   },
+   {
+    "n": "Gulie Health Center",
+    "a2": "West Gojam",
+    "h0": 257,
+    "h1": 511,
+    "x": 37.2962679,
+    "y": 11.0734676
+   },
+   {
+    "n": "Washera Health Center",
+    "a2": "West Gojam",
+    "h0": 246,
+    "h1": 489,
+    "x": 37.5606471,
+    "y": 11.1131847
+   }
+  ],
+  "top_h": [
+   {
+    "n": "Wacha Primary Hosiptal",
+    "a2": "Kefa",
+    "cf": 238,
+    "c30": 142,
+    "x": 35.7979102,
+    "y": 7.1454717
+   },
+   {
+    "n": "Darimu Primary Hospital",
+    "a2": "Ilu Aba Bora",
+    "cf": 190,
+    "c30": 130,
+    "x": 35.5074709,
+    "y": 8.585586
+   },
+   {
+    "n": "Dembi Dollo Compernsive Specialized Hospital",
+    "a2": "Kelem Wellega",
+    "cf": 154,
+    "c30": 115,
+    "x": 34.807909,
+    "y": 8.521316000000002
+   },
+   {
+    "n": "Setema Primary Hospital",
+    "a2": "Jimma",
+    "cf": 125,
+    "c30": 105,
+    "x": 36.2035673,
+    "y": 7.9820519
+   },
+   {
+    "n": "Mekane Eyesus Primary Hospital",
+    "a2": "South Gondar",
+    "cf": 115,
+    "c30": 85,
+    "x": 38.0519795,
+    "y": 11.6047319
+   },
+   {
+    "n": "Teppi General Hospital",
+    "a2": "Sheka",
+    "cf": 112,
+    "c30": 83,
+    "x": 35.426415,
+    "y": 7.1966211
+   },
+   {
+    "n": "Mizan Teppi university Teaching Hospital",
+    "a2": "Bench Sheko",
+    "cf": 87,
+    "c30": 74,
+    "x": 35.5486578,
+    "y": 6.9519356
+   },
+   {
+    "n": "Debre tabor Comperhensive Specialized  Hospital",
+    "a2": "South Gondar",
+    "cf": 83,
+    "c30": 67,
+    "x": 38.0229,
+    "y": 11.8565826
+   },
+   {
+    "n": "Gida Ayana General Hospital",
+    "a2": "East Wellega",
+    "cf": 145,
+    "c30": 64,
+    "x": 36.6217331,
+    "y": 9.8787112
+   },
+   {
+    "n": "Janamora Primary Hospital",
+    "a2": "North Gondar",
+    "cf": 60,
+    "c30": 56,
+    "x": 38.1128117,
+    "y": 13.0101177
+   }
+  ]
+ }
+};
+const TIERS = [
+  { key: "Severe", t: 3, tok: "--sev", note: "~50% slower, may close" },
+  { key: "Elevated", t: 2, tok: "--elev", note: "~25% slower" },
+  { key: "Minor", t: 1, tok: "--minor", note: "~10% slower" },
+];
+const RLEV = [5, 10, 25, 50, 100, 150];
+const RAIN_LABEL = ["none", "low", "moderate", "high"];
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const fmt = n => Math.round(n).toLocaleString("en-US");
+const state = { on: { 1: true, 2: true, 3: true }, terrain: true };
+
+// ---- panel (renders at rest from the inline summary) ----
+document.getElementById("runline").textContent = `WeatherNext 2 · run ${SUMMARY.init} 00Z · ${SUMMARY.start} – ${SUMMARY.end}`;
+const tiersEl = document.getElementById("tiers");
+TIERS.forEach(T => {
+  const id = "tier-" + T.t;
+  const lab = document.createElement("label");
+  lab.className = "tier"; lab.htmlFor = id;
+  lab.innerHTML = `<input type="checkbox" id="${id}" checked><i class="sw" style="background:var(${T.tok})"></i>
+    <span class="lbl"><b>${T.key}</b><span>${T.note}</span></span><span class="km">${fmt(SUMMARY.tiers[T.key])} km</span>`;
+  lab.querySelector("input").addEventListener("change", e => { state.on[T.t] = e.target.checked; lab.classList.toggle("off", !e.target.checked); applyFilter(); });
+  tiersEl.appendChild(lab);
+});
+const slowed = SUMMARY.tiers.Minor + SUMMARY.tiers.Elevated + SUMMARY.tiers.Severe;
+document.getElementById("totline").innerHTML =
+  `<span class="num">${fmt(slowed)}</span> of <span class="num">${fmt(SUMMARY.total_km)}</span> km of vehicle road likely slowed (${Math.round(100 * slowed / SUMMARY.total_km)}%). Terrain raises <span class="num">${fmt(SUMMARY.raised_km)}</span> km by at least one tier; <span class="num">${fmt(SUMMARY.slide_km)}</span> km are exposed to slips or rock fall.`;
+
+const regEl = document.getElementById("regions");
+SUMMARY.regions.forEach(r => {
+  const tot = r.Normal + r.Minor + r.Elevated + r.Severe;
+  const b = document.createElement("button");
+  b.className = "reg";
+  b.innerHTML = `<span>${r.name}</span><span class="bar" title="${fmt(r.Severe)} km severe · ${fmt(r.Elevated)} km elevated · ${fmt(r.Minor)} km minor">
+      <i style="width:${100 * r.Severe / tot}%;background:var(--sev)"></i><i style="width:${100 * r.Elevated / tot}%;background:var(--elev)"></i><i style="width:${100 * r.Minor / tot}%;background:var(--minor)"></i></span>
+    <span class="pct">${Math.round(r.share)}%</span>`;
+  b.addEventListener("click", () => map && r.bbox && map.fitBounds([[r.bbox[0], r.bbox[1]], [r.bbox[2], r.bbox[3]]], { padding: 30 }));
+  regEl.appendChild(b);
+});
+const H = SUMMARY.health;
+document.getElementById("hfline").innerHTML = `<span class="num">${fmt(H.hc_30)}</span> of <span class="num">${fmt(H.hc_n)}</span> health centres take 30+ minutes longer to reach a hospital (<span class="num">${fmt(H.hc_60)}</span> an hour or more). <span class="num">${fmt(H.hp_30)}</span> health posts take 30+ minutes longer to reach a health centre. Tap a name to go there.`;
+const goTo = (x, y, name) => { if (!map) return; map.flyTo({ center: [x, y], zoom: 10.5, essential: true }); map.once("moveend", () => openFacility(name, x, y)); };
+const hrow = (el, h, right) => { const b = document.createElement("button"); b.className = "hrow";
+  b.innerHTML = `<span>${esc(h.n)}<small>${esc(h.a2)}</small></span><span class="num">${right}</span>`; b.addEventListener("click", () => goTo(h.x, h.y, h.n)); el.appendChild(b); };
+H.top_h.forEach(h => hrow(document.getElementById("toph"), h, `${h.c30} of ${h.cf} linked +30 min`));
+H.top_hc.forEach(h => hrow(document.getElementById("tophc"), h, `${(h.h0 / 60).toFixed(1)} → ${(h.h1 / 60).toFixed(1)} h`));
+const ETH = [[33.0, 3.4], [48.0, 14.9]];
+document.getElementById("reg-all").addEventListener("click", () => map && map.fitBounds(ETH, { padding: 20 }));
+document.getElementById("ramp").innerHTML = [1, 2, 3, 4, 5, 6].map(i => `<i style="background:var(--r${i})"></i>`).join("");
+
+// ---- map ----
+const status = document.getElementById("status");
+let map = null;
+function decode(d) {
+  const C = d.cols, L = d.lut, last = C.length, feats = new Array(d.f.length);
+  for (let n = 0; n < d.f.length; n++) {
+    const r = d.f[n], p = {};
+    for (let i = 0; i < last; i++) p[C[i]] = L[C[i]] ? L[C[i]][r[i]] : r[i];
+    const g = r[last]; let x = g[0], y = g[1]; const c = [[x / 1e4, y / 1e4]];
+    for (let j = 2; j < g.length; j += 2) { x += g[j]; y += g[j + 1]; c.push([x / 1e4, y / 1e4]); }
+    feats[n] = { type: "Feature", properties: p, geometry: { type: "LineString", coordinates: c } };
+  }
+  return feats;
+}
+const getJSON = u => fetch(u).then(r => { if (!r.ok) throw new Error(u + " " + r.status); return r.json(); });
+
+function tierColor() {
+  const prop = state.terrain ? "t" : "tw";
+  return ["match", ["get", prop], 3, css("--sev"), 2, css("--elev"), 1, css("--minor"), css("--ctx")];
+}
+function hfColor() {
+  return ["case", ["==", ["typeof", ["get", "d"]], "number"],
+    ["step", ["get", "d"], css("--d0"), 5, css("--d1"), 15, css("--d2"), 30, css("--d3"), 60, css("--d4")], css("--d0")];
+}
+function applyFilter() {
+  if (!map || !map.getLayer("roads")) return;
+  const prop = state.terrain ? "t" : "tw";
+  const on = [1, 2, 3].filter(t => state.on[t]);
+  map.setFilter("roads", ["in", ["get", prop], ["literal", on]]);
+  map.setPaintProperty("roads", "line-color", tierColor());
+  map.setLayoutProperty("roads", "line-sort-key", ["get", prop]);
+  map.setFilter("slip", ["all", ["==", ["get", "sl"], 1], ["in", ["get", prop], ["literal", on]]]);
+}
+function applyTheme() {
+  if (!map) return;
+  const has = id => map.getLayer(id);
+  map.setPaintProperty("bg", "background-color", css("--mapbg"));
+  if (has("rain")) map.setPaintProperty("rain", "fill-color", ["step", ["get", "m"], "rgba(0,0,0,0)", 5, css("--r1"), 10, css("--r2"), 25, css("--r3"), 50, css("--r4"), 100, css("--r5"), 150, css("--r6")]);
+  if (has("hs")) map.setPaintProperty("hs", "raster-brightness-min", parseFloat(css("--hs-min")) || 0);
+  if (has("ctx")) map.setPaintProperty("ctx", "line-color", css("--ctx"));
+  if (has("adm")) map.setPaintProperty("adm", "line-color", css("--adm"));
+  if (has("slip")) map.setPaintProperty("slip", "line-color", css("--slip"));
+  if (has("roads")) map.setPaintProperty("roads", "line-color", tierColor());
+  ["hf-hp", "hf-main"].forEach(id => { if (has(id)) { map.setPaintProperty(id, "circle-color", hfColor());
+    map.setPaintProperty(id, "circle-stroke-color", id === "hf-main" ? ["match", ["get", "ty"], 2, css("--ink"), css("--hfring")] : css("--hfring")); } });
+}
+
+function init() {
+  map = new maplibregl.Map({
+    container: "map", bounds: ETH, fitBoundsOptions: { padding: 20 }, maxBounds: [[28, 0], [53, 18]],
+    attributionControl: false, dragRotate: false, pitchWithRotate: false,
+    style: { version: 8, sources: {}, layers: [{ id: "bg", type: "background", paint: { "background-color": css("--mapbg") } }] },
+  });
+  map.touchZoomRotate.disableRotation();
+  map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+  map.addControl(new maplibregl.ScaleControl({ maxWidth: 110 }), "bottom-right");
+  map.addControl(new maplibregl.AttributionControl({ compact: true, customAttribution:
+    'Roads © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>, surface model HeiGIT · Elevation Google GEM-15 · Rain Google WeatherNext 2 · Regions geoBoundaries' }), "bottom-right");
+
+  map.on("load", async () => {
+    const hb = SUMMARY.hillshade_bounds;
+    map.addSource("hs", { type: "image", url: "data/hillshade.png", coordinates: [[hb[0], hb[3]], [hb[2], hb[3]], [hb[2], hb[1]], [hb[0], hb[1]]] });
+    map.addLayer({ id: "hs", type: "raster", source: "hs", paint: { "raster-opacity": ["interpolate", ["linear"], ["zoom"], 5, 0.45, 9, 0.8], "raster-fade-duration": 0 } });
+    const [rain, adm] = await Promise.all([getJSON("data/rain.geojson"), getJSON("data/adm1.geojson")]);
+    map.addSource("rain", { type: "geojson", data: rain });
+    map.addLayer({ id: "rain", type: "fill", source: "rain", paint: { "fill-opacity": 0.55, "fill-antialias": false } });
+    map.addSource("adm", { type: "geojson", data: adm });
+    map.addLayer({ id: "adm", type: "line", source: "adm", paint: { "line-width": 0.8, "line-opacity": 0.7 } });
+    applyTheme(); sync();
+
+    getJSON("data/roads_context.json").then(d => {
+      map.addSource("ctx", { type: "geojson", data: { type: "FeatureCollection", features: decode(d) } });
+      map.addLayer({ id: "ctx", type: "line", source: "ctx", paint: { "line-color": css("--ctx"), "line-opacity": 0.8,
+        "line-width": ["interpolate", ["linear"], ["zoom"], 5, ["match", ["get", "c"], 0, 0.9, 1, 0.7, 0.45], 10, ["match", ["get", "c"], 0, 2.4, 1, 1.8, 1.2]] } }, map.getLayer("roads") ? "roads" : undefined);
+      sync();
+    });
+
+    const files = ["severe", "elevated", "minor"]; let feats = [], done = 0;
+    status.textContent = "Loading roads… 0 of 3";
+    try {
+      const parts = await Promise.all(files.map(f => getJSON(`data/roads_${f}.json`).then(d => { status.textContent = `Loading roads… ${++done} of 3`; return decode(d); })));
+      feats = parts.flat();
+    } catch (e) { status.textContent = "Road data did not load. Reload the page to try again."; return; }
+    map.addSource("roads", { type: "geojson", data: { type: "FeatureCollection", features: feats }, tolerance: 0.3 });
+    const w = (a, b) => ["interpolate", ["linear"], ["zoom"], 5, ["match", ["get", state.terrain ? "t" : "tw"], 3, a * 1.6, 2, a * 1.15, a], 11, ["match", ["get", "t"], 3, b * 1.4, 2, b * 1.15, b]];
+    map.addLayer({ id: "roads", type: "line", source: "roads", layout: { "line-cap": "round", "line-join": "round", "line-sort-key": ["get", "t"] },
+      paint: { "line-color": tierColor(), "line-width": w(0.55, 3) } });
+    map.addLayer({ id: "slip", type: "line", source: "roads", filter: ["==", ["get", "sl"], 1],
+      paint: { "line-color": css("--slip"), "line-width": ["interpolate", ["linear"], ["zoom"], 5, 0.35, 8, 0.9, 11, 1.8],
+        "line-opacity": ["interpolate", ["linear"], ["zoom"], 5, 0.45, 8, 0.9], "line-dasharray": [1.2, 1.4] } });
+    if (map.getLayer("ctx")) map.moveLayer("ctx", "roads");
+    try {
+      const hfd = await getJSON("data/facilities.geojson");
+      map.addSource("hf", { type: "geojson", data: hfd });
+      map.addLayer({ id: "hf-hp", type: "circle", source: "hf", minzoom: 7, filter: ["==", ["get", "ty"], 0],
+        paint: { "circle-radius": ["interpolate", ["linear"], ["zoom"], 7, 2, 12, 4.5], "circle-stroke-width": 0.6 } });
+      map.addLayer({ id: "hf-main", type: "circle", source: "hf", filter: [">=", ["get", "ty"], 1],
+        layout: { "circle-sort-key": ["get", "ty"] },
+        paint: { "circle-radius": ["interpolate", ["linear"], ["zoom"], 5, ["match", ["get", "ty"], 2, 2.6, 1.7], 8, ["match", ["get", "ty"], 2, 5, 3.2], 11, ["match", ["get", "ty"], 2, 9, 6]],
+                 "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 5, ["match", ["get", "ty"], 2, 1, 0.3], 9, ["match", ["get", "ty"], 2, 2, 0.8]] } });
+    } catch (e) { console.warn("facilities did not load", e); }
+    status.hidden = true;
+    sync(); applyFilter(); applyTheme();
+    wirePopup();
+  });
+}
+
+function sync() {
+  if (!map) return;
+  const vis = (id, on) => map.getLayer(id) && map.setLayoutProperty(id, "visibility", on ? "visible" : "none");
+  vis("rain", document.getElementById("opt-rain").checked);
+  vis("hs", document.getElementById("opt-hs").checked);
+  vis("ctx", document.getElementById("opt-ctx").checked);
+  vis("slip", document.getElementById("opt-slip").checked);
+  const hfOn = document.getElementById("opt-hf").checked;
+  vis("hf-hp", hfOn); vis("hf-main", hfOn);
+  document.getElementById("leg-hf").hidden = !hfOn; document.getElementById("leg-hf2").hidden = !hfOn;
+  document.getElementById("leg-slip").hidden = !document.getElementById("opt-slip").checked;
+}
+["opt-rain", "opt-hs", "opt-ctx", "opt-slip", "opt-hf"].forEach(id => document.getElementById(id).addEventListener("change", sync));
+document.getElementById("opt-terrain").addEventListener("change", e => { state.terrain = e.target.checked; applyFilter(); });
+
+const TIER_NAME = ["Normal", "Minor", "Elevated", "Severe"], TIER_TOK = ["--ctx", "--minor", "--elev", "--sev"];
+const HW = { trunk: "Trunk road", trunk_link: "Trunk link", primary: "Primary road", primary_link: "Primary link", secondary: "Secondary road", secondary_link: "Secondary link",
+  tertiary: "Tertiary road", tertiary_link: "Tertiary link", unclassified: "Minor road", residential: "Residential street", track: "Track", service: "Service road", road: "Road", living_street: "Living street", motorway: "Motorway" };
+function popupHTML(p) {
+  const t = state.terrain ? p.t : p.tw;
+  const cond = p.cond ? `, mapped as ${esc(p.cond.replace("_", " "))}` : "";
+  return `<div class="pp-h">${esc(p.nm || HW[p.hw] || p.hw)}</div>
+    <div class="pp-sub">${esc(p.nm ? (HW[p.hw] || p.hw) + " · " : "")}${esc(p.rg)} · ${p.km.toFixed(2)} km</div>
+    <span class="pill"><i style="background:var(${TIER_TOK[t]})"></i>${TIER_NAME[t]}</span>
+    ${p.t !== p.tw ? `<span class="note" style="margin-left:6px">${TIER_NAME[p.tw]} without terrain</span>` : ""}
+    <div class="pp-grid">
+      <span class="k">Rain</span><span class="v">${RAIN_LABEL[p.R]}: ${p.r15} mm over 15 days, wettest 3 days ${p.r3} mm, ${Math.round(p.p20 * 100)}% chance of a 20 mm day</span><span class="s">R ${p.R}</span>
+      <span class="k">Surface</span><span class="v">${p.sf} (${p.sk ? "mapped" : "inferred from road class"})${cond}</span><span class="s">S ${p.S}</span>
+      <span class="k">Terrain</span><span class="v">${esc(p.tc)}: grade ${p.gr}%, ground slope ${p.sm}° mean, ${p.sx}° max, ${fmt(p.el)} m</span><span class="s">T ${p.T}</span>
+    </div>
+    <div class="pp-foot">Wettest forecast day ${esc(p.pk)}${p.sl ? " · <b>slip / rock-fall exposure</b>" : ""}</div>`;
+}
+const TYN = ["Health post", "Health centre", "Hospital"];
+const hrs = m => m == null ? "–" : m >= 90 ? `${(m / 60).toFixed(1)} h` : `${m} min`;
+function facilityHTML(p) {
+  const target = p.ty === 0 ? (p.hc ? p.hc : "health centre") : (p.ch ? p.ch : "hospital");
+  const t0 = p.ty === 0 ? p.c0 : p.h0, t1 = p.ty === 0 ? p.c1 : p.h1;
+  const tok = p.d == null ? "--d0" : p.d >= 60 ? "--d4" : p.d >= 30 ? "--d3" : p.d >= 15 ? "--d2" : p.d >= 5 ? "--d1" : "--d0";
+  let rows = p.ty === 2
+    ? `<span class="k">Linked</span><span class="v">nearest hospital by road for ${p.cf ?? 0} health centres and posts; ${p.c30 ?? 0} take 30+ min longer to reach it under the forecast${p.cm != null ? ` (median +${p.cm} min)` : ""}</span><span class="s"></span>`
+    : `<span class="k">To ${p.ty === 0 ? "health centre" : "hospital"}</span><span class="v">${hrs(t0)} normally, ${hrs(t1)} under the forecast</span><span class="s">+${p.d ?? "–"}</span>`;
+  if (p.ty === 0) rows += `<span class="k">To hospital</span><span class="v">${hrs(p.h0)} → ${hrs(p.h1)}${p.ch ? ` (${esc(p.ch)})` : ""}</span><span class="s"></span>`;
+  else if (p.ty === 1 && p.ch) rows += `<span class="k">Hospital</span><span class="v">${esc(p.ch)}</span><span class="s"></span>`;
+  rows += `<span class="k">Roads nearby</span><span class="v">${p.s5 == null ? "no mapped roads within 5 km" : Math.round(p.s5 * 100) + "% Elevated / Severe within 5 km"}; nearest road ${esc(p.nt)}</span><span class="s"></span>`;
+  return `<div class="pp-h">${esc(p.n)}</div><div class="pp-sub">${TYN[p.ty]} · ${esc(p.a3)}, ${esc(p.a2)}</div>
+    ${p.ty !== 2 ? `<span class="pill"><i style="background:var(${tok})"></i>+${p.d ?? "–"} min to reach ${esc(target)}</span>` : ""}
+    <div class="pp-grid">${rows}</div>
+    <div class="pp-foot">${p.off ? `${p.gap} km from the nearest mapped road · ` : ""}${p.sl ? "<b>slip / rock-fall exposure</b> within 5 km" : "no slip-exposed road within 5 km"}</div>`;
+}
+let openFacility = () => {};
+function wirePopup() {
+  const pop = new maplibregl.Popup({ closeButton: true, closeOnClick: false, maxWidth: "330px", offset: 8 });
+  let pinned = false;
+  const box = e => [[e.point.x - 5, e.point.y - 5], [e.point.x + 5, e.point.y + 5]];
+  const hfLayers = () => ["hf-main", "hf-hp"].filter(id => map.getLayer(id) && map.getLayoutProperty(id, "visibility") !== "none");
+  const hit = e => {
+    const f = map.queryRenderedFeatures(box(e), { layers: hfLayers() }).sort((a, b) => b.properties.ty - a.properties.ty)[0];
+    if (f) return { html: facilityHTML(f.properties) };
+    const r = map.queryRenderedFeatures(box(e), { layers: ["roads"] }).sort((a, b) => b.properties.t - a.properties.t)[0];
+    return r ? { html: popupHTML(r.properties) } : null;
+  };
+  openFacility = (name, x, y) => {
+    const f = map.querySourceFeatures("hf", { filter: ["==", ["get", "n"], name] })[0];
+    if (f) { pinned = true; pop.setLngLat([x, y]).setHTML(facilityHTML(f.properties)).addTo(map); }
+  };
+  map.on("mousemove", e => {
+    const f = hit(e);
+    map.getCanvas().style.cursor = f ? "pointer" : "";
+    if (pinned) return;
+    if (f) pop.setLngLat(e.lngLat).setHTML(f.html).addTo(map); else pop.remove();
+  });
+  map.on("click", e => {
+    const f = hit(e);
+    if (f) { pinned = true; pop.setLngLat(e.lngLat).setHTML(f.html).addTo(map); }
+    else { pinned = false; pop.remove(); }
+  });
+  pop.on("close", () => { pinned = false; });
+}
+
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", applyTheme);
+new MutationObserver(applyTheme).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+if (window.maplibregl) init(); else status.textContent = "The map library did not load. Reload the page to try again.";
+</script>
+
+</body>
+</html>

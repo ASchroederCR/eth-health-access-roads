@@ -1,0 +1,100 @@
+# Ethiopia: roads and health facility access under forecast rain
+
+**Interactive map:** https://aschroedercr.github.io/eth-health-access-roads/
+
+This is an example of using a 15-day rainfall forecast to flag Ethiopian roads likely to slow down or become blocked. It also flags the health facilities whose referral trips get longest as a result. Each road segment is scored on three factors:
+
+1. **Forecast rain:** Google WeatherNext 2, a 64-member ensemble at 0.25°, via Earth Engine.
+2. **Road surface:** paved or unpaved, plus mapped condition. From HeiGIT's Mapillary-based road surface dataset (OpenStreetMap).
+3. **Terrain steepness:** Google GEM-15 bare-earth elevation, as road grade and ground slope.
+
+The road network is then used to route every hospital, health centre and health post (about 19,700 approved facilities) under normal and forecast speeds.
+
+The current outputs are for the **17 Nov 2026 00Z** forecast run, covering 17 Nov – 1 Dec 2026.
+
+![Road slowdown map](charts/ETH_roads_rain_risk_map.png)
+![Health facility access](charts/ETH_health_access_map.png)
+![Most affected facilities](charts/ETH_health_access_top.png)
+
+## Headline results (17 Nov 2026 run)
+
+| | |
+|---|---|
+| Vehicle road network scored | ~447,000 km |
+| Severe / Elevated / Minor slowdown | 17,130 / 66,367 / 53,515 km |
+| Roads exposed to slips / rock fall | ~8,150 km |
+| Health centres taking 30+ min longer to reach their nearest hospital | 366 of ~3,600 (187 take an hour or more) |
+| Health posts taking 30+ min longer to reach their nearest health centre | 231 |
+
+The hardest-hit areas are the south-west highlands (Sheka, Kefa, Ilu Aba Bora, Bench Sheko) and the Amhara highlands (North Gondar, West and East Gojam, South Gondar).
+
+## Method
+
+### Road slowdown tier
+Each road segment's tier is **rain (0–3) + surface (0–2) + steepness (0–2) − 1**, kept between 0 and 3. A road can be at most one tier above its rain score, and a road with no forecast rain is always Normal.
+
+| Factor | Levels |
+|---|---|
+| Rain | **high:** ≥ 50% of members give a day ≥ 20 mm, or the wettest 3 days average ≥ 40 mm<br>**moderate:** a day ≥ 10 mm, or 3 days ≥ 20 mm<br>**low:** 15-day ensemble mean ≥ 10 mm |
+| Surface | paved 0, unpaved 1, plus 1 if OSM tags the condition as bad / very bad / horrible / impassable. Surface is mapped for about 25% of road length; the rest is inferred from road class. |
+| Steepness | Based on the Ethiopian Roads Authority terrain classes:<br>**mountainous:** ground slope ≥ 14° or road grade ≥ 5%<br>**escarpment:** ground slope ≥ 26.6° or road grade ≥ 10% |
+
+- **Tiers and assumed speeds:** Normal, Minor (~10% slower), Elevated (~25% slower), Severe (~50% slower, may be impassable).
+- **Slip / rock-fall exposure flag:** moderate or heavier rain, and a ≥ 26.6° cell along the road.
+- **Removed:** about 5,200 km of seismic survey cut-lines in the Ogaden that OSM maps as tracks.
+
+### Health facility access
+- **Road graph:** every road vertex is a node. Dead ends within 30 m of another road are linked to it.
+- **Normal speeds:** trunk 70, primary 60, secondary 50, tertiary 40, minor roads 30, residential 20, tracks 15 km/h. Unpaved roads run at 70% of that.
+- **Forecast speeds:** normal speed × the road's tier factor.
+- **Joining the network:** facilities connect to the nearest road vertex, covering the gap at 5 km/h. Those more than 10 km from a mapped road are flagged and left out of the rankings.
+- **Assignment:** each facility is assigned its nearest hospital by road at normal speeds. Health posts are also assigned their nearest health centre.
+- **Added minutes:** the forecast time minus the normal time for that same trip.
+- **Linked facilities:** a hospital's linked facilities are the health centres and posts for which it is the nearest hospital. This is a road-network grouping, not a population catchment or the official referral pathway.
+
+### Caveats
+- Thresholds and speed factors are illustrative and haven't been checked against observed travel times or closures.
+- Road grades come from a ~110 m elevation grid, so they run high where roads cut across hillsides.
+- In an earlier check, WeatherNext 2 under-forecast observed rainfall (Google PARDIG) in early November 2026. Treat rain amounts as conservative.
+- Routing is by road only. Seasonal river crossings, ferries and closures aren't modelled.
+
+## Repository layout
+```
+docs/                 GitHub Pages site (index.html + data/)
+scripts/
+  11_weathernext_forecast.py   WeatherNext 2 15-day ensemble for Ethiopia (Earth Engine) + shared helpers
+  14_roads_rain_risk.py        score road segments; static maps and charts
+  15_fetch_gem15_dem.py        GEM-15 elevation + 15 m slope on a ~110 m grid (Earth Engine)
+  16_export_webmap.py          compact web-map data files
+  17_health_access.py          routing, facility rankings, charts
+  18_build_webmap.py           build webmap/index.html (artifact) and docs/index.html (Pages)
+webmap/index.src.html  web map source (MapLibre GL)
+charts/               PNG outputs
+tables/               CSV outputs (per region, per facility, top lists, woredas)
+```
+
+## Reproducing
+Requires Python 3.12 with the packages in `requirements.txt` and an Earth Engine project (`earthengine authenticate`).
+
+```bash
+set EE_PROJECT=your-ee-project
+python scripts/11_weathernext_forecast.py          # fetches the latest 00Z WeatherNext 2 run
+python scripts/15_fetch_gem15_dem.py               # one-off, ~1,600 tiles
+python scripts/14_roads_rain_risk.py
+python scripts/17_health_access.py
+python scripts/16_export_webmap.py
+python scripts/18_build_webmap.py
+```
+
+These inputs aren't included; place them under `data/` first:
+- `data/raw/roads/heigit_eth_roadsurface_lines.geojson`: [HeiGIT road surface, Ethiopia](https://downloads.ohsome.org/hdx/mapillary_road_surface/heigit_eth_roadsurface_lines.geojson) (HDX).
+- `data/raw/boundaries/geoboundaries_adm1/ETH_ADM1.geojson`: [geoBoundaries](https://www.geoboundaries.org/) Ethiopia ADM1.
+- `data/health_facilities/ethiopian-health-facilities.csv`: Ethiopian health facility register, with columns `Id, Name, Latitude, Longitude, Type, Status, admin1Name, admin2Name, admin3Name, …`.
+
+## Data sources and attribution
+- Roads: © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), available under the ODbL. The road surface model is by HeiGIT (Heidelberg Institute for Geoinformation Technology). The road data in `docs/data/` is derived from OSM and is under the ODbL.
+- Elevation: Google GEM-15 (Earth Engine, `projects/climate-and-sustainability/assets/gem-15_v1`).
+- Rain forecast: Google WeatherNext 2 (Earth Engine, `projects/gcp-public-data-weathernext/assets/weathernext_2_0_0`).
+- Region boundaries: geoBoundaries (CC BY 4.0).
+- Health facilities: Ethiopian health facility register.
+- Map rendering: [MapLibre GL JS](https://maplibre.org/) (BSD-3-Clause).
