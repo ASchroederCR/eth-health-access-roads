@@ -1,0 +1,11 @@
+{
+ "moderate_p90_day_mm": 13.0,
+ "high_p90_day_mm": 24.0,
+ "calibrated_on": [
+  "2026-11-01",
+  "2026-11-16",
+  "2026-11-17"
+ ],
+ "target_share_ge_moderate": 0.0604,
+ "target_share_high": 0.0063
+}

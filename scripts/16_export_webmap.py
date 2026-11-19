@@ -1,7 +1,7 @@
 """
 16_export_webmap.py -- data files for the interactive road / rain web map (webmap/index.html).
 
-Reads the outputs of 14_roads_rain_risk.py (scored roads GeoPackage), the WeatherNext 2 run it used,
+Reads the outputs of 14_roads_rain_risk.py (scored roads GeoPackage), the WeatherNext 3 run it used (21_),
 GEM-15 elevation (15_fetch_gem15_dem.py) and the ADM1 boundaries, and writes compact web files to webmap/data/:
   roads_severe.json, roads_elevated.json, roads_minor.json   flagged segments, simplified ~30 m, compact
   roads_context.json       trunk / primary / secondary roads (all tiers) as a light base network
@@ -15,7 +15,7 @@ GEM-15 elevation (15_fetch_gem15_dem.py) and the ADM1 boundaries, and writes com
 
     python scripts\\16_export_webmap.py [--init 2026-11-17]
 """
-import argparse, glob, json, os
+import argparse, glob, importlib.util, json, os
 import numpy as np, pandas as pd, geopandas as gpd, shapely, rasterio
 from rasterio.features import rasterize
 from PIL import Image
@@ -57,13 +57,12 @@ def dump(path, gdf, props):
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(); ap.add_argument("--init"); a = ap.parse_args()
-    wraw = os.path.join(ROOT, "data", "raw", "weathernext")
-    f = (os.path.join(wraw, f"wn2_eth_{pd.Timestamp(a.init):%Y%m%d}00.npz") if a.init else
-         sorted(glob.glob(os.path.join(wraw, "wn2_eth_??????????.npz")))[-1])
-    z = np.load(f); init = pd.Timestamp(str(z["init"])); tag = f"{init:%Y%m%d}"
+    spec3 = importlib.util.spec_from_file_location("wn3", os.path.join(ROOT, "scripts", "21_weathernext3_forecast.py"))
+    wn3 = importlib.util.module_from_spec(spec3); spec3.loader.exec_module(wn3)
+    z = wn3.load_run(a.init); init = pd.Timestamp(str(z["init"])); tag = f"{init:%Y%m%d}"
     g = gpd.read_file(os.path.join(ROOT, "data", "processed", "roads", f"eth_roads_rain_risk_{tag}.gpkg"), engine="pyogrio")
     regions = sorted(g.region.unique())
-    days = pd.date_range(init, periods=z["precip"].shape[1])
+    days = pd.date_range(init, periods=z["mean"].shape[0])
 
     # --- flagged roads, compact properties --------------------------------------------
     g["t"] = g.tier.map({t: i for i, t in enumerate(TIERS)})
@@ -79,11 +78,11 @@ if __name__ == "__main__":
     g["tw"] = g.tier_without_terrain.map({t: i for i, t in enumerate(TIERS)})
     props = {"t": "t", "tw": "tw", "hw": "highway", "nm": "nm", "sf": "sf", "sk": "sk", "cond": "bad", "km": "km",
              "tc": "terrain_class", "gr": "road_grade_pct", "sm": "terrain_slope_mean_deg", "sx": "terrain_slope_max_deg",
-             "el": "elev_mean_m", "r15": "rain_15d_mm", "r3": "wettest_3d_mm", "p20": "p_day_ge20mm", "pk": "pk",
+             "el": "elev_mean_m", "r15": "rain_15d_mm", "r3": "wettest_3d_mm", "p20": "p90_wettest_day_mm", "pk": "pk",
              "sl": "sl", "slk": "slide_km", "su": "landslide_susc_max", "rg": "region", "R": "rain_hazard",
              "S": "surface_score", "T": "steep_score"}
     for c_, nd in [("km", 2), ("road_grade_pct", 1), ("terrain_slope_mean_deg", 1), ("terrain_slope_max_deg", 1),
-                   ("rain_15d_mm", 1), ("wettest_3d_mm", 1), ("p_day_ge20mm", 2)]:
+                   ("rain_15d_mm", 1), ("wettest_3d_mm", 1), ("p90_wettest_day_mm", 1)]:
         g[c_] = g[c_].astype(float).round(nd)
     g["elev_mean_m"] = g.elev_mean_m.round(0).astype(int)
     g["geometry"] = r4(g.geometry.values, 0.0003)
@@ -118,18 +117,19 @@ if __name__ == "__main__":
     gpd.GeoDataFrame(geometry=[mask], crs="EPSG:4326").to_file(os.path.join(OUT, "mask.geojson"), driver="GeoJSON", engine="pyogrio")
 
     # --- rain cells ----------------------------------------------------------------------
-    arr, mask = z["precip"], z["mask"]
-    H, fld = rr.hazard(arr)
+    mask = z["mask"]
+    H, fld = rr.hazard(z)
     wn = rr.wn
+    gx0, gy0, gres = float(z["x0"]), float(z["y0"]), float(z["res"])
     feats = []
-    for i in range(wn.NY):
-        for j in range(wn.NX):
+    for i in range(int(z["ny"])):
+        for j in range(int(z["nx"])):
             if not mask[i, j]: continue
-            x0, y1 = wn.X0 + j * wn.RES, wn.Y0 - i * wn.RES
-            x1, y0 = x0 + wn.RES, y1 - wn.RES
+            x0, y1 = round(gx0 + j * gres, 4), round(gy0 - i * gres, 4)
+            x1, y0 = round(x0 + gres, 4), round(y1 - gres, 4)
             feats.append({"type": "Feature", "properties": {
                 "m": round(float(fld["mean15"][i, j]), 1), "r3": round(float(fld["r3"][i, j]), 1),
-                "p20": round(float(fld["p20"][i, j]), 2), "h": int(H[i, j])},
+                "p20": round(float(fld["p90max"][i, j]), 1), "h": int(H[i, j])},
                 "geometry": {"type": "Polygon", "coordinates": [[[x0, y0], [x1, y0], [x1, y1], [x0, y1], [x0, y0]]]}})
     json.dump({"type": "FeatureCollection", "features": feats}, open(os.path.join(OUT, "rain.geojson"), "w"),
               separators=(",", ":"))

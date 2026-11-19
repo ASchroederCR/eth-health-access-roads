@@ -137,7 +137,7 @@ section { display: flex; flex-direction: column; gap: 6px; }
 <div class="app">
   <aside class="panel" aria-label="Summary and filters">
     <header>
-      <div class="eyebrow" id="runline">WeatherNext 2 · run 17 Nov 2026 00Z</div>
+      <div class="eyebrow" id="runline">WeatherNext 3 · run 17 Nov 2026 00Z</div>
       <h1>Ethiopia roads under the next 15 days of rain</h1>
       <p class="lede" id="lede">Each road segment is scored on forecast rain, road surface and how steep the ground is, and each health facility on how much longer its referral trip takes. Click or tap a road or facility for details.</p>
     </header>
@@ -179,7 +179,7 @@ section { display: flex; flex-direction: column; gap: 6px; }
     <section aria-labelledby="h-how">
       <h2 id="h-how">How the score works</h2>
       <p class="note">Tier = rain (0–3) + surface (paved 0, unpaved 1, +1 if mapped in bad condition) + steepness (0–2) − 1, kept to 0–3 and at most one tier above the rain score. No forecast rain means Normal. Speed losses (Minor ~10%, Elevated ~25%, Severe ~50%) are illustrative assumptions, not measured.</p>
-      <p class="note">Rain: high = half the 64 ensemble members give a day ≥ 20 mm, or the wettest 3 days average ≥ 40 mm; moderate = a day ≥ 10 mm or 3 days ≥ 20 mm; low = 15-day mean ≥ 10 mm. Steepness after the Ethiopian Roads Authority terrain classes: mountainous ≥ 14° ground or ≥ 5 % road grade, escarpment ≥ 26.6° or ≥ 10 %.</p>
+      <p class="note">Rain (WeatherNext 3, 0.1°): high = the wettest day's wet end (90th percentile) ≥ 24 mm, or the wettest 3 days of the ensemble mean ≥ 40 mm; moderate = wet end ≥ 13 mm or 3 days ≥ 20 mm; low = 15-day mean ≥ 10 mm. WeatherNext 3 publishes percentiles rather than ensemble members, so the 13 and 24 mm thresholds were set to reproduce the earlier 64-member WeatherNext 2 rule on runs both models made. Steepness after the Ethiopian Roads Authority terrain classes: mountainous ≥ 14° ground or ≥ 5 % road grade, escarpment ≥ 26.6° or ≥ 10 %.</p>
       <p class="note">Health access: shortest road travel time from each facility to the nearest hospital (health posts: nearest health centre) at normal speeds by road class (trunk 70 … track 15 km/h, unpaved × 0.7), then to that same facility with each road slowed by its tier. A hospital's linked facilities are the health centres and posts for which it is the nearest hospital by road; this is a road-network grouping, not a population catchment or the official referral pathway. Facilities are approved hospitals, health centres and health posts from the Ethiopian health facility register.</p>
       <p class="note">Slip / rock-fall exposure is judged on each ~110 m piece of road: moderate or high forecast rain over that piece, and either ground ≥ 26.6° where NASA's global landslide susceptibility map rates it moderate or higher, or very high susceptibility on ground ≥ 14°. Only the exposed stretches are drawn and counted.</p>
       <p class="note">Surface is mapped (OSM tag or Mapillary image model) for about a quarter of road length; the rest is inferred from road class. Road grades come from a ~110 m elevation grid and run high where roads cut across hillsides.</p>
@@ -216,7 +216,7 @@ const fmt = n => Math.round(n).toLocaleString("en-US");
 const state = { on: { 1: true, 2: true, 3: true }, terrain: true };
 
 // ---- panel (renders at rest from the inline summary) ----
-document.getElementById("runline").textContent = `WeatherNext 2 · run ${SUMMARY.init} 00Z · ${SUMMARY.start} – ${SUMMARY.end}`;
+document.getElementById("runline").textContent = `WeatherNext 3 · run ${SUMMARY.init} 00Z · ${SUMMARY.start} – ${SUMMARY.end}`;
 const tiersEl = document.getElementById("tiers");
 TIERS.forEach(T => {
   const id = "tier-" + T.t;
@@ -310,7 +310,7 @@ function init() {
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
   map.addControl(new maplibregl.ScaleControl({ maxWidth: 110 }), "bottom-right");
   map.addControl(new maplibregl.AttributionControl({ compact: true, customAttribution:
-    'Roads © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>, surface model HeiGIT · Elevation Google GEM-15 · Rain Google WeatherNext 2 · Regions geoBoundaries' }), "bottom-right");
+    'Roads © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>, surface model HeiGIT · Elevation Google GEM-15 · Rain Google WeatherNext 3 · Regions geoBoundaries' }), "bottom-right");
 
   // the container can still be unsized when the map starts (e.g. a linked stylesheet still loading): re-measure and re-fit
   new ResizeObserver(() => map.resize()).observe(document.getElementById("map"));
@@ -395,7 +395,7 @@ function popupHTML(p) {
     <span class="pill"><i style="background:var(${TIER_TOK[t]})"></i>${TIER_NAME[t]}</span>
     ${p.t !== p.tw ? `<span class="note" style="margin-left:6px">${TIER_NAME[p.tw]} without terrain</span>` : ""}
     <div class="pp-grid">
-      <span class="k">Rain</span><span class="v">${RAIN_LABEL[p.R]}: ${p.r15} mm over 15 days, wettest 3 days ${p.r3} mm, ${Math.round(p.p20 * 100)}% chance of a 20 mm day</span><span class="s">R ${p.R}</span>
+      <span class="k">Rain</span><span class="v">${RAIN_LABEL[p.R]}: ${p.r15} mm over 15 days, wettest 3 days ${p.r3} mm; wet end up to ${p.p20} mm in a day</span><span class="s">R ${p.R}</span>
       <span class="k">Surface</span><span class="v">${p.sf} (${p.sk ? "mapped" : "inferred from road class"})${cond}</span><span class="s">S ${p.S}</span>
       <span class="k">Terrain</span><span class="v">${esc(p.tc)}: grade ${p.gr}%, ground slope ${p.sm}° mean, ${p.sx}° max, ${fmt(p.el)} m</span><span class="s">T ${p.T}</span>
     </div>

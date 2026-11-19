@@ -251,7 +251,7 @@ if __name__ == "__main__":
     fig.legend(handles=hd, loc="lower center", ncol=7, frameon=False, fontsize=9, bbox_to_anchor=(0.5, 0.0))
     fig.suptitle("Which health facilities lose the most referral access under the forecast rain", x=0.01, ha="left",
                  fontsize=13, fontweight="bold", color=INK, y=1.0)
-    fig.text(0.01, 0.955, f"Extra travel time when roads slow to their forecast tier speeds · WeatherNext 2 run {pd.Timestamp(tag):%d %b %Y}, 15 days",
+    fig.text(0.01, 0.955, f"Extra travel time when roads slow to their forecast tier speeds · WeatherNext 3 run {pd.Timestamp(tag):%d %b %Y}, 15 days",
              fontsize=9.5, color=INK2)
     fig.text(0.01, -0.03, "Shortest road travel time, normal vs forecast speeds. Normal speed by road class (trunk 70 … track 15 km/h, unpaved x 0.7); "
                           "forecast = normal x tier factor (Minor 0.9, Elevated 0.75, Severe 0.5).\nFacilities join the road network at the nearest road "

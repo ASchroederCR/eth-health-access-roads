@@ -1,5 +1,5 @@
 """
-14_roads_rain_risk.py -- example: which Ethiopian roads may slow down under the WeatherNext 2 15-day rainfall
+14_roads_rain_risk.py -- example: which Ethiopian roads may slow down under the WeatherNext 3 15-day rainfall
 forecast, given their surface (paved / unpaved).
 
 Inputs
@@ -7,16 +7,20 @@ Inputs
       surface = OSM surface tag first, then the Mapillary image model (combined_surface_osm_priority).
       About 3/4 of the road length has neither; for those the surface is inferred from the road class,
       using the share of each class that is paved among the labelled roads.
-  data/raw/weathernext/wn2_eth_<init>.npz               64-member daily rainfall from 11_weathernext_forecast.py
+  data/raw/weathernext3/wn3_eth_<init>.npz             WeatherNext 3 daily rainfall (0.1 deg; ensemble mean, p50, p90)
+                                                        from 21_weathernext3_forecast.py
   data/raw/dem/gem15_eth_0p001.tif                      Google GEM-15 bare-earth elevation + mean 15 m slope on a
                                                         ~110 m grid, from 15_fetch_gem15_dem.py
 
 Method (illustrative thresholds, not calibrated against observed travel times)
   Three factors per road segment, each sampled every ~110 m along the line:
-  R  rain hazard 0-3 at the segment's 0.25 deg cell, from the ensemble:
-      3 high      >= 50% of members have a day >= 20 mm, or ensemble-mean wettest 3 days >= 40 mm
-      2 moderate  >= 50% of members have a day >= 10 mm, or wettest 3 days >= 20 mm
-      1 low       15-day ensemble mean >= 10 mm
+  R  rain hazard 0-3 at the segment's 0.1 deg cell, from WeatherNext 3. WN3 publishes the ensemble mean and
+     percentiles, not members, so the old "half of the 64 members give a day >= X" tests use the wettest day of the wet
+     end instead (hourly p90 summed per day, p90max), with thresholds calibrated by 22_calibrate_wn3_hazard.py to
+     reproduce the WeatherNext 2 member-rule areas on runs both models made (data/processed/wn3_hazard_thresholds.json):
+      3 high      p90max >= H (24 mm), or the wettest 3 days of the mean >= 40 mm
+      2 moderate  p90max >= M (13 mm), or the wettest 3 days of the mean >= 20 mm
+      1 low       15-day mean >= 10 mm
   S  surface 0-2: paved 0, unpaved 1; +1 if OSM smoothness is bad/very_bad/horrible/very_horrible/impassable
   T  steepness 0-2, after the Ethiopian Roads Authority terrain classes (flat/rolling < 25 % ground slope,
      mountainous 25-50 %, escarpment > 50 %) plus the road's own gradient:
@@ -29,7 +33,7 @@ Method (illustrative thresholds, not calibrated against observed travel times)
   Flat roads give the same tiers as before (unpaved: Minor/Elevated/Severe for low/moderate/high rain;
   paved one lower); steep ground adds up to two tiers.
   Separate slip / rock-fall exposure, judged on each ~110 m piece of road (not the whole segment): the piece's own
-  0.25 deg rain cell has R >= 2, and either ground slope >= 26.6 deg with NASA global landslide susceptibility
+  0.1 deg rain cell has R >= 2, and either ground slope >= 26.6 deg with NASA global landslide susceptibility
   (Stanley & Kirschbaum, 2023 map, data/raw/landslide/) moderate or higher, or susceptibility very high on ground
   >= 14 deg. slide_km = length of exposed pieces; places where slips, rock fall or wash-outs could block the road.
   Assumed speed factors: Minor 0.9, Elevated 0.75, Severe 0.5 (may be impassable).
@@ -40,7 +44,7 @@ Method (illustrative thresholds, not calibrated against observed travel times)
 Outputs (<init> = run date)
   charts/ETH_roads_rain_risk_map.png      roads by slowdown tier over the 15-day forecast, national + hotspot zoom
   charts/ETH_roads_rain_risk_adm1.png     km of road per tier by region
-  charts/ETH_roads_rain_risk_daily.png    probability-weighted km of road under >= 10 mm rain, per forecast day
+  charts/ETH_roads_rain_risk_daily.png    km of road under >= 10 mm of rain per forecast day (mean, and p90 wet end)
   charts/ETH_roads_rain_risk_factors.png  how surface and steepness change the tier, km by factor combination
   data/processed/roads/eth_roads_rain_risk_<init>.gpkg   scored segments (tier Minor+), for GIS
   data/processed/roads/eth_roads_scored_<init>.parquet   every vehicle segment with tier + speed factor (routing)
@@ -115,17 +119,22 @@ def classify_surface(g):
     return g, share
 
 
-def hazard(arr):
-    """arr [member, day, y, x] mm -> hazard level 0-3 per cell plus the fields behind it."""
-    mean15 = arr.sum(1).mean(0)
-    dmax = arr.max(1)
-    p20, p10 = (dmax >= 20).mean(0), (dmax >= 10).mean(0)
-    r3 = np.stack([arr[:, i:i + 3].sum(1) for i in range(arr.shape[1] - 2)], 1).max(1).mean(0)
+THRESH = os.path.join(ROOT, "data", "processed", "wn3_hazard_thresholds.json")
+
+
+def hazard(run):
+    """WeatherNext 3 run (daily mean / p90 [day, y, x] mm) -> hazard level 0-3 per cell plus the fields behind it.
+    Wet-end thresholds come from 22_calibrate_wn3_hazard.py."""
+    import json
+    t = json.load(open(THRESH)); M, Hh = t["moderate_p90_day_mm"], t["high_p90_day_mm"]
+    m = np.nan_to_num(run["mean"]); p90 = np.nan_to_num(run["p90"])
+    mean15, dmax, p90max = m.sum(0), m.max(0), p90.max(0)
+    r3 = np.stack([m[i:i + 3].sum(0) for i in range(m.shape[0] - 2)]).max(0)
     h = np.zeros(mean15.shape, "int8")
     h[mean15 >= 10] = 1
-    h[(p10 >= 0.5) | (r3 >= 20)] = 2
-    h[(p20 >= 0.5) | (r3 >= 40)] = 3
-    return h, dict(mean15=mean15, p20=p20, p10=p10, r3=r3)
+    h[(p90max >= M) | (r3 >= 20)] = 2
+    h[(p90max >= Hh) | (r3 >= 40)] = 3
+    return h, dict(mean15=mean15, dmax=dmax, r3=r3, p90max=p90max, M=M, H=Hh)
 
 
 DEM = os.path.join(ROOT, "data", "raw", "dem", "gem15_eth_0p001.tif")
@@ -195,9 +204,12 @@ def slip_pieces(smp, H, length_m):
     return slide_km, sumax, pieces
 
 
+GRID = {}                                                   # rain grid, set from the WeatherNext 3 run in main
+
+
 def to_cell(x, y):
-    c = np.clip(((x - wn.X0) / wn.RES).astype(int), 0, wn.NX - 1)
-    r = np.clip(((wn.Y0 - y) / wn.RES).astype(int), 0, wn.NY - 1)
+    c = np.clip(((x - GRID["x0"]) / GRID["res"]).astype(int), 0, GRID["nx"] - 1)
+    r = np.clip(((GRID["y0"] - y) / GRID["res"]).astype(int), 0, GRID["ny"] - 1)
     return r, c
 
 
@@ -211,19 +223,22 @@ def lines(ax, gg, color, lw, z):
 def rain_bg(ax, mean15):
     cmap = ListedColormap(RAIN_SEQ); norm = BoundaryNorm(RAIN_LV, cmap.N)
     a = np.where(MASK, mean15, np.nan)
-    return ax.imshow(a, extent=wn.EXT, cmap=cmap, norm=norm, interpolation="nearest", zorder=0)
+    return ax.imshow(a, extent=GRID["ext"], cmap=cmap, norm=norm, interpolation="nearest", zorder=0)
 
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(); ap.add_argument("--init"); a = ap.parse_args()
-    f = (os.path.join(wn.RAW, f"wn2_eth_{pd.Timestamp(a.init):%Y%m%d}00.npz") if a.init else
-         sorted(glob.glob(os.path.join(wn.RAW, "wn2_eth_??????????.npz")))[-1])
-    z = np.load(f); arr, MASK = z["precip"], z["mask"]
-    init = pd.Timestamp(str(z["init"])); days = pd.date_range(init, periods=arr.shape[1])
+    spec3 = importlib.util.spec_from_file_location("wn3", os.path.join(ROOT, "scripts", "21_weathernext3_forecast.py"))
+    wn3 = importlib.util.module_from_spec(spec3); spec3.loader.exec_module(wn3)
+    RUN = wn3.load_run(a.init)
+    MASK = RUN["mask"]
+    GRID.update(x0=float(RUN["x0"]), y0=float(RUN["y0"]), res=float(RUN["res"]), nx=int(RUN["nx"]), ny=int(RUN["ny"]))
+    GRID["ext"] = [GRID["x0"], GRID["x0"] + GRID["nx"] * GRID["res"], GRID["y0"] - GRID["ny"] * GRID["res"], GRID["y0"]]
+    init = pd.Timestamp(str(RUN["init"])); days = pd.date_range(init, periods=RUN["mean"].shape[0])
     tag, span = f"{init:%Y%m%d}", f"{days[0]:%d %b} – {days[-1]:%d %b %Y}"
     print(f"forecast {init:%Y-%m-%d} 00Z, {span}")
 
-    H, fld = hazard(arr)
+    H, fld = hazard(RUN)
     roads, seis_km = drop_seismic(load_roads())
     g, share = classify_surface(roads)
     miss = g.osm_length.isna()                             # ~1% lack osm_length: measure them in UTM 37N
@@ -253,8 +268,9 @@ if __name__ == "__main__":
     g["speed_factor"] = g.tier.map(SPEED).astype(float)
     g["rain_15d_mm"] = fld["mean15"][r, c].round(1)
     g["wettest_3d_mm"] = fld["r3"][r, c].round(1)
-    g["p_day_ge20mm"] = fld["p20"][r, c].round(2)
-    daymean = arr.mean(0)                                   # [day, y, x]
+    g["wettest_day_mm"] = fld["dmax"][r, c].round(1)
+    g["p90_wettest_day_mm"] = fld["p90max"][r, c].round(1)
+    daymean = np.nan_to_num(RUN["mean"])                    # [day, y, x]
     g["peak_day"] = days[daymean[:, r, c].argmax(0)].strftime("%Y-%m-%d")
     reg = gpd.GeoDataFrame({"region": wn.NAMES}, geometry=wn.GEOMS, crs="EPSG:4326")
     pts = gpd.GeoDataFrame(geometry=gpd.points_from_xy(mx, my), crs="EPSG:4326")
@@ -343,7 +359,7 @@ if __name__ == "__main__":
             ax.text(p.x, p.y, n, fontsize=8.5, color=INK2, ha="center", zorder=11,
                     bbox=dict(boxstyle="round,pad=0.2", fc=SURF, ec="none", alpha=0.8))
     wn.title(axs[0], "Roads that may slow down under the next 15 days of forecast rain",
-             f"WeatherNext 2, run {init:%d %b %Y} 00Z ({span}) · rain × road surface × terrain steepness (GEM-15)")
+             f"WeatherNext 3, run {init:%d %b %Y} 00Z ({span}) · rain × road surface × terrain steepness (GEM-15)")
     axs[1].set_title(f"Hotspot: {box[1]:.1f}–{box[3]:.1f}°N, {box[0]:.1f}–{box[2]:.1f}°E, over GEM-15 hillshade", loc="left",
                      fontsize=10.5, color=INK, pad=6)
     hd = [Line2D([], [], color=TCOL[t], lw=3 if t != "Normal" else 1.5,
@@ -360,8 +376,9 @@ if __name__ == "__main__":
     yb = min([ax_.get_position().y0 for ax_ in axs] + [cax.get_position().y0 - 0.03] +
              [l_.get_window_extent().transformed(fig.transFigure.inverted()).y0 for l_ in (leg, axs[1].get_legend())])
     fig.text(0.01, yb - 0.02, "Tier = rain hazard (0–3) + surface (paved 0, unpaved 1, +1 if tagged bad/horrible) + steepness (0–2) − 1, "
-                 "capped at one tier above the rain hazard; no rain = Normal.\nRain: high = half the members give a day ≥ 20 mm or the "
-                 "wettest 3 days average ≥ 40 mm; moderate = a day ≥ 10 mm or 3 days ≥ 20 mm; low = 15-day mean ≥ 10 mm. "
+                 "capped at one tier above the rain hazard; no rain = Normal.\nRain (WeatherNext 3, 0.1°): high = wet-end (p90) day ≥ " + f"{fld['H']:.0f}" + " mm or "
+                 "mean wettest 3 days ≥ 40 mm; moderate = wet-end day ≥ " + f"{fld['M']:.0f}" + " mm or 3 days ≥ 20 mm; low = 15-day mean ≥ 10 mm "
+                 "(wet-end thresholds calibrated to the earlier 64-member rule). "
                  "Steepness: mountainous = terrain ≥ 14° or road grade ≥ 5 %; escarpment = ≥ 26.6° or ≥ 10 %.\n"
                  "Slip / rock-fall exposure, per ~110 m piece: moderate+ rain and either ground ≥ 26.6° with NASA landslide susceptibility moderate+, "
                  "or very high susceptibility on ground ≥ 14°. Speed factors are illustrative, not calibrated. "
@@ -394,24 +411,25 @@ if __name__ == "__main__":
                  "Tiers as in ETH_roads_rain_risk_map.png.")
     wn.save(fig, os.path.join(wn.OUT, "ETH_roads_rain_risk_adm1.png"))
 
-    # --- when: km of road under likely >= 10 mm per day ---------------------------------
-    # timing differs between members, so use probability-weighted km: sum of length x P(>= 10 mm that day)
-    pday = (arr >= 10).mean(0)[:, r, c]                    # [day, segment]
+    # --- when: km of road under >= 10 mm per day (ensemble mean; p90 wet end as an outline) -------
+    pday = daymean[:, r, c] >= 10                            # [day, segment]
+    pwet = np.nan_to_num(RUN["p90"])[:, r, c] >= 10
     kmv = km.values
-    du = (pday * (kmv * unp)).sum(1); dp = (pday * (kmv * ~unp)).sum(1)
+    du = (pday * (kmv * unp)).sum(1); dp = (pday * (kmv * ~unp)).sum(1); dw = (pwet * kmv).sum(1)
     x = np.arange(len(days))
     fig, ax = plt.subplots(figsize=(11, 4.6))
-    ax.bar(x, du, width=0.7, color=TCOL["Elevated"], label="unpaved", edgecolor=SURF, linewidth=1)
-    ax.bar(x, dp, width=0.7, bottom=du, color=TCOL["Normal"], label="paved", edgecolor=SURF, linewidth=1)
+    ax.bar(x, dw, width=0.78, facecolor="none", edgecolor=INK2, linewidth=0.9, ls=(0, (2, 2)), label="wet end (p90) ≥ 10 mm, all roads")
+    ax.bar(x, du, width=0.7, color=TCOL["Elevated"], label="mean ≥ 10 mm, unpaved", edgecolor=SURF, linewidth=1)
+    ax.bar(x, dp, width=0.7, bottom=du, color=TCOL["Normal"], label="mean ≥ 10 mm, paved", edgecolor=SURF, linewidth=1)
     for i, v in enumerate(du + dp):
-        ax.text(i, v, f"{v / 1000:.1f}k", ha="center", va="bottom", fontsize=8, color=INK2)
+        if v > 0: ax.text(i, v, f"{v / 1000:.1f}k", ha="center", va="bottom", fontsize=8, color=INK2)
     ax.set_xticks(x, [f"{d:%d %b}" for d in days], fontsize=8.5)
-    ax.set_ylabel("expected road km under ≥ 10 mm"); ax.grid(axis="x", visible=False)
+    ax.set_ylabel("road km under ≥ 10 mm that day"); ax.grid(axis="x", visible=False)
     ax.legend(loc="upper left", frameon=False, fontsize=9)
     wn.title(ax, "When the wet days fall on the road network",
-             "Road length × chance of ≥ 10 mm that UTC day (share of 64 members), summed over all segments")
-    wn.foot(fig, f"WeatherNext 2 64-member ensemble, run {init:%d %b %Y} 00Z; each segment takes the 0.25° cell at its midpoint. "
-                 "Members disagree on timing, so the risk is spread over several days rather than concentrated on one.")
+             "Road length where the forecast for that UTC day is ≥ 10 mm: ensemble mean (bars) and wet end (dashed)")
+    wn.foot(fig, f"WeatherNext 3, run {init:%d %b %Y} 00Z, 0.1°; each segment takes the cell at its midpoint. Wet end = hourly 90th percentiles "
+                 "summed over the day, an upper envelope rather than a true daily percentile.")
     wn.save(fig, os.path.join(wn.OUT, "ETH_roads_rain_risk_daily.png"))
     # --- factors: surface x terrain, km by tier, for roads with any forecast rain --------
     wet = hz > 0

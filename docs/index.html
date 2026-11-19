@@ -142,7 +142,7 @@ section { display: flex; flex-direction: column; gap: 6px; }
 <div class="app">
   <aside class="panel" aria-label="Summary and filters">
     <header>
-      <div class="eyebrow" id="runline">WeatherNext 2 · run 17 Nov 2026 00Z</div>
+      <div class="eyebrow" id="runline">WeatherNext 3 · run 17 Nov 2026 00Z</div>
       <h1>Ethiopia roads under the next 15 days of rain</h1>
       <p class="lede" id="lede">Each road segment is scored on forecast rain, road surface and how steep the ground is, and each health facility on how much longer its referral trip takes. Click or tap a road or facility for details.</p>
     </header>
@@ -184,7 +184,7 @@ section { display: flex; flex-direction: column; gap: 6px; }
     <section aria-labelledby="h-how">
       <h2 id="h-how">How the score works</h2>
       <p class="note">Tier = rain (0–3) + surface (paved 0, unpaved 1, +1 if mapped in bad condition) + steepness (0–2) − 1, kept to 0–3 and at most one tier above the rain score. No forecast rain means Normal. Speed losses (Minor ~10%, Elevated ~25%, Severe ~50%) are illustrative assumptions, not measured.</p>
-      <p class="note">Rain: high = half the 64 ensemble members give a day ≥ 20 mm, or the wettest 3 days average ≥ 40 mm; moderate = a day ≥ 10 mm or 3 days ≥ 20 mm; low = 15-day mean ≥ 10 mm. Steepness after the Ethiopian Roads Authority terrain classes: mountainous ≥ 14° ground or ≥ 5 % road grade, escarpment ≥ 26.6° or ≥ 10 %.</p>
+      <p class="note">Rain (WeatherNext 3, 0.1°): high = the wettest day's wet end (90th percentile) ≥ 24 mm, or the wettest 3 days of the ensemble mean ≥ 40 mm; moderate = wet end ≥ 13 mm or 3 days ≥ 20 mm; low = 15-day mean ≥ 10 mm. WeatherNext 3 publishes percentiles rather than ensemble members, so the 13 and 24 mm thresholds were set to reproduce the earlier 64-member WeatherNext 2 rule on runs both models made. Steepness after the Ethiopian Roads Authority terrain classes: mountainous ≥ 14° ground or ≥ 5 % road grade, escarpment ≥ 26.6° or ≥ 10 %.</p>
       <p class="note">Health access: shortest road travel time from each facility to the nearest hospital (health posts: nearest health centre) at normal speeds by road class (trunk 70 … track 15 km/h, unpaved × 0.7), then to that same facility with each road slowed by its tier. A hospital's linked facilities are the health centres and posts for which it is the nearest hospital by road; this is a road-network grouping, not a population catchment or the official referral pathway. Facilities are approved hospitals, health centres and health posts from the Ethiopian health facility register.</p>
       <p class="note">Slip / rock-fall exposure is judged on each ~110 m piece of road: moderate or high forecast rain over that piece, and either ground ≥ 26.6° where NASA's global landslide susceptibility map rates it moderate or higher, or very high susceptibility on ground ≥ 14°. Only the exposed stretches are drawn and counted.</p>
       <p class="note">Surface is mapped (OSM tag or Mapillary image model) for about a quarter of road length; the rest is inferred from road class. Road grades come from a ~110 m elevation grid and run high where roads cut across hillsides.</p>
@@ -208,27 +208,42 @@ section { display: flex; flex-direction: column; gap: 6px; }
 <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script>
 const SUMMARY = {
- "init": "17 Nov 2026",
- "start": "17 Nov",
- "end": "01 Dec 2026",
- "total_km": 441218,
+ "init": "19 Nov 2026",
+ "start": "19 Nov",
+ "end": "03 Dec 2026",
+ "total_km": 441220,
  "tiers": {
-  "Normal": 304505,
-  "Minor": 53285,
-  "Elevated": 66298,
-  "Severe": 17130
+  "Normal": 206932,
+  "Minor": 105066,
+  "Elevated": 104373,
+  "Severe": 24849
  },
- "slide_km": 1499,
- "raised_km": 82539,
+ "slide_km": 1633,
+ "raised_km": 121872,
  "regions": [
   {
+   "name": "Dire Dawa",
+   "Normal": 225,
+   "Minor": 694,
+   "Elevated": 405,
+   "Severe": 0,
+   "share": 83.0,
+   "slide": 0,
+   "bbox": [
+    41.729,
+    9.472,
+    42.341,
+    9.785
+   ]
+  },
+  {
    "name": "Amhara",
-   "Normal": 23129,
-   "Minor": 15003,
-   "Elevated": 14961,
-   "Severe": 8891,
-   "share": 62.7,
-   "slide": 899,
+   "Normal": 15792,
+   "Minor": 19417,
+   "Elevated": 19754,
+   "Severe": 7020,
+   "share": 74.5,
+   "slide": 879,
    "bbox": [
     35.258,
     8.716,
@@ -238,12 +253,12 @@ const SUMMARY = {
   },
   {
    "name": "SNNPR",
-   "Normal": 58137,
-   "Minor": 8577,
-   "Elevated": 20036,
-   "Severe": 5572,
-   "share": 37.0,
-   "slide": 503,
+   "Normal": 28995,
+   "Minor": 24848,
+   "Elevated": 30980,
+   "Severe": 7500,
+   "share": 68.6,
+   "slide": 564,
    "bbox": [
     34.878,
     4.441,
@@ -253,12 +268,12 @@ const SUMMARY = {
   },
   {
    "name": "Oromia",
-   "Normal": 124195,
-   "Minor": 25543,
-   "Elevated": 27544,
-   "Severe": 2130,
-   "share": 30.8,
-   "slide": 54,
+   "Normal": 69921,
+   "Minor": 51694,
+   "Elevated": 47785,
+   "Severe": 10012,
+   "share": 61.0,
+   "slide": 159,
    "bbox": [
     34.14,
     3.511,
@@ -267,13 +282,28 @@ const SUMMARY = {
    ]
   },
   {
+   "name": "Afar",
+   "Normal": 4410,
+   "Minor": 1550,
+   "Elevated": 1251,
+   "Severe": 13,
+   "share": 39.0,
+   "slide": 9,
+   "bbox": [
+    39.651,
+    8.842,
+    42.356,
+    14.499
+   ]
+  },
+  {
    "name": "Tigray",
-   "Normal": 16408,
-   "Minor": 2733,
-   "Elevated": 3170,
-   "Severe": 209,
-   "share": 27.1,
-   "slide": 17,
+   "Normal": 16802,
+   "Minor": 2713,
+   "Elevated": 2985,
+   "Severe": 21,
+   "share": 25.4,
+   "slide": 18,
    "bbox": [
     36.452,
     12.256,
@@ -283,12 +313,12 @@ const SUMMARY = {
   },
   {
    "name": "Gambela",
-   "Normal": 4171,
-   "Minor": 921,
-   "Elevated": 259,
-   "Severe": 136,
-   "share": 24.0,
-   "slide": 3,
+   "Normal": 4235,
+   "Minor": 583,
+   "Elevated": 388,
+   "Severe": 282,
+   "share": 22.8,
+   "slide": 4,
    "bbox": [
     33.002,
     6.282,
@@ -298,12 +328,12 @@ const SUMMARY = {
   },
   {
    "name": "Beneshangul Gumu",
-   "Normal": 8641,
-   "Minor": 333,
-   "Elevated": 194,
-   "Severe": 187,
+   "Normal": 8642,
+   "Minor": 281,
+   "Elevated": 432,
+   "Severe": 0,
    "share": 7.6,
-   "slide": 23,
+   "slide": 0,
    "bbox": [
     34.101,
     8.951,
@@ -312,27 +342,12 @@ const SUMMARY = {
    ]
   },
   {
-   "name": "Afar",
-   "Normal": 7090,
-   "Minor": 33,
-   "Elevated": 97,
-   "Severe": 5,
-   "share": 1.9,
-   "slide": 0,
-   "bbox": [
-    39.651,
-    8.842,
-    42.356,
-    14.499
-   ]
-  },
-  {
    "name": "Somali",
-   "Normal": 52034,
-   "Minor": 142,
-   "Elevated": 37,
-   "Severe": 0,
-   "share": 0.3,
+   "Normal": 48533,
+   "Minor": 3286,
+   "Elevated": 393,
+   "Severe": 1,
+   "share": 7.0,
    "slide": 0,
    "bbox": [
     39.094,
@@ -370,21 +385,6 @@ const SUMMARY = {
     42.273,
     9.39
    ]
-  },
-  {
-   "name": "Dire Dawa",
-   "Normal": 1323,
-   "Minor": 0,
-   "Elevated": 0,
-   "Severe": 0,
-   "share": 0.0,
-   "slide": 0,
-   "bbox": [
-    41.729,
-    9.472,
-    42.341,
-    9.785
-   ]
   }
  ],
  "hillshade_bounds": [
@@ -395,18 +395,58 @@ const SUMMARY = {
  ],
  "health": {
   "hc_n": 3639,
-  "hc_30": 366,
-  "hc_60": 187,
+  "hc_30": 548,
+  "hc_60": 233,
   "hp_n": 15539,
-  "hp_30": 231,
+  "hp_30": 353,
   "top_hc": [
    {
-    "n": "Liwarie Health Center",
-    "a2": "North Gondar",
-    "h0": 348,
-    "h1": 685,
-    "x": 38.5091099,
-    "y": 13.2328929
+    "n": "Bobe Liban Health Center",
+    "a2": "North Shewa (OR)",
+    "h0": 513,
+    "h1": 927,
+    "x": 38.1844443,
+    "y": 9.8916468
+   },
+   {
+    "n": "Gore Health Center",
+    "a2": "Ilu Aba Bora",
+    "h0": 386,
+    "h1": 755,
+    "x": 35.5379434,
+    "y": 8.1557659
+   },
+   {
+    "n": "Baroyi Health Center",
+    "a2": "Ilu Aba Bora",
+    "h0": 389,
+    "h1": 742,
+    "x": 35.3708012,
+    "y": 8.3370883
+   },
+   {
+    "n": "Becho Health Center",
+    "a2": "Ilu Aba Bora",
+    "h0": 368,
+    "h1": 720,
+    "x": 35.6812765,
+    "y": 8.203864100000002
+   },
+   {
+    "n": "Asandabo Health Center",
+    "a2": "Ilu Aba Bora",
+    "h0": 375,
+    "h1": 720,
+    "x": 35.5194349,
+    "y": 7.9337228
+   },
+   {
+    "n": "Kemise Health Center",
+    "a2": "Ilu Aba Bora",
+    "h0": 372,
+    "h1": 710,
+    "x": 35.6064685,
+    "y": 8.2187361
    },
    {
     "n": "Akile Health Center",
@@ -417,92 +457,52 @@ const SUMMARY = {
     "y": 11.0922925
    },
    {
-    "n": "Asandabo Health Center",
+    "n": "Liwarie Health Center",
+    "a2": "North Gondar",
+    "h0": 348,
+    "h1": 682,
+    "x": 38.5091099,
+    "y": 13.2328929
+   },
+   {
+    "n": "Burusa Health Center",
     "a2": "Ilu Aba Bora",
-    "h0": 375,
-    "h1": 693,
-    "x": 35.5194349,
-    "y": 7.9337228
+    "h0": 352,
+    "h1": 684,
+    "x": 35.4658536,
+    "y": 8.2987877
    },
    {
-    "n": "Dliybza Health Center",
-    "a2": "North Gondar",
-    "h0": 288,
-    "h1": 569,
-    "x": 38.4403121,
-    "y": 13.1181669
-   },
-   {
-    "n": "Chago health center",
-    "a2": "Sheka",
-    "h0": 300,
-    "h1": 580,
-    "x": 35.5409373,
-    "y": 7.7102785
-   },
-   {
-    "n": "Qeja health center",
-    "a2": "Sheka",
-    "h0": 300,
-    "h1": 559,
-    "x": 35.4584893,
-    "y": 7.8079981
-   },
-   {
-    "n": "Jembelew Health Center",
-    "a2": "North Gondar",
-    "h0": 264,
-    "h1": 523,
-    "x": 38.3639714,
-    "y": 13.0991121
-   },
-   {
-    "n": "Degele health center",
-    "a2": "Sheka",
-    "h0": 306,
-    "h1": 564,
-    "x": 35.3919973,
-    "y": 7.8068033
-   },
-   {
-    "n": "Gulie Health Center",
-    "a2": "West Gojam",
-    "h0": 257,
-    "h1": 511,
-    "x": 37.2962679,
-    "y": 11.0734676
-   },
-   {
-    "n": "Washera Health Center",
-    "a2": "West Gojam",
-    "h0": 246,
-    "h1": 489,
-    "x": 37.5606471,
-    "y": 11.1131847
+    "n": "Tulube Health Center",
+    "a2": "Ilu Aba Bora",
+    "h0": 352,
+    "h1": 661,
+    "x": 35.5365123,
+    "y": 8.3302075
    }
   ],
   "top_h": [
    {
-    "n": "Wacha Primary Hosiptal",
-    "a2": "Kefa",
-    "cf": 238,
-    "c30": 142,
-    "x": 35.7979102,
-    "y": 7.1454717
-   },
-   {
     "n": "Darimu Primary Hospital",
     "a2": "Ilu Aba Bora",
     "cf": 190,
-    "c30": 130,
+    "c30": 174,
     "x": 35.5074709,
     "y": 8.585586
+   },
+   {
+    "n": "Wacha Primary Hosiptal",
+    "a2": "Kefa",
+    "cf": 238,
+    "c30": 173,
+    "x": 35.7979102,
+    "y": 7.1454717
    },
    {
     "n": "Dembi Dollo Compernsive Specialized Hospital",
     "a2": "Kelem Wellega",
     "cf": 154,
-    "c30": 115,
+    "c30": 134,
     "x": 34.807909,
     "y": 8.521316000000002
    },
@@ -510,25 +510,9 @@ const SUMMARY = {
     "n": "Setema Primary Hospital",
     "a2": "Jimma",
     "cf": 125,
-    "c30": 105,
+    "c30": 94,
     "x": 36.2035673,
     "y": 7.9820519
-   },
-   {
-    "n": "Mekane Eyesus Primary Hospital",
-    "a2": "South Gondar",
-    "cf": 115,
-    "c30": 85,
-    "x": 38.0519795,
-    "y": 11.6047319
-   },
-   {
-    "n": "Teppi General Hospital",
-    "a2": "Sheka",
-    "cf": 112,
-    "c30": 83,
-    "x": 35.426415,
-    "y": 7.1966211
    },
    {
     "n": "Mizan Teppi university Teaching Hospital",
@@ -539,28 +523,44 @@ const SUMMARY = {
     "y": 6.9519356
    },
    {
-    "n": "Debre tabor Comperhensive Specialized  Hospital",
+    "n": "Teppi General Hospital",
+    "a2": "Sheka",
+    "cf": 112,
+    "c30": 73,
+    "x": 35.426415,
+    "y": 7.1966211
+   },
+   {
+    "n": "Maji Primary Hospital",
+    "a2": "Mirab Omo",
+    "cf": 86,
+    "c30": 72,
+    "x": 35.5888443,
+    "y": 6.1748015
+   },
+   {
+    "n": "Mekane Eyesus Primary Hospital",
     "a2": "South Gondar",
-    "cf": 83,
-    "c30": 67,
-    "x": 38.0229,
-    "y": 11.8565826
+    "cf": 115,
+    "c30": 69,
+    "x": 38.0519795,
+    "y": 11.6047319
    },
    {
     "n": "Gida Ayana General Hospital",
     "a2": "East Wellega",
     "cf": 145,
-    "c30": 64,
+    "c30": 68,
     "x": 36.6217331,
     "y": 9.8787112
    },
    {
-    "n": "Janamora Primary Hospital",
-    "a2": "North Gondar",
-    "cf": 60,
-    "c30": 56,
-    "x": 38.1128117,
-    "y": 13.0101177
+    "n": "Tocha Primary Hospital",
+    "a2": "Dawuro",
+    "cf": 77,
+    "c30": 63,
+    "x": 37.0395398,
+    "y": 7.0920382
    }
   ]
  }
@@ -578,7 +578,7 @@ const fmt = n => Math.round(n).toLocaleString("en-US");
 const state = { on: { 1: true, 2: true, 3: true }, terrain: true };
 
 // ---- panel (renders at rest from the inline summary) ----
-document.getElementById("runline").textContent = `WeatherNext 2 · run ${SUMMARY.init} 00Z · ${SUMMARY.start} – ${SUMMARY.end}`;
+document.getElementById("runline").textContent = `WeatherNext 3 · run ${SUMMARY.init} 00Z · ${SUMMARY.start} – ${SUMMARY.end}`;
 const tiersEl = document.getElementById("tiers");
 TIERS.forEach(T => {
   const id = "tier-" + T.t;
@@ -672,7 +672,7 @@ function init() {
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
   map.addControl(new maplibregl.ScaleControl({ maxWidth: 110 }), "bottom-right");
   map.addControl(new maplibregl.AttributionControl({ compact: true, customAttribution:
-    'Roads © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>, surface model HeiGIT · Elevation Google GEM-15 · Rain Google WeatherNext 2 · Regions geoBoundaries' }), "bottom-right");
+    'Roads © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>, surface model HeiGIT · Elevation Google GEM-15 · Rain Google WeatherNext 3 · Regions geoBoundaries' }), "bottom-right");
 
   // the container can still be unsized when the map starts (e.g. a linked stylesheet still loading): re-measure and re-fit
   new ResizeObserver(() => map.resize()).observe(document.getElementById("map"));
@@ -757,7 +757,7 @@ function popupHTML(p) {
     <span class="pill"><i style="background:var(${TIER_TOK[t]})"></i>${TIER_NAME[t]}</span>
     ${p.t !== p.tw ? `<span class="note" style="margin-left:6px">${TIER_NAME[p.tw]} without terrain</span>` : ""}
     <div class="pp-grid">
-      <span class="k">Rain</span><span class="v">${RAIN_LABEL[p.R]}: ${p.r15} mm over 15 days, wettest 3 days ${p.r3} mm, ${Math.round(p.p20 * 100)}% chance of a 20 mm day</span><span class="s">R ${p.R}</span>
+      <span class="k">Rain</span><span class="v">${RAIN_LABEL[p.R]}: ${p.r15} mm over 15 days, wettest 3 days ${p.r3} mm; wet end up to ${p.p20} mm in a day</span><span class="s">R ${p.R}</span>
       <span class="k">Surface</span><span class="v">${p.sf} (${p.sk ? "mapped" : "inferred from road class"})${cond}</span><span class="s">S ${p.S}</span>
       <span class="k">Terrain</span><span class="v">${esc(p.tc)}: grade ${p.gr}%, ground slope ${p.sm}° mean, ${p.sx}° max, ${fmt(p.el)} m</span><span class="s">T ${p.T}</span>
     </div>
