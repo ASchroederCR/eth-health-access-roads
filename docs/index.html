@@ -19,7 +19,7 @@
   --hs-min: 0; --focus: #2a6fb8;
   --outside: #ffffff; --int1: #cdb7e6; --int2: #8656bd;
   --pn1: #8c510a; --pn2: #d8b365; --pn3: #ecebe6; --pn4: #9ec5f4; --pn5: #256abf;
-  --rain-op: 0.55; --pn-op: 0.7; --ctrl-icon: none;
+  --rain-op: 0.55; --pn-op: 0.7; --ctrl-icon: none; --hosp: #000000;
   --d0: #d4d3cc; --d1: #f6cf7a; --d2: #ec9a3b; --d3: #c95a1c; --d4: #7d2a0c; --hfring: #fbfbf9;
   --f-display: "Roboto", system-ui, sans-serif;
   --f-body: "Roboto", system-ui, sans-serif;
@@ -31,7 +31,7 @@
     --mapbg: #1f2321; --chip: #232826;
     --minor: #e3a83f; --elev: #f2812f; --sev: #ff5a3c; --slip: #f4f6f3; --ctx: #66706a; --adm: #a2aaa4;
     --r1: #1d2a37; --r2: #213651; --r3: #24456d; --r4: #285b93; --r5: #2f74bd; --r6: #4691dc;
-    --pn1: #e0a458; --pn2: #8a6630; --pn3: #3a3f3c; --pn4: #2f6aa8; --pn5: #6aa8ec; --rain-op: 0.8; --pn-op: 0.85; --ctrl-icon: invert(1); --hs-min: 0.32; --outside: #141716; --int1: #5d4a78; --int2: #b38be0; --d0: #4d5450; --d1: #6e5a24; --d2: #a8661f; --d3: #e27b33; --d4: #ffb07a; --hfring: #141716; --focus: #6aa8ec; color-scheme: dark;
+    --pn1: #e0a458; --pn2: #8a6630; --pn3: #3a3f3c; --pn4: #2f6aa8; --pn5: #6aa8ec; --rain-op: 0.8; --pn-op: 0.85; --ctrl-icon: invert(1); --hosp: #f4f6f3; --hs-min: 0.32; --outside: #141716; --int1: #5d4a78; --int2: #b38be0; --d0: #4d5450; --d1: #6e5a24; --d2: #a8661f; --d3: #e27b33; --d4: #ffb07a; --hfring: #141716; --focus: #6aa8ec; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
@@ -39,7 +39,7 @@
   --mapbg: #1f2321; --chip: #232826;
   --minor: #e3a83f; --elev: #f2812f; --sev: #ff5a3c; --slip: #f4f6f3; --ctx: #66706a; --adm: #a2aaa4;
   --r1: #1d2a37; --r2: #213651; --r3: #24456d; --r4: #285b93; --r5: #2f74bd; --r6: #4691dc;
-  --pn1: #e0a458; --pn2: #8a6630; --pn3: #3a3f3c; --pn4: #2f6aa8; --pn5: #6aa8ec; --rain-op: 0.8; --pn-op: 0.85; --ctrl-icon: invert(1); --hs-min: 0.32; --outside: #141716; --int1: #5d4a78; --int2: #b38be0; --d0: #4d5450; --d1: #6e5a24; --d2: #a8661f; --d3: #e27b33; --d4: #ffb07a; --hfring: #141716; --focus: #6aa8ec; color-scheme: dark;
+  --pn1: #e0a458; --pn2: #8a6630; --pn3: #3a3f3c; --pn4: #2f6aa8; --pn5: #6aa8ec; --rain-op: 0.8; --pn-op: 0.85; --ctrl-icon: invert(1); --hosp: #f4f6f3; --hs-min: 0.32; --outside: #141716; --int1: #5d4a78; --int2: #b38be0; --d0: #4d5450; --d1: #6e5a24; --d2: #a8661f; --d3: #e27b33; --d4: #ffb07a; --hfring: #141716; --focus: #6aa8ec; color-scheme: dark;
 }
 html, body { height: 100%; }
 input, button, select, textarea { font-family: inherit; }
@@ -284,7 +284,7 @@ section { display: flex; flex-direction: column; gap: 6px; }
       <div id="leg-int">Intense rain possible</div>
       <div class="dots" id="leg-int2"><span><i style="background:var(--int1);border-radius:2px"></i>≥ 10 mm/h</span><span><i style="background:var(--int2);border-radius:2px"></i>≥ 20 mm/h</span></div>
       <div id="leg-hf">Facilities: added minutes</div>
-      <div class="dots" id="leg-hf2"><span><i style="background:var(--d0)"></i>&lt;5</span><span><i style="background:var(--d1)"></i>5–15</span><span><i style="background:var(--d2)"></i>15–30</span><span><i style="background:var(--d3)"></i>30–60</span><span><i style="background:var(--d4)"></i>60+</span></div>
+      <div class="dots" id="leg-hf2"><span><i style="background:var(--d0)"></i>&lt;5</span><span><i style="background:var(--d1)"></i>5–15</span><span><i style="background:var(--d2)"></i>15–30</span><span><i style="background:var(--d3)"></i>30–60</span><span><i style="background:var(--d4)"></i>60+</span><span><i style="background:transparent;border-radius:0;box-shadow:inset 0 0 0 2px var(--hosp)"></i>hospital</span></div>
     </div>
   </div>
 </div>
@@ -947,6 +947,7 @@ function setModel(m) {
   document.getElementById("model-fric").setAttribute("aria-checked", m === "fric");
   renderHealth();
   if (map) ["hf-hp", "hf-main", "hf-linked"].forEach(id => map.getLayer(id) && map.setPaintProperty(id, "circle-color", hfColor()));
+  if (map && map.getLayer("hf-hosp")) map.setLayoutProperty("hf-hosp", "icon-image", hospIcon());
   if (cardHosp) { const h = cardHosp; clearNetwork(); showCard(h); showNetwork(h); }
 }
 document.getElementById("model-road").addEventListener("click", () => setModel("road"));
@@ -1004,13 +1005,27 @@ function decode(d) {
   return feats;
 }
 // data files keep fixed names, so tag each request with this build's version: browsers then never mix a new page with old data
-const DATA_VERSION = "202611191357-3a16ef";
+const DATA_VERSION = "202611191433-3a16ef";
 const dv = u => `${u}?v=${DATA_VERSION}`;
 const getJSON = u => fetch(dv(u), { cache: "no-cache" }).then(r => { if (!r.ok) throw new Error(u + " " + r.status); return r.json(); });
 
 function tierColor() {
   const prop = tierProp();
   return ["match", ["get", prop], 3, css("--sev"), 2, css("--elev"), 1, css("--minor"), css("--ctx")];
+}
+// hospitals are empty squares with a black outline (light outline in dark mode)
+function hospImages() {
+  if (!map) return;
+  const px = 2, n = 14 * px, b = 2 * px;                      // 14 css px square, 2 px outline, drawn at 2x
+  const c = document.createElement("canvas"); c.width = c.height = n; const g = c.getContext("2d");
+  g.strokeStyle = css("--hosp"); g.lineWidth = b; g.strokeRect(b / 2, b / 2, n - b, n - b);
+  const img = g.getImageData(0, 0, n, n);
+  if (map.hasImage("hq")) map.updateImage("hq", img); else map.addImage("hq", img, { pixelRatio: px });
+}
+function hospIcon() { return "hq"; }
+function hospSize(sel) {
+  const big = v => sel == null ? v : ["case", ["==", ["get", "id"], sel], v * 1.6, v];
+  return ["interpolate", ["linear"], ["zoom"], 5, big(0.42), 8, big(0.75), 11, big(1.25)];
 }
 function hfColor() {
   const k = state.model === "fric" ? "fd" : "d";
@@ -1044,7 +1059,8 @@ function applyTheme() {
   if (has("slip")) map.setPaintProperty("slip", "line-color", css("--slip"));
   if (has("roads")) map.setPaintProperty("roads", "line-color", tierColor());
   ["hf-hp", "hf-main"].forEach(id => { if (has(id)) { map.setPaintProperty(id, "circle-color", hfColor());
-    map.setPaintProperty(id, "circle-stroke-color", id === "hf-main" ? ["match", ["get", "ty"], 2, css("--ink"), css("--hfring")] : css("--hfring")); } });
+    map.setPaintProperty(id, "circle-stroke-color", css("--hfring")); } });
+  if (has("hf-hosp")) hospImages();
   if (has("hf-linked")) { map.setPaintProperty("hf-linked", "circle-color", hfColor()); map.setPaintProperty("hf-linked", "circle-stroke-color", css("--ink")); }
   applyFilter();
 }
@@ -1117,7 +1133,7 @@ function init() {
 
       map.addLayer({ id: "hf-hp", type: "circle", source: "hf", minzoom: 7, filter: ["==", ["get", "ty"], 0],
         paint: { "circle-radius": ["interpolate", ["linear"], ["zoom"], 7, 2, 12, 4.5], "circle-stroke-width": 0.6 } });
-      map.addLayer({ id: "hf-main", type: "circle", source: "hf", filter: [">=", ["get", "ty"], 1],
+      map.addLayer({ id: "hf-main", type: "circle", source: "hf", filter: ["==", ["get", "ty"], 1],
         layout: { "circle-sort-key": ["get", "ty"] },
         paint: { "circle-radius": ["interpolate", ["linear"], ["zoom"], 5, ["match", ["get", "ty"], 2, 2.6, 1.7], 8, ["match", ["get", "ty"], 2, 5, 3.2], 11, ["match", ["get", "ty"], 2, 9, 6]],
                  "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 5, ["match", ["get", "ty"], 2, 1, 0.3], 9, ["match", ["get", "ty"], 2, 2, 0.8]] } });
@@ -1125,6 +1141,10 @@ function init() {
         layout: { "circle-sort-key": ["get", "ty"] },
         paint: { "circle-radius": ["interpolate", ["linear"], ["zoom"], 5, ["match", ["get", "ty"], 2, 6, 3.6], 11, ["match", ["get", "ty"], 2, 12, 7.5]],
                  "circle-color": hfColor(), "circle-stroke-width": ["match", ["get", "ty"], 2, 3, 1.8], "circle-stroke-color": css("--ink") } });
+      hospImages();
+      map.addLayer({ id: "hf-hosp", type: "symbol", source: "hf", filter: ["==", ["get", "ty"], 2],
+        layout: { "icon-image": hospIcon(), "icon-size": hospSize(null), "icon-allow-overlap": true, "icon-ignore-placement": true,
+                  "symbol-sort-key": ["coalesce", ["get", "d"], 0] } });
     } catch (e) { console.warn("facilities did not load", e); }
     status.hidden = true;
     sync(); applyFilter(); applyTheme();
@@ -1149,7 +1169,7 @@ function sync() {
   vis("fric", frOn);
   ["leg-fric", "leg-fric2", "leg-fric3"].forEach(id => document.getElementById(id).hidden = !frOn);
   const hfOn = document.getElementById("opt-hf").checked;
-  vis("hf-hp", hfOn); vis("hf-main", hfOn);
+  vis("hf-hp", hfOn); vis("hf-main", hfOn); vis("hf-hosp", hfOn);
   document.getElementById("leg-hf").hidden = !hfOn; document.getElementById("leg-hf2").hidden = !hfOn;
   document.getElementById("leg-slip").hidden = !document.getElementById("opt-slip").checked;
 }
@@ -1228,15 +1248,19 @@ function showNetwork(hp) {
   const key = state.model === "fric" ? "fhid" : "hid";
   const hpt = HF_ALL.find(f => f.properties.id === hp.id); if (!hpt) return 0;
   const linked = HF_ALL.filter(f => f.properties[key] === hp.id && f.properties.ty !== 2);
-  map.setFilter("hf-linked", ["any", ["==", ["get", key], hp.id], ["==", ["get", "id"], hp.id]]);
+  map.setFilter("hf-linked", ["all", ["==", ["get", key], hp.id], ["!=", ["get", "ty"], 2]]);
   map.setPaintProperty("hf-linked", "circle-color", hfColor());
   ["hf-main", "hf-hp"].forEach(id => { if (map.getLayer(id)) { map.setPaintProperty(id, "circle-opacity", 0.15); map.setPaintProperty(id, "circle-stroke-opacity", 0.15); } });
+  if (map.getLayer("hf-hosp")) { map.setPaintProperty("hf-hosp", "icon-opacity", ["case", ["==", ["get", "id"], hp.id], 1, 0.2]);
+    map.setLayoutProperty("hf-hosp", "icon-size", hospSize(hp.id)); map.setLayoutProperty("hf-hosp", "symbol-sort-key", ["case", ["==", ["get", "id"], hp.id], 1e6, ["coalesce", ["get", "d"], 0]]); }
   return linked.length;
 }
 function clearNetwork() {
   if (!map || !map.getLayer("hf-linked")) return;
   map.setFilter("hf-linked", ["==", ["get", "id"], -1]);
   ["hf-main", "hf-hp"].forEach(id => { if (map.getLayer(id)) { map.setPaintProperty(id, "circle-opacity", 1); map.setPaintProperty(id, "circle-stroke-opacity", 1); } });
+  if (map.getLayer("hf-hosp")) { map.setPaintProperty("hf-hosp", "icon-opacity", 1); map.setLayoutProperty("hf-hosp", "icon-size", hospSize(null));
+    map.setLayoutProperty("hf-hosp", "symbol-sort-key", ["coalesce", ["get", "d"], 0]); }
 }
 function forecastChart(hs) {
   if (typeof hs === "string") { try { hs = JSON.parse(hs); } catch (e) { return ""; } }
@@ -1313,7 +1337,7 @@ function legendItems() {
   if (on("opt-fric")) L.push({ h: "MAP travel speed, km/h" }, ...[["#a8320f", "< 3"], ["#e0701f", "3–10"], ["#f2b33d", "10–30"], ["#c9c8c2", "30+"]].map(([c, l]) => ({ box: c, l })));
   if (on("opt-hf")) L.push({ h: `Facilities: added travel minutes · ${state.model === "fric" ? "MAP friction" : "road + slope"} model` },
     ...[["--d0", "< 5"], ["--d1", "5–15"], ["--d2", "15–30"], ["--d3", "30–60"], ["--d4", "60+"]].map(([t, l]) => ({ dot: css(t), l: l + " min" })),
-    { dot: css("--d0"), ring: css("--ink"), l: "Hospital (ringed)" });
+    { sq: true, ring: css("--hosp"), l: "Hospital" });
   if (cardHosp) L.push({ h: "Selected network" }, { dot: css("--d2"), ring: css("--ink"), l: `Linked to ${cardHosp.n}` }, { dot: css("--d0"), fade: true, l: "Other facilities (faded)" });
   return L;
 }
@@ -1388,7 +1412,7 @@ async function exportPNG() {
     await new Promise(res => { map.once("render", res); map.triggerRepaint(); });
     const mc = map.getCanvas(), dpr = mc.width / mc.clientWidth;
     const S = v => Math.round(v * dpr);
-    const legendW = S(300), headH = S(66), pad = S(16);
+    const legendW = S(300), headH = S(66), pad = S(16), mx = pad;   // mx: left margin, so the map sits in a frame
     const wrap = (g_, text, maxW) => { const out = []; let line = "";
       for (const w of String(text).split(" ")) { const t = line ? line + " " + w : w; if (line && g_.measureText(t).width > maxW) { out.push(line); line = w; } else line = t; }
       if (line) out.push(line); return out; };
@@ -1397,22 +1421,28 @@ async function exportPNG() {
     const foot1 = "Roads © OpenStreetMap contributors, surface model HeiGIT · Elevation Google GEM-15 · Rain Google WeatherNext 3, bias-corrected to Google PARDIG · Facilities: Ethiopian health facility register · Regions geoBoundaries · Travel speed: Malaria Atlas Project" +
       (state.rain === "pn" && document.getElementById("opt-rain").checked ? " · Normal: CHIRPS v3 1991–2020 (UCSB CHC); forecast put into CHIRPS terms by the regional PARDIG ÷ CHIRPS ratio" : "");
     const foot2 = `Speed factors and thresholds are illustrative. Exported ${new Date().toISOString().slice(0, 16).replace("T", " ")} UTC.`;
-    const footLines = wrap(meas, foot1, mc.width + legendW - 2 * pad).concat([foot2]);
+    const footLines = wrap(meas, foot1, mx + mc.width + legendW - 2 * pad).concat([foot2]);
     const footH = S(14) + footLines.length * S(14) + S(8);
     const cardW = S(340);
     let card = null;
     if (cardHosp && !document.getElementById("infocard").hidden) {
       const ch = await drawCard(meas, 0, 0, cardW, S, false);
-      card = { h: ch, inset: ch + 2 * S(12) <= mc.height && mc.width >= cardW * 1.8 };
+      // inset in the first map corner that leaves the selected hospital visible; else its own column
+      const hp = HF_ALL.find(f => f.properties.id === +cardHosp.id), m = S(12), M = S(24);
+      const p = hp ? map.project(hp.geometry.coordinates) : null, px = p ? S(p.x) : -1, py = p ? S(p.y) : -1;
+      const spots = [[mc.width - cardW - m, m], [m, m], [mc.width - cardW - m, mc.height - ch - m], [m, mc.height - ch - m]];
+      const free = ([x, y]) => !(px > x - M && px < x + cardW + M && py > y - M && py < y + ch + M);
+      const spot = ch + 2 * m <= mc.height && mc.width >= cardW * 1.8 ? spots.find(free) : null;
+      card = { h: ch, inset: !!spot, x: spot ? spot[0] : 0, y: spot ? spot[1] : 0 };
     }
     const extraW = card && !card.inset ? cardW + pad : 0;
     const cv = document.createElement("canvas");
-    cv.width = mc.width + legendW + extraW; cv.height = mc.height + headH + footH;
+    cv.width = mx + mc.width + legendW + extraW; cv.height = mc.height + headH + footH;
     const g = cv.getContext("2d");
     const ink = css("--ink"), ink2 = css("--ink2"), muted = css("--muted"), rule = css("--rule");
     g.fillStyle = css("--panel"); g.fillRect(0, 0, cv.width, cv.height);
-    g.drawImage(mc, 0, headH, mc.width, mc.height);
-    g.strokeStyle = rule; g.lineWidth = S(1); g.strokeRect(0, headH, mc.width, mc.height);
+    g.drawImage(mc, mx, headH, mc.width, mc.height);
+    g.strokeStyle = rule; g.lineWidth = S(1); g.strokeRect(mx, headH, mc.width, mc.height);
     const font = (w, px, fam) => `${w} ${S(px)}px ${fam}`;
     g.textBaseline = "alphabetic";
     g.fillStyle = ink; g.font = font(700, 22, ROBOTO);
@@ -1421,7 +1451,7 @@ async function exportPNG() {
     const c = map.getCenter();
     g.fillText(`WeatherNext 3 run ${SUMMARY.init} 00Z · ${SUMMARY.start} – ${SUMMARY.end} · ${state.win ? ["", "days 1–3", "days 4–7", "days 8–15"][state.win] : "all 15 days"} · view centred ${c.lat.toFixed(2)}°N ${c.lng.toFixed(2)}°E, zoom ${map.getZoom().toFixed(1)}`, pad, S(52));
     // legend panel
-    let x = mc.width + pad, y = headH + S(2), first = true;
+    let x = mx + mc.width + pad, y = headH + S(2), first = true;
     for (const it of legendItems()) {
       if (it.h) { y += first ? S(16) : S(28); first = false; g.font = font(500, 12.5, ROBOTO); g.fillStyle = ink;
         const ls = wrap(g, it.h, legendW - 2 * pad); ls.forEach((l, i) => { if (i) y += S(15); g.fillText(l, x, y); }); y += S(4); continue; }
@@ -1431,17 +1461,18 @@ async function exportPNG() {
       if (it.box) { g.fillStyle = it.box; g.fillRect(x, y - S(10), S(24), S(11)); }
       if (it.dot) { g.globalAlpha = it.fade ? 0.25 : 1; g.fillStyle = it.dot; g.beginPath(); g.arc(x + S(12), y - S(4), S(5), 0, 7); g.fill();
         if (it.ring) { g.strokeStyle = it.ring; g.lineWidth = S(2); g.stroke(); } g.globalAlpha = 1; }
+      if (it.sq) { g.strokeStyle = it.ring; g.lineWidth = S(2); g.strokeRect(x + S(7), y - S(9), S(11), S(11)); }
       if (it.ramp) { it.ramp.forEach((col, i) => { g.fillStyle = col; g.fillRect(x + i * S(34), y - S(10), S(34), S(10)); });
         g.fillStyle = muted; g.font = font(400, 10.5, ROBOTO); it.ticks.forEach((t, i) => g.fillText(t, x + i * S(34), y + S(12))); y += S(12); continue; }
       if (it.note) { g.fillStyle = muted; g.font = font(400, 11, ROBOTO); y += S(4);
         wrap(g, it.l, legendW - 2 * pad).forEach((l, i) => { if (i) y += S(14); g.fillText(l, x, y); }); continue; }
       g.fillStyle = ink2; const ls = wrap(g, it.l, legendW - 2 * pad - S(32)); ls.forEach((l, i) => { if (i) y += S(14); g.fillText(l, x + S(32), y); });
     }
-    if (card) await drawCard(g, card.inset ? mc.width - cardW - S(12) : mc.width + legendW, headH + S(12), cardW, S, true);
+    if (card) await drawCard(g, card.inset ? mx + card.x : mx + mc.width + legendW, headH + (card.inset ? card.y : S(12)), cardW, S, true);
     // scale bar on the map image
     const mpp = 40075016.686 * Math.cos(c.lat * Math.PI / 180) / (512 * Math.pow(2, map.getZoom()));   // metres per CSS pixel
     const target = 110 * mpp, p10 = Math.pow(10, Math.floor(Math.log10(target))), nice = [1, 2, 5, 10].map(k => k * p10).filter(v => v <= target).pop();
-    const barPx = S(nice / mpp), bx = pad, by = headH + mc.height - S(18);
+    const barPx = S(nice / mpp), bx = mx + pad, by = headH + mc.height - S(18);
     g.globalAlpha = 0.85; g.fillStyle = css("--panel"); g.fillRect(bx - S(6), by - S(16), barPx + S(12), S(26)); g.globalAlpha = 1;
     g.fillStyle = ink; g.fillRect(bx, by, barPx, S(3));
     g.font = font(500, 11, ROBOTO); g.fillText(nice >= 1000 ? `${nice / 1000} km` : `${nice} m`, bx, by - S(4));
@@ -1467,7 +1498,7 @@ function wirePopup() {
   const pop = new maplibregl.Popup({ closeButton: true, closeOnClick: false, maxWidth: "340px", offset: 8 });
   let pinned = false;
   const box = e => [[e.point.x - 5, e.point.y - 5], [e.point.x + 5, e.point.y + 5]];
-  const hfLayers = () => ["hf-main", "hf-hp"].filter(id => map.getLayer(id) && map.getLayoutProperty(id, "visibility") !== "none");
+  const hfLayers = () => ["hf-hosp", "hf-main", "hf-hp"].filter(id => map.getLayer(id) && map.getLayoutProperty(id, "visibility") !== "none");
   const hit = e => {
     const f = map.queryRenderedFeatures(box(e), { layers: hfLayers() }).sort((a, b) => b.properties.ty - a.properties.ty)[0];
     if (f) return { html: facilityHTML(f.properties), hosp: f.properties.ty === 2 ? f.properties : null };
