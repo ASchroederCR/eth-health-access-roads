@@ -37,6 +37,31 @@ Rain is judged two ways, each for days 1–3, 4–7 and 8–15 (`charts/ETH_road
 - **Intense rain** marks where a downpour is possible. It is the wettest hour of WeatherNext 3's hourly 90th percentile (`27_wn3_hourly.py`), with thresholds set so it flags as often as PARDIG observed ≥ 10 mm, or ≥ 20 mm, in an hour (1–18 Nov 2026; `28_pardig_hourly.py`, `29_calibrate_intensity.py`). Exact cell-days are hard to hit: about 15% hit rate, 86% false alarms, though still 8–10× better than random. At the scale the map uses it (per window, ~20 km tolerance), flags are rarely false: 6–14% false alarms. It catches 23% (days 1–3), 53% (4–7) and 67% (8–15) of observed downpour areas.
 - The **overall** tier is the worst window, and drives routing. Slip / rock-fall exposure needs intense rain or high accumulation on steep, landslide-prone ground.
 
+### Rain bias correction
+**Why.** WeatherNext 3's rain forecast is the average of its ensemble runs, and averaging smooths rain out. Checked against PARDIG, Google's observed rainfall (`23_verify_wn3_pardig.py`), it gives 0.6–0.9 of the rain that falls and rarely forecasts a day ≥ 10 mm. The hazard rules use thresholds like "a day ≥ 10 mm", so the raw forecast would almost never trigger them.
+
+**Method: quantile mapping.** Instead of scaling every value by one factor, the correction matches rankings: the forecast's 90th-percentile day is made equal to PARDIG's 90th-percentile day, and so on.
+1. **Pairs.** For every cached WeatherNext 3 00 UTC run, each forecast day's rain in each 0.1° cell is paired with PARDIG's observed rain for that day and cell.
+2. **Groups.** Bias depends on lead time and place, so pairs are split by forecast range (days 1–3, 4–7, 8–15) and by region (ADM1). A region with fewer than 3,000 observed wet cell-days (≥ 1 mm) in a group uses the all-Ethiopia mapping, because thin samples give unstable tails.
+3. **Lookup table.** In each group the forecast values and the observed values are sorted separately and read off at the same 201 percentile levels, spaced more densely at the wet end. Each row pairs a forecast amount with the observed amount at the same percentile.
+4. **Applying it.** Each forecast value is looked up in its group's table, interpolating between rows, and replaced by the matching observed amount. For example, if WeatherNext 3's top 5% of days run around 6 mm and PARDIG's around 18 mm, a 6 mm forecast becomes about 18 mm. Values above the table's top are scaled by the ratio at the top, and corrected rain is never negative.
+
+**Two mappings, each used where it tested best** (`25_test_biascorr_seasons.py`, across Bega, Belg, Kiremt and the short rains of 2024–2026):
+
+| | Hazard mapping (`24_bias_correct_wn3.py`) | Amounts mapping (`26_monthly_biascorr_wn3.py`) |
+|---|---|---|
+| Trained on | short-rains runs only: Oct–Dec 2025 (every third day) and Nov 2026 | every cached run, all years, with one table per calendar month that pools month M − 1, M and M + 1 (a month with too few pairs uses the all-months table) |
+| Used for | the rain hazard classes that set road slowdown tiers | rain amounts: map layer, totals, road details, hospital charts, % of normal |
+| Why | caught the most observed hazard in every season: 73–83% of the moderate-or-higher area in Belg and Kiremt, with 8–15% false alarms, including the dry Kiremt of 2026 | the hazard mapping overstates amounts 1.5–2.5× outside the short rains; this one is closer on totals in most seasons |
+
+**Testing.** The amounts mapping was tested leave-one-year-out: for each year, tables were fitted on the other years and scored on that one. The hazard mapping was trained partly on this year's short rains, so its scores for those runs are in-sample and flattering.
+
+**Limits.**
+- About 2–3 years of WeatherNext 3 runs. Its bias varies by year, so amounts can be off by tens of per cent in a given season (Kiremt 2025: 1.9×, Kiremt 2026: 0.56× after correction).
+- It corrects the distribution of rain, not its timing or location: a storm forecast in the wrong place stays in the wrong place, with more realistic amounts.
+- Everything is corrected toward PARDIG, not CHIRPS. That matters mostly for counts of heavy-rain days, not for the 10-day totals behind the slowdown tiers (see *Rain compared with normal*).
+- The intense-rain flag (≥ 10 / 20 mm in an hour) does not use this correction; its thresholds are set so WeatherNext 3's hourly forecast flags downpours as often as PARDIG observed them.
+
 ### Rain compared with normal
 The web map can show rain as **% of normal** (switch under *Forecast rain*). It follows the forecast window, and the hospital card shows the same comparison at each hospital (`charts/ETH_rain_percent_of_normal.png`, `33_percent_of_normal.py`).
 - **Normal:** CHIRPS v3 daily, 1991–2020, for the same calendar days (`31_chirps_normal.py`).
@@ -56,9 +81,7 @@ Each road segment's tier, per window, is **accumulation (0–3) + surface (0–2
 | Surface | paved 0, unpaved 1, plus 1 if OSM tags the condition as bad / very bad / horrible / impassable. Surface is mapped for about 25% of road length; the rest is inferred from road class. |
 | Steepness | Based on the Ethiopian Roads Authority terrain classes:<br>**mountainous:** ground slope ≥ 14° or road grade ≥ 5%<br>**escarpment:** ground slope ≥ 26.6° or road grade ≥ 10% |
 
-- **Rain bias correction:** checked against PARDIG (`23_verify_wn3_pardig.py`), WeatherNext 3's ensemble-mean daily rain is too low in every season (0.6–0.9 of observed) and rarely reaches 10 mm. Daily rain is corrected by quantile mapping per forecast range (days 1–3, 4–7, 8–15) and region, using two mappings, each where it tested best across Bega, Belg, Kiremt and the short rains of 2024–2026 (`25_test_biascorr_seasons.py`, `26_monthly_biascorr_wn3.py`):
-  - **Hazard classes** use a mapping trained on the short rains (`24_bias_correct_wn3.py`). It caught the most observed hazard in every season: 73–83% of the moderate-or-higher area in Belg and Kiremt, with 8–15% false alarms, including the dry Kiremt of 2026. It overstates rain amounts outside the short rains (1.5–2.5×).
-  - **Rain amounts** (map layer, totals, road details, daily chart) use a year-round monthly mapping pooled across 2024–2026. Tested leave-one-year-out, it is closer to observed totals in most seasons. WeatherNext 3's bias still varies from year to year, so amounts can be off by tens of per cent in a given year (Kiremt 2025: 1.9×, Kiremt 2026: 0.56×).
+- **Rain bias correction:** forecast rain is corrected toward observed rain before any of these levels are applied; see *Rain bias correction* above.
 - **Tiers and assumed speeds:** Normal, Minor (~10% slower), Elevated (~25% slower), Severe (~50% slower).
 - **Slip / rock-fall exposure:** judged on each ~110 m piece of road, not the whole segment. A piece is exposed when the forecast rain over it is moderate or high, and either the ground is ≥ 26.6° where NASA's global landslide susceptibility map rates it moderate or higher, or susceptibility is very high on ground ≥ 14°. Only the exposed stretches are counted (km) and drawn on the maps. The flag is reported separately and doesn't change the slowdown tier.
 - **Removed:** about 5,200 km of seismic survey cut-lines in the Ogaden that OSM maps as tracks.
