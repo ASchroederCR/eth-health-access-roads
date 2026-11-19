@@ -15,6 +15,7 @@ The current outputs are for the **19 Nov 2026 00Z** WeatherNext 3 run, covering 
 ![Road slowdown map](charts/ETH_roads_rain_risk_map.png)
 ![Health facility access](charts/ETH_health_access_map.png)
 ![Most affected facilities](charts/ETH_health_access_top.png)
+![Forecast rain at hospitals in the wettest zones](charts/ETH_hospital_rain_forecast.png)
 
 ## Headline results (19 Nov 2026 run)
 
@@ -88,6 +89,7 @@ scripts/
   16_export_webmap.py          compact web-map data files
   17_health_access.py          routing, facility rankings, charts
   18_build_webmap.py           build webmap/index.html (artifact) and docs/index.html (Pages)
+  30_hospital_rain_charts.py   forecast rain charts for hospitals in the wettest zones, with intense-rain periods
   19_travel_surface_compare.py compare with MAP 2020 motorized travel time (north-west clip)
   20_friction_access.py        rerun facility routing on the MAP motorized friction surface
 webmap/index.src.html  web map source (MapLibre GL)
