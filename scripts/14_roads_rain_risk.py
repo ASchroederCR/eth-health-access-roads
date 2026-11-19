@@ -35,7 +35,7 @@ Method (illustrative thresholds, not calibrated against observed travel times)
   0.1 deg rain cell has R >= 2, and either ground slope >= 26.6 deg with NASA global landslide susceptibility
   (Stanley & Kirschbaum, 2023 map, data/raw/landslide/) moderate or higher, or susceptibility very high on ground
   >= 14 deg. slide_km = length of exposed pieces; places where slips, rock fall or wash-outs could block the road.
-  Assumed speed factors: Minor 0.9, Elevated 0.75, Severe 0.5 (may be impassable).
+  Assumed speed factors: Minor 0.9, Elevated 0.75, Severe 0.5.
   Footpaths, tracks under construction etc. are dropped; only vehicle roads are scored.
   Also dropped: ~5,200 km of seismic survey cut-lines around the Calub / Hilala gas fields (44-45.5 E,
   5.5-6.8 N) - unnamed, dead-straight lines > 2 km that OSM maps as tracks/unclassified roads.
