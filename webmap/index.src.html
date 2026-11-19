@@ -131,6 +131,13 @@ section { display: flex; flex-direction: column; gap: 6px; }
 .legend .dots { display: flex; gap: 8px; flex-wrap: wrap; font-family: var(--f-data); font-size: 10.5px; color: var(--muted); }
 .legend .dots span { display: inline-flex; align-items: center; gap: 3px; }
 .legend .dots i { width: 9px; height: 9px; border-radius: 50%; display: block; }
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 7px; padding: 2px; gap: 2px; background: var(--chip); align-self: flex-start; }
+.seg button { border: 0; background: none; color: var(--ink2); font: inherit; font-size: 13px; padding: 5px 11px; border-radius: 5px; cursor: pointer; }
+.seg button[aria-checked="true"] { background: var(--panel); color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.seg button:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+.seg button:disabled { opacity: .45; cursor: not-allowed; }
+.legend .spd { display: flex; }
+.legend .spd i { width: 26px; height: 8px; display: block; }
 @media (prefers-reduced-motion: reduce) { .toggle, .toggle::after { transition: none; } }
 </style>
 
@@ -150,6 +157,11 @@ section { display: flex; flex-direction: column; gap: 6px; }
 
     <section aria-labelledby="h-hf">
       <h2 id="h-hf">Health facility access</h2>
+      <div class="seg" role="radiogroup" aria-label="Travel model">
+        <button type="button" role="radio" aria-checked="true" id="model-road">Road + slope model</button>
+        <button type="button" role="radio" aria-checked="false" id="model-fric">MAP friction surface</button>
+      </div>
+      <p class="note" id="modelnote"></p>
       <p class="note" id="hfline"></p>
       <div class="subh">Hospitals that become hardest to reach</div>
       <div class="hlist" id="toph"></div>
@@ -164,6 +176,7 @@ section { display: flex; flex-direction: column; gap: 6px; }
         <label class="sw-row" for="opt-hf"><span>Health facilities<small>Coloured by added travel time; health posts from zoom 7</small></span><input type="checkbox" class="toggle" id="opt-hf" checked></label>
         <label class="sw-row" for="opt-slip"><span>Slip / rock-fall exposure<small>Exposed stretches: moderate+ rain on steep, landslide-prone ground</small></span><input type="checkbox" class="toggle" id="opt-slip" checked></label>
         <label class="sw-row" for="opt-rain"><span>Forecast rain, 15-day total</span><input type="checkbox" class="toggle" id="opt-rain" checked></label>
+        <label class="sw-row" for="opt-fric"><span>MAP travel speed (friction surface)<small>Malaria Atlas Project 2019, motorized</small></span><input type="checkbox" class="toggle" id="opt-fric"></label>
         <label class="sw-row" for="opt-hs"><span>Hillshade (GEM-15)</span><input type="checkbox" class="toggle" id="opt-hs" checked></label>
         <label class="sw-row" for="opt-ctx"><span>Main road network</span><input type="checkbox" class="toggle" id="opt-ctx" checked></label>
       </div>
@@ -179,8 +192,9 @@ section { display: flex; flex-direction: column; gap: 6px; }
     <section aria-labelledby="h-how">
       <h2 id="h-how">How the score works</h2>
       <p class="note">Tier = rain (0–3) + surface (paved 0, unpaved 1, +1 if mapped in bad condition) + steepness (0–2) − 1, kept to 0–3 and at most one tier above the rain score. No forecast rain means Normal. Speed losses (Minor ~10%, Elevated ~25%, Severe ~50%) are illustrative assumptions, not measured.</p>
-      <p class="note">Rain (WeatherNext 3, 0.1°): high = the wettest day's wet end (90th percentile) ≥ 24 mm, or the wettest 3 days of the ensemble mean ≥ 40 mm; moderate = wet end ≥ 13 mm or 3 days ≥ 20 mm; low = 15-day mean ≥ 10 mm. WeatherNext 3 publishes percentiles rather than ensemble members, so the 13 and 24 mm thresholds were set to reproduce the earlier 64-member WeatherNext 2 rule on runs both models made. Steepness after the Ethiopian Roads Authority terrain classes: mountainous ≥ 14° ground or ≥ 5 % road grade, escarpment ≥ 26.6° or ≥ 10 %.</p>
+      <p class="note">Rain: WeatherNext 3 (0.1°) daily ensemble-mean rain, bias-corrected against Google PARDIG observations by quantile mapping for each forecast range and region (trained on Oct–Dec 2025 and early Nov 2026; tested on unseen runs, it lifted the forecast from about half the observed rain to about the right amount). High = a day ≥ 20 mm or the wettest 3 days ≥ 40 mm; moderate = a day ≥ 10 mm or 3 days ≥ 20 mm; low = 15 days ≥ 10 mm. Steepness after the Ethiopian Roads Authority terrain classes: mountainous ≥ 14° ground or ≥ 5 % road grade, escarpment ≥ 26.6° or ≥ 10 %.</p>
       <p class="note">Health access: shortest road travel time from each facility to the nearest hospital (health posts: nearest health centre) at normal speeds by road class (trunk 70 … track 15 km/h, unpaved × 0.7), then to that same facility with each road slowed by its tier. A hospital's linked facilities are the health centres and posts for which it is the nearest hospital by road; this is a road-network grouping, not a population catchment or the official referral pathway. Facilities are approved hospitals, health centres and health posts from the Ethiopian health facility register.</p>
+      <p class="note">Travel model: the road + slope model routes over the mapped road network with class speeds and walking to the road. The MAP friction surface (Malaria Atlas Project 2019 motorized, ~1 km) routes cell to cell using MAP's road, land-cover and off-road speeds, with cells crossed by a scored road slowed by the same tier factors. Both use the same facilities and the same nearest-hospital rule. MAP's journeys come out about 3–4 times shorter, so the two models usually agree on which facilities are worst hit but not on how many minutes are added.</p>
       <p class="note">Slip / rock-fall exposure is judged on each ~110 m piece of road: moderate or high forecast rain over that piece, and either ground ≥ 26.6° where NASA's global landslide susceptibility map rates it moderate or higher, or very high susceptibility on ground ≥ 14°. Only the exposed stretches are drawn and counted.</p>
       <p class="note">Surface is mapped (OSM tag or Mapillary image model) for about a quarter of road length; the rest is inferred from road class. Road grades come from a ~110 m elevation grid and run high where roads cut across hillsides.</p>
     </section>
@@ -190,10 +204,13 @@ section { display: flex; flex-direction: column; gap: 6px; }
     <div id="map" role="region" aria-label="Map of Ethiopian roads coloured by slowdown tier"></div>
     <div class="status" id="status">Loading roads…</div>
     <div class="legend" aria-hidden="true">
-      <div>15-day rain, mm</div>
+      <div>15-day rain, mm (bias-corrected)</div>
       <div class="ramp" id="ramp"></div>
       <div class="ticks"><span>5</span><span>10</span><span>25</span><span>50</span><span>100</span><span>150</span></div>
       <div class="slip" id="leg-slip"><i></i>slip / rock-fall exposure</div>
+      <div id="leg-fric" hidden>MAP travel speed, km/h</div>
+      <div class="spd" id="leg-fric2" hidden><i style="background:#f1efe8"></i><i style="background:#d7e3dc"></i><i style="background:#a9cfc3"></i><i style="background:#6fb2a4"></i><i style="background:#2f8a80"></i><i style="background:#0f5c5a"></i></div>
+      <div class="ticks" id="leg-fric3" hidden><span>0</span><span>3</span><span>5</span><span>10</span><span>30</span><span>60+</span></div>
       <div id="leg-hf">Facilities: added minutes</div>
       <div class="dots" id="leg-hf2"><span><i style="background:var(--d0)"></i>&lt;5</span><span><i style="background:var(--d1)"></i>5–15</span><span><i style="background:var(--d2)"></i>15–30</span><span><i style="background:var(--d3)"></i>30–60</span><span><i style="background:var(--d4)"></i>60+</span></div>
     </div>
@@ -243,12 +260,34 @@ SUMMARY.regions.forEach(r => {
   regEl.appendChild(b);
 });
 const H = SUMMARY.health;
-document.getElementById("hfline").innerHTML = `<span class="num">${fmt(H.hc_30)}</span> of <span class="num">${fmt(H.hc_n)}</span> health centres take 30+ minutes longer to reach a hospital (<span class="num">${fmt(H.hc_60)}</span> an hour or more). <span class="num">${fmt(H.hp_30)}</span> health posts take 30+ minutes longer to reach a health centre. Tap a name to go there.`;
+state.model = "road";
+const HM = () => (state.model === "fric" && H.fr) ? H.fr : H;
 const goTo = (x, y, name) => { if (!map) return; map.flyTo({ center: [x, y], zoom: 10.5, essential: true }); map.once("moveend", () => openFacility(name, x, y)); };
 const hrow = (el, h, right) => { const b = document.createElement("button"); b.className = "hrow";
   b.innerHTML = `<span>${esc(h.n)}<small>${esc(h.a2)}</small></span><span class="num">${right}</span>`; b.addEventListener("click", () => goTo(h.x, h.y, h.n)); el.appendChild(b); };
-H.top_h.forEach(h => hrow(document.getElementById("toph"), h, `${h.c30} of ${h.cf} linked +30 min`));
-H.top_hc.forEach(h => hrow(document.getElementById("tophc"), h, `${(h.h0 / 60).toFixed(1)} → ${(h.h1 / 60).toFixed(1)} h`));
+function renderHealth() {
+  const M = HM();
+  document.getElementById("hfline").innerHTML = `<span class="num">${fmt(M.hc_30)}</span> of <span class="num">${fmt(M.hc_n)}</span> health centres take 30+ minutes longer to reach their hospital (<span class="num">${fmt(M.hc_60)}</span> an hour or more). <span class="num">${fmt(M.hp_30)}</span> health posts take 30+ minutes longer to reach their health centre. Tap a name to go there.`;
+  document.getElementById("modelnote").textContent = state.model === "fric"
+    ? `MAP friction surface: median normal trip from a health centre to its hospital ${H.fr.hc_median_normal} min (road model ${H.fr.road_hc_median_normal} min).`
+    : "Road + slope model: mapped road network with class speeds, walking to the road at 5 km/h.";
+  const th = document.getElementById("toph"), tc = document.getElementById("tophc");
+  th.innerHTML = ""; tc.innerHTML = "";
+  M.top_h.forEach(h => hrow(th, h, `${h.c30} of ${h.cf} linked +30 min`));
+  M.top_hc.forEach(h => hrow(tc, h, `${(h.h0 / 60).toFixed(1)} → ${(h.h1 / 60).toFixed(1)} h`));
+}
+function setModel(m) {
+  if (m === "fric" && !H.fr) return;
+  state.model = m;
+  document.getElementById("model-road").setAttribute("aria-checked", m === "road");
+  document.getElementById("model-fric").setAttribute("aria-checked", m === "fric");
+  renderHealth();
+  if (map) ["hf-hp", "hf-main"].forEach(id => map.getLayer(id) && map.setPaintProperty(id, "circle-color", hfColor()));
+}
+document.getElementById("model-road").addEventListener("click", () => setModel("road"));
+document.getElementById("model-fric").addEventListener("click", () => setModel("fric"));
+if (!H.fr) { document.getElementById("model-fric").disabled = true; document.getElementById("model-fric").title = "No friction-surface results for this run"; }
+renderHealth();
 const ETH = [[33.0, 3.4], [48.0, 14.9]];
 document.getElementById("reg-all").addEventListener("click", () => map && map.fitBounds(ETH, { padding: 20 }));
 document.getElementById("ramp").innerHTML = [1, 2, 3, 4, 5, 6].map(i => `<i style="background:var(--r${i})"></i>`).join("");
@@ -274,8 +313,9 @@ function tierColor() {
   return ["match", ["get", prop], 3, css("--sev"), 2, css("--elev"), 1, css("--minor"), css("--ctx")];
 }
 function hfColor() {
-  return ["case", ["==", ["typeof", ["get", "d"]], "number"],
-    ["step", ["get", "d"], css("--d0"), 5, css("--d1"), 15, css("--d2"), 30, css("--d3"), 60, css("--d4")], css("--d0")];
+  const k = state.model === "fric" ? "fd" : "d";
+  return ["case", ["==", ["typeof", ["get", k]], "number"],
+    ["step", ["get", k], css("--d0"), 5, css("--d1"), 15, css("--d2"), 30, css("--d3"), 60, css("--d4")], css("--d0")];
 }
 function applyFilter() {
   if (!map || !map.getLayer("roads")) return;
@@ -318,6 +358,11 @@ function init() {
     map.resize(); map.fitBounds(ETH, { padding: 20, duration: 0 });
     const hb = SUMMARY.hillshade_bounds;
     map.addSource("hs", { type: "image", url: "data/hillshade.png", coordinates: [[hb[0], hb[3]], [hb[2], hb[3]], [hb[2], hb[1]], [hb[0], hb[1]]] });
+    if (H.fr && H.fr.bounds) {
+      const fb = H.fr.bounds;
+      map.addSource("fric", { type: "image", url: "data/friction.png", coordinates: [[fb[0], fb[3]], [fb[2], fb[3]], [fb[2], fb[1]], [fb[0], fb[1]]] });
+      map.addLayer({ id: "fric", type: "raster", source: "fric", layout: { visibility: "none" }, paint: { "raster-opacity": 0.85, "raster-resampling": "nearest", "raster-fade-duration": 0 } });
+    }
     map.addLayer({ id: "hs", type: "raster", source: "hs", paint: { "raster-opacity": ["interpolate", ["linear"], ["zoom"], 5, 0.45, 9, 0.8], "raster-fade-duration": 0 } });
     const [rain, adm] = await Promise.all([getJSON("data/rain.geojson"), getJSON("data/adm1.geojson")]);
     map.addSource("rain", { type: "geojson", data: rain });
@@ -376,12 +421,15 @@ function sync() {
   vis("hs", document.getElementById("opt-hs").checked);
   vis("ctx", document.getElementById("opt-ctx").checked);
   vis("slip", document.getElementById("opt-slip").checked);
+  const frOn = document.getElementById("opt-fric").checked;
+  vis("fric", frOn);
+  ["leg-fric", "leg-fric2", "leg-fric3"].forEach(id => document.getElementById(id).hidden = !frOn);
   const hfOn = document.getElementById("opt-hf").checked;
   vis("hf-hp", hfOn); vis("hf-main", hfOn);
   document.getElementById("leg-hf").hidden = !hfOn; document.getElementById("leg-hf2").hidden = !hfOn;
   document.getElementById("leg-slip").hidden = !document.getElementById("opt-slip").checked;
 }
-["opt-rain", "opt-hs", "opt-ctx", "opt-slip", "opt-hf"].forEach(id => document.getElementById(id).addEventListener("change", sync));
+["opt-rain", "opt-hs", "opt-ctx", "opt-slip", "opt-hf", "opt-fric"].forEach(id => document.getElementById(id).addEventListener("change", sync));
 document.getElementById("opt-terrain").addEventListener("change", e => { state.terrain = e.target.checked; applyFilter(); });
 
 const TIER_NAME = ["Normal", "Minor", "Elevated", "Severe"], TIER_TOK = ["--ctx", "--minor", "--elev", "--sev"];
@@ -403,7 +451,12 @@ function popupHTML(p) {
 }
 const TYN = ["Health post", "Health centre", "Hospital"];
 const hrs = m => m == null ? "–" : m >= 90 ? `${(m / 60).toFixed(1)} h` : `${m} min`;
-function facilityHTML(p) {
+function facilityHTML(p0) {
+  const fr = state.model === "fric" && p0.fh0 !== undefined;
+  const p = fr ? Object.assign({}, p0, { h0: p0.fh0, h1: p0.fh1, c0: p0.fc0, c1: p0.fc1, d: p0.fd, ch: p0.fch || p0.ch,
+                                          cf: p0.fcf, c30: p0.fc30, cm: p0.fcm }) : p0;
+  const other = fr ? `Road model: ${p0.ty === 0 ? hrs(p0.c0) + " → " + hrs(p0.c1) : hrs(p0.h0) + " → " + hrs(p0.h1)}`
+                   : (p0.fh0 !== undefined && p0.fh0 !== null ? `MAP friction: ${p0.ty === 0 ? hrs(p0.fc0) + " → " + hrs(p0.fc1) : hrs(p0.fh0) + " → " + hrs(p0.fh1)}` : "");
   const target = p.ty === 0 ? (p.hc ? p.hc : "health centre") : (p.ch ? p.ch : "hospital");
   const t0 = p.ty === 0 ? p.c0 : p.h0, t1 = p.ty === 0 ? p.c1 : p.h1;
   const tok = p.d == null ? "--d0" : p.d >= 60 ? "--d4" : p.d >= 30 ? "--d3" : p.d >= 15 ? "--d2" : p.d >= 5 ? "--d1" : "--d0";
@@ -412,8 +465,9 @@ function facilityHTML(p) {
     : `<span class="k">To ${p.ty === 0 ? "health centre" : "hospital"}</span><span class="v">${hrs(t0)} normally, ${hrs(t1)} under the forecast</span><span class="s">+${p.d ?? "–"}</span>`;
   if (p.ty === 0) rows += `<span class="k">To hospital</span><span class="v">${hrs(p.h0)} → ${hrs(p.h1)}${p.ch ? ` (${esc(p.ch)})` : ""}</span><span class="s"></span>`;
   else if (p.ty === 1 && p.ch) rows += `<span class="k">Hospital</span><span class="v">${esc(p.ch)}</span><span class="s"></span>`;
+  if (other && p.ty !== 2) rows += `<span class="k">Other model</span><span class="v">${other}</span><span class="s"></span>`;
   rows += `<span class="k">Roads nearby</span><span class="v">${p.s5 == null ? "no mapped roads within 5 km" : Math.round(p.s5 * 100) + "% Elevated / Severe within 5 km"}; nearest road ${esc(p.nt)}</span><span class="s"></span>`;
-  return `<div class="pp-h">${esc(p.n)}</div><div class="pp-sub">${TYN[p.ty]} · ${esc(p.a3)}, ${esc(p.a2)}</div>
+  return `<div class="pp-h">${esc(p.n)}</div><div class="pp-sub">${TYN[p.ty]} · ${esc(p.a3)}, ${esc(p.a2)} · ${fr ? "MAP friction surface" : "road + slope model"}</div>
     ${p.ty !== 2 ? `<span class="pill"><i style="background:var(${tok})"></i>+${p.d ?? "–"} min to reach ${esc(target)}</span>` : ""}
     <div class="pp-grid">${rows}</div>
     <div class="pp-foot">${p.off ? `${p.gap} km from the nearest mapped road · ` : ""}${p.sl ? "<b>slip / rock-fall exposed road</b> within 5 km" : "no slip-exposed road within 5 km"}</div>`;

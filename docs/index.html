@@ -133,6 +133,13 @@ section { display: flex; flex-direction: column; gap: 6px; }
 .legend .dots { display: flex; gap: 8px; flex-wrap: wrap; font-family: var(--f-data); font-size: 10.5px; color: var(--muted); }
 .legend .dots span { display: inline-flex; align-items: center; gap: 3px; }
 .legend .dots i { width: 9px; height: 9px; border-radius: 50%; display: block; }
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 7px; padding: 2px; gap: 2px; background: var(--chip); align-self: flex-start; }
+.seg button { border: 0; background: none; color: var(--ink2); font: inherit; font-size: 13px; padding: 5px 11px; border-radius: 5px; cursor: pointer; }
+.seg button[aria-checked="true"] { background: var(--panel); color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.seg button:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+.seg button:disabled { opacity: .45; cursor: not-allowed; }
+.legend .spd { display: flex; }
+.legend .spd i { width: 26px; height: 8px; display: block; }
 @media (prefers-reduced-motion: reduce) { .toggle, .toggle::after { transition: none; } }
 </style>
 
@@ -155,6 +162,11 @@ section { display: flex; flex-direction: column; gap: 6px; }
 
     <section aria-labelledby="h-hf">
       <h2 id="h-hf">Health facility access</h2>
+      <div class="seg" role="radiogroup" aria-label="Travel model">
+        <button type="button" role="radio" aria-checked="true" id="model-road">Road + slope model</button>
+        <button type="button" role="radio" aria-checked="false" id="model-fric">MAP friction surface</button>
+      </div>
+      <p class="note" id="modelnote"></p>
       <p class="note" id="hfline"></p>
       <div class="subh">Hospitals that become hardest to reach</div>
       <div class="hlist" id="toph"></div>
@@ -169,6 +181,7 @@ section { display: flex; flex-direction: column; gap: 6px; }
         <label class="sw-row" for="opt-hf"><span>Health facilities<small>Coloured by added travel time; health posts from zoom 7</small></span><input type="checkbox" class="toggle" id="opt-hf" checked></label>
         <label class="sw-row" for="opt-slip"><span>Slip / rock-fall exposure<small>Exposed stretches: moderate+ rain on steep, landslide-prone ground</small></span><input type="checkbox" class="toggle" id="opt-slip" checked></label>
         <label class="sw-row" for="opt-rain"><span>Forecast rain, 15-day total</span><input type="checkbox" class="toggle" id="opt-rain" checked></label>
+        <label class="sw-row" for="opt-fric"><span>MAP travel speed (friction surface)<small>Malaria Atlas Project 2019, motorized</small></span><input type="checkbox" class="toggle" id="opt-fric"></label>
         <label class="sw-row" for="opt-hs"><span>Hillshade (GEM-15)</span><input type="checkbox" class="toggle" id="opt-hs" checked></label>
         <label class="sw-row" for="opt-ctx"><span>Main road network</span><input type="checkbox" class="toggle" id="opt-ctx" checked></label>
       </div>
@@ -184,8 +197,9 @@ section { display: flex; flex-direction: column; gap: 6px; }
     <section aria-labelledby="h-how">
       <h2 id="h-how">How the score works</h2>
       <p class="note">Tier = rain (0–3) + surface (paved 0, unpaved 1, +1 if mapped in bad condition) + steepness (0–2) − 1, kept to 0–3 and at most one tier above the rain score. No forecast rain means Normal. Speed losses (Minor ~10%, Elevated ~25%, Severe ~50%) are illustrative assumptions, not measured.</p>
-      <p class="note">Rain (WeatherNext 3, 0.1°): high = the wettest day's wet end (90th percentile) ≥ 24 mm, or the wettest 3 days of the ensemble mean ≥ 40 mm; moderate = wet end ≥ 13 mm or 3 days ≥ 20 mm; low = 15-day mean ≥ 10 mm. WeatherNext 3 publishes percentiles rather than ensemble members, so the 13 and 24 mm thresholds were set to reproduce the earlier 64-member WeatherNext 2 rule on runs both models made. Steepness after the Ethiopian Roads Authority terrain classes: mountainous ≥ 14° ground or ≥ 5 % road grade, escarpment ≥ 26.6° or ≥ 10 %.</p>
+      <p class="note">Rain: WeatherNext 3 (0.1°) daily ensemble-mean rain, bias-corrected against Google PARDIG observations by quantile mapping for each forecast range and region (trained on Oct–Dec 2025 and early Nov 2026; tested on unseen runs, it lifted the forecast from about half the observed rain to about the right amount). High = a day ≥ 20 mm or the wettest 3 days ≥ 40 mm; moderate = a day ≥ 10 mm or 3 days ≥ 20 mm; low = 15 days ≥ 10 mm. Steepness after the Ethiopian Roads Authority terrain classes: mountainous ≥ 14° ground or ≥ 5 % road grade, escarpment ≥ 26.6° or ≥ 10 %.</p>
       <p class="note">Health access: shortest road travel time from each facility to the nearest hospital (health posts: nearest health centre) at normal speeds by road class (trunk 70 … track 15 km/h, unpaved × 0.7), then to that same facility with each road slowed by its tier. A hospital's linked facilities are the health centres and posts for which it is the nearest hospital by road; this is a road-network grouping, not a population catchment or the official referral pathway. Facilities are approved hospitals, health centres and health posts from the Ethiopian health facility register.</p>
+      <p class="note">Travel model: the road + slope model routes over the mapped road network with class speeds and walking to the road. The MAP friction surface (Malaria Atlas Project 2019 motorized, ~1 km) routes cell to cell using MAP's road, land-cover and off-road speeds, with cells crossed by a scored road slowed by the same tier factors. Both use the same facilities and the same nearest-hospital rule. MAP's journeys come out about 3–4 times shorter, so the two models usually agree on which facilities are worst hit but not on how many minutes are added.</p>
       <p class="note">Slip / rock-fall exposure is judged on each ~110 m piece of road: moderate or high forecast rain over that piece, and either ground ≥ 26.6° where NASA's global landslide susceptibility map rates it moderate or higher, or very high susceptibility on ground ≥ 14°. Only the exposed stretches are drawn and counted.</p>
       <p class="note">Surface is mapped (OSM tag or Mapillary image model) for about a quarter of road length; the rest is inferred from road class. Road grades come from a ~110 m elevation grid and run high where roads cut across hillsides.</p>
     </section>
@@ -195,10 +209,13 @@ section { display: flex; flex-direction: column; gap: 6px; }
     <div id="map" role="region" aria-label="Map of Ethiopian roads coloured by slowdown tier"></div>
     <div class="status" id="status">Loading roads…</div>
     <div class="legend" aria-hidden="true">
-      <div>15-day rain, mm</div>
+      <div>15-day rain, mm (bias-corrected)</div>
       <div class="ramp" id="ramp"></div>
       <div class="ticks"><span>5</span><span>10</span><span>25</span><span>50</span><span>100</span><span>150</span></div>
       <div class="slip" id="leg-slip"><i></i>slip / rock-fall exposure</div>
+      <div id="leg-fric" hidden>MAP travel speed, km/h</div>
+      <div class="spd" id="leg-fric2" hidden><i style="background:#f1efe8"></i><i style="background:#d7e3dc"></i><i style="background:#a9cfc3"></i><i style="background:#6fb2a4"></i><i style="background:#2f8a80"></i><i style="background:#0f5c5a"></i></div>
+      <div class="ticks" id="leg-fric3" hidden><span>0</span><span>3</span><span>5</span><span>10</span><span>30</span><span>60+</span></div>
       <div id="leg-hf">Facilities: added minutes</div>
       <div class="dots" id="leg-hf2"><span><i style="background:var(--d0)"></i>&lt;5</span><span><i style="background:var(--d1)"></i>5–15</span><span><i style="background:var(--d2)"></i>15–30</span><span><i style="background:var(--d3)"></i>30–60</span><span><i style="background:var(--d4)"></i>60+</span></div>
     </div>
@@ -211,24 +228,24 @@ const SUMMARY = {
  "init": "19 Nov 2026",
  "start": "19 Nov",
  "end": "03 Dec 2026",
- "total_km": 441220,
+ "total_km": 441218,
  "tiers": {
-  "Normal": 206932,
-  "Minor": 105066,
-  "Elevated": 104373,
-  "Severe": 24849
+  "Normal": 223190,
+  "Minor": 63028,
+  "Elevated": 89482,
+  "Severe": 65518
  },
- "slide_km": 1633,
- "raised_km": 121872,
+ "slide_km": 5048,
+ "raised_km": 99113,
  "regions": [
   {
    "name": "Dire Dawa",
-   "Normal": 225,
-   "Minor": 694,
-   "Elevated": 405,
-   "Severe": 0,
-   "share": 83.0,
-   "slide": 0,
+   "Normal": 5,
+   "Minor": 187,
+   "Elevated": 727,
+   "Severe": 405,
+   "share": 99.6,
+   "slide": 55,
    "bbox": [
     41.729,
     9.472,
@@ -237,28 +254,13 @@ const SUMMARY = {
    ]
   },
   {
-   "name": "Amhara",
-   "Normal": 15792,
-   "Minor": 19417,
-   "Elevated": 19754,
-   "Severe": 7020,
-   "share": 74.5,
-   "slide": 879,
-   "bbox": [
-    35.258,
-    8.716,
-    40.213,
-    13.769
-   ]
-  },
-  {
    "name": "SNNPR",
-   "Normal": 28995,
-   "Minor": 24848,
-   "Elevated": 30980,
-   "Severe": 7500,
-   "share": 68.6,
-   "slide": 564,
+   "Normal": 26378,
+   "Minor": 16945,
+   "Elevated": 27510,
+   "Severe": 21488,
+   "share": 71.4,
+   "slide": 1579,
    "bbox": [
     34.878,
     4.441,
@@ -267,13 +269,43 @@ const SUMMARY = {
    ]
   },
   {
+   "name": "Amhara",
+   "Normal": 20986,
+   "Minor": 9833,
+   "Elevated": 15040,
+   "Severe": 16123,
+   "share": 66.1,
+   "slide": 2258,
+   "bbox": [
+    35.258,
+    8.716,
+    40.213,
+    13.769
+   ]
+  },
+  {
+   "name": "Gambela",
+   "Normal": 2012,
+   "Minor": 2188,
+   "Elevated": 618,
+   "Severe": 669,
+   "share": 63.3,
+   "slide": 8,
+   "bbox": [
+    33.002,
+    6.282,
+    35.393,
+    8.71
+   ]
+  },
+  {
    "name": "Oromia",
-   "Normal": 69921,
-   "Minor": 51694,
-   "Elevated": 47785,
-   "Severe": 10012,
-   "share": 61.0,
-   "slide": 159,
+   "Normal": 83955,
+   "Minor": 30436,
+   "Elevated": 41045,
+   "Severe": 23976,
+   "share": 53.2,
+   "slide": 749,
    "bbox": [
     34.14,
     3.511,
@@ -283,12 +315,12 @@ const SUMMARY = {
   },
   {
    "name": "Afar",
-   "Normal": 4410,
-   "Minor": 1550,
-   "Elevated": 1251,
-   "Severe": 13,
-   "share": 39.0,
-   "slide": 9,
+   "Normal": 4262,
+   "Minor": 596,
+   "Elevated": 1211,
+   "Severe": 1157,
+   "share": 41.0,
+   "slide": 56,
    "bbox": [
     39.651,
     8.842,
@@ -298,12 +330,12 @@ const SUMMARY = {
   },
   {
    "name": "Tigray",
-   "Normal": 16802,
-   "Minor": 2713,
-   "Elevated": 2985,
-   "Severe": 21,
-   "share": 25.4,
-   "slide": 18,
+   "Normal": 18063,
+   "Minor": 1144,
+   "Elevated": 1922,
+   "Severe": 1391,
+   "share": 19.8,
+   "slide": 303,
    "bbox": [
     36.452,
     12.256,
@@ -312,28 +344,13 @@ const SUMMARY = {
    ]
   },
   {
-   "name": "Gambela",
-   "Normal": 4235,
-   "Minor": 583,
-   "Elevated": 388,
-   "Severe": 282,
-   "share": 22.8,
-   "slide": 4,
-   "bbox": [
-    33.002,
-    6.282,
-    35.393,
-    8.71
-   ]
-  },
-  {
    "name": "Beneshangul Gumu",
-   "Normal": 8642,
-   "Minor": 281,
-   "Elevated": 432,
-   "Severe": 0,
-   "share": 7.6,
-   "slide": 0,
+   "Normal": 8698,
+   "Minor": 189,
+   "Elevated": 303,
+   "Severe": 165,
+   "share": 7.0,
+   "slide": 16,
    "bbox": [
     34.101,
     8.951,
@@ -343,12 +360,12 @@ const SUMMARY = {
   },
   {
    "name": "Somali",
-   "Normal": 48533,
-   "Minor": 3286,
-   "Elevated": 393,
-   "Severe": 1,
-   "share": 7.0,
-   "slide": 0,
+   "Normal": 49454,
+   "Minor": 1510,
+   "Elevated": 1106,
+   "Severe": 144,
+   "share": 5.3,
+   "slide": 24,
    "bbox": [
     39.094,
     3.4,
@@ -395,16 +412,16 @@ const SUMMARY = {
  ],
  "health": {
   "hc_n": 3639,
-  "hc_30": 548,
-  "hc_60": 233,
+  "hc_30": 872,
+  "hc_60": 459,
   "hp_n": 15539,
-  "hp_30": 353,
+  "hp_30": 697,
   "top_hc": [
    {
     "n": "Bobe Liban Health Center",
     "a2": "North Shewa (OR)",
     "h0": 513,
-    "h1": 927,
+    "h1": 969,
     "x": 38.1844443,
     "y": 9.8916468
    },
@@ -417,6 +434,22 @@ const SUMMARY = {
     "y": 8.1557659
    },
    {
+    "n": "Asandabo Health Center",
+    "a2": "Ilu Aba Bora",
+    "h0": 375,
+    "h1": 737,
+    "x": 35.5194349,
+    "y": 7.9337228
+   },
+   {
+    "n": "Kumba Health Center",
+    "a2": "Kefa",
+    "h0": 448,
+    "h1": 803,
+    "x": 36.2284998,
+    "y": 6.769212
+   },
+   {
     "n": "Baroyi Health Center",
     "a2": "Ilu Aba Bora",
     "h0": 389,
@@ -425,20 +458,20 @@ const SUMMARY = {
     "y": 8.3370883
    },
    {
+    "n": "Biriti Health Center",
+    "a2": "North Shewa (OR)",
+    "h0": 476,
+    "h1": 828,
+    "x": 38.2754747,
+    "y": 9.764304
+   },
+   {
     "n": "Becho Health Center",
     "a2": "Ilu Aba Bora",
     "h0": 368,
     "h1": 720,
     "x": 35.6812765,
     "y": 8.203864100000002
-   },
-   {
-    "n": "Asandabo Health Center",
-    "a2": "Ilu Aba Bora",
-    "h0": 375,
-    "h1": 720,
-    "x": 35.5194349,
-    "y": 7.9337228
    },
    {
     "n": "Kemise Health Center",
@@ -463,46 +496,30 @@ const SUMMARY = {
     "h1": 682,
     "x": 38.5091099,
     "y": 13.2328929
-   },
-   {
-    "n": "Burusa Health Center",
-    "a2": "Ilu Aba Bora",
-    "h0": 352,
-    "h1": 684,
-    "x": 35.4658536,
-    "y": 8.2987877
-   },
-   {
-    "n": "Tulube Health Center",
-    "a2": "Ilu Aba Bora",
-    "h0": 352,
-    "h1": 661,
-    "x": 35.5365123,
-    "y": 8.3302075
    }
   ],
   "top_h": [
    {
-    "n": "Darimu Primary Hospital",
-    "a2": "Ilu Aba Bora",
-    "cf": 190,
-    "c30": 174,
-    "x": 35.5074709,
-    "y": 8.585586
-   },
-   {
     "n": "Wacha Primary Hosiptal",
     "a2": "Kefa",
     "cf": 238,
-    "c30": 173,
+    "c30": 184,
     "x": 35.7979102,
     "y": 7.1454717
+   },
+   {
+    "n": "Darimu Primary Hospital",
+    "a2": "Ilu Aba Bora",
+    "cf": 190,
+    "c30": 171,
+    "x": 35.5074709,
+    "y": 8.585586
    },
    {
     "n": "Dembi Dollo Compernsive Specialized Hospital",
     "a2": "Kelem Wellega",
     "cf": 154,
-    "c30": 134,
+    "c30": 126,
     "x": 34.807909,
     "y": 8.521316000000002
    },
@@ -510,39 +527,47 @@ const SUMMARY = {
     "n": "Setema Primary Hospital",
     "a2": "Jimma",
     "cf": 125,
-    "c30": 94,
+    "c30": 120,
     "x": 36.2035673,
     "y": 7.9820519
    },
    {
-    "n": "Mizan Teppi university Teaching Hospital",
-    "a2": "Bench Sheko",
-    "cf": 87,
-    "c30": 74,
-    "x": 35.5486578,
-    "y": 6.9519356
+    "n": "Limu Genet Hospital",
+    "a2": "Jimma",
+    "cf": 113,
+    "c30": 90,
+    "x": 36.9489353,
+    "y": 8.0949709
    },
    {
     "n": "Teppi General Hospital",
     "a2": "Sheka",
     "cf": 112,
-    "c30": 73,
+    "c30": 89,
     "x": 35.426415,
     "y": 7.1966211
    },
    {
-    "n": "Maji Primary Hospital",
-    "a2": "Mirab Omo",
-    "cf": 86,
-    "c30": 72,
-    "x": 35.5888443,
-    "y": 6.1748015
+    "n": "Gedo General Hospital",
+    "a2": "West Shewa",
+    "cf": 116,
+    "c30": 86,
+    "x": 37.450564,
+    "y": 9.0222992
+   },
+   {
+    "n": "Selam General Hospital",
+    "a2": "South Wello",
+    "cf": 99,
+    "c30": 86,
+    "x": 39.6341505,
+    "y": 11.1277854
    },
    {
     "n": "Mekane Eyesus Primary Hospital",
     "a2": "South Gondar",
     "cf": 115,
-    "c30": 69,
+    "c30": 85,
     "x": 38.0519795,
     "y": 11.6047319
    },
@@ -550,19 +575,190 @@ const SUMMARY = {
     "n": "Gida Ayana General Hospital",
     "a2": "East Wellega",
     "cf": 145,
-    "c30": 68,
+    "c30": 81,
     "x": 36.6217331,
     "y": 9.8787112
-   },
-   {
-    "n": "Tocha Primary Hospital",
-    "a2": "Dawuro",
-    "cf": 77,
-    "c30": 63,
-    "x": 37.0395398,
-    "y": 7.0920382
    }
-  ]
+  ],
+  "fr": {
+   "hc_n": 3639,
+   "hc_30": 145,
+   "hc_60": 23,
+   "hp_n": 15539,
+   "hp_30": 180,
+   "top_hc": [
+    {
+     "n": "Shekibedo health center",
+     "a2": "Sheka",
+     "h0": 846,
+     "h1": 1104,
+     "x": 35.2689202,
+     "y": 7.6808947
+    },
+    {
+     "n": "Degele health center",
+     "a2": "Sheka",
+     "h0": 93,
+     "h1": 178,
+     "x": 35.3919973,
+     "y": 7.8068033
+    },
+    {
+     "n": "Kumba Health Center",
+     "a2": "Kefa",
+     "h0": 87,
+     "h1": 170,
+     "x": 36.2284998,
+     "y": 6.769212
+    },
+    {
+     "n": "Qeja health center",
+     "a2": "Sheka",
+     "h0": 90,
+     "h1": 171,
+     "x": 35.4584893,
+     "y": 7.8079981
+    },
+    {
+     "n": "Samo Health Center",
+     "a2": "Horo Gudru Wellega",
+     "h0": 186,
+     "h1": 266,
+     "x": 37.042997,
+     "y": 10.11183
+    },
+    {
+     "n": "Masha Health Center",
+     "a2": "Sheka",
+     "h0": 81,
+     "h1": 154,
+     "x": 35.4781858,
+     "y": 7.7431169
+    },
+    {
+     "n": "Lalo Health Center",
+     "a2": "Ilu Aba Bora",
+     "h0": 89,
+     "h1": 162,
+     "x": 35.6068111,
+     "y": 7.9056155
+    },
+    {
+     "n": "Asandabo Health Center",
+     "a2": "Ilu Aba Bora",
+     "h0": 81,
+     "h1": 153,
+     "x": 35.5194349,
+     "y": 7.9337228
+    },
+    {
+     "n": "Chago health center",
+     "a2": "Sheka",
+     "h0": 84,
+     "h1": 155,
+     "x": 35.5409373,
+     "y": 7.7102785
+    },
+    {
+     "n": "Metekleya Health Center",
+     "a2": "Gabi /Zone 3",
+     "h0": 79,
+     "h1": 148,
+     "x": 39.8875452,
+     "y": 9.4601623
+    }
+   ],
+   "top_h": [
+    {
+     "n": "Darimu Primary Hospital",
+     "a2": "Ilu Aba Bora",
+     "cf": 247,
+     "c30": 162,
+     "x": 35.5074709,
+     "y": 8.585586
+    },
+    {
+     "n": "Odda Primary Hospital",
+     "a2": "Kefa",
+     "cf": 178,
+     "c30": 87,
+     "x": 36.4718748,
+     "y": 7.1198403
+    },
+    {
+     "n": "Teppi General Hospital",
+     "a2": "Sheka",
+     "cf": 112,
+     "c30": 56,
+     "x": 35.426415,
+     "y": 7.1966211
+    },
+    {
+     "n": "Setema Primary Hospital",
+     "a2": "Jimma",
+     "cf": 105,
+     "c30": 53,
+     "x": 36.2035673,
+     "y": 7.9820519
+    },
+    {
+     "n": "Dembi Dollo Compernsive Specialized Hospital",
+     "a2": "Kelem Wellega",
+     "cf": 124,
+     "c30": 51,
+     "x": 34.807909,
+     "y": 8.521316000000002
+    },
+    {
+     "n": "Janamora Primary Hospital",
+     "a2": "North Gondar",
+     "cf": 63,
+     "c30": 46,
+     "x": 38.1128117,
+     "y": 13.0101177
+    },
+    {
+     "n": "Shambu General Hospital",
+     "a2": "Horo Gudru Wellega",
+     "cf": 91,
+     "c30": 32,
+     "x": 37.1210922,
+     "y": 9.5759274
+    },
+    {
+     "n": "Amhara Sayint Primary Hospital",
+     "a2": "South Wello",
+     "cf": 61,
+     "c30": 28,
+     "x": 38.775147,
+     "y": 11.0311312
+    },
+    {
+     "n": "Debre Birhan Comprehensive Specialized Hospital",
+     "a2": "North Shewa (AM)",
+     "cf": 59,
+     "c30": 27,
+     "x": 39.5351612,
+     "y": 9.6790154
+    },
+    {
+     "n": "Adet Primary Hospital",
+     "a2": "West Gojam",
+     "cf": 129,
+     "c30": 27,
+     "x": 37.4818119,
+     "y": 11.246865
+    }
+   ],
+   "hc_median_normal": 17.3,
+   "road_hc_median_normal": 64.8,
+   "bounds": [
+    33.0,
+    3.3000000000000007,
+    48.0,
+    15.0
+   ]
+  }
  }
 };
 const TIERS = [
@@ -605,12 +801,34 @@ SUMMARY.regions.forEach(r => {
   regEl.appendChild(b);
 });
 const H = SUMMARY.health;
-document.getElementById("hfline").innerHTML = `<span class="num">${fmt(H.hc_30)}</span> of <span class="num">${fmt(H.hc_n)}</span> health centres take 30+ minutes longer to reach a hospital (<span class="num">${fmt(H.hc_60)}</span> an hour or more). <span class="num">${fmt(H.hp_30)}</span> health posts take 30+ minutes longer to reach a health centre. Tap a name to go there.`;
+state.model = "road";
+const HM = () => (state.model === "fric" && H.fr) ? H.fr : H;
 const goTo = (x, y, name) => { if (!map) return; map.flyTo({ center: [x, y], zoom: 10.5, essential: true }); map.once("moveend", () => openFacility(name, x, y)); };
 const hrow = (el, h, right) => { const b = document.createElement("button"); b.className = "hrow";
   b.innerHTML = `<span>${esc(h.n)}<small>${esc(h.a2)}</small></span><span class="num">${right}</span>`; b.addEventListener("click", () => goTo(h.x, h.y, h.n)); el.appendChild(b); };
-H.top_h.forEach(h => hrow(document.getElementById("toph"), h, `${h.c30} of ${h.cf} linked +30 min`));
-H.top_hc.forEach(h => hrow(document.getElementById("tophc"), h, `${(h.h0 / 60).toFixed(1)} → ${(h.h1 / 60).toFixed(1)} h`));
+function renderHealth() {
+  const M = HM();
+  document.getElementById("hfline").innerHTML = `<span class="num">${fmt(M.hc_30)}</span> of <span class="num">${fmt(M.hc_n)}</span> health centres take 30+ minutes longer to reach their hospital (<span class="num">${fmt(M.hc_60)}</span> an hour or more). <span class="num">${fmt(M.hp_30)}</span> health posts take 30+ minutes longer to reach their health centre. Tap a name to go there.`;
+  document.getElementById("modelnote").textContent = state.model === "fric"
+    ? `MAP friction surface: median normal trip from a health centre to its hospital ${H.fr.hc_median_normal} min (road model ${H.fr.road_hc_median_normal} min).`
+    : "Road + slope model: mapped road network with class speeds, walking to the road at 5 km/h.";
+  const th = document.getElementById("toph"), tc = document.getElementById("tophc");
+  th.innerHTML = ""; tc.innerHTML = "";
+  M.top_h.forEach(h => hrow(th, h, `${h.c30} of ${h.cf} linked +30 min`));
+  M.top_hc.forEach(h => hrow(tc, h, `${(h.h0 / 60).toFixed(1)} → ${(h.h1 / 60).toFixed(1)} h`));
+}
+function setModel(m) {
+  if (m === "fric" && !H.fr) return;
+  state.model = m;
+  document.getElementById("model-road").setAttribute("aria-checked", m === "road");
+  document.getElementById("model-fric").setAttribute("aria-checked", m === "fric");
+  renderHealth();
+  if (map) ["hf-hp", "hf-main"].forEach(id => map.getLayer(id) && map.setPaintProperty(id, "circle-color", hfColor()));
+}
+document.getElementById("model-road").addEventListener("click", () => setModel("road"));
+document.getElementById("model-fric").addEventListener("click", () => setModel("fric"));
+if (!H.fr) { document.getElementById("model-fric").disabled = true; document.getElementById("model-fric").title = "No friction-surface results for this run"; }
+renderHealth();
 const ETH = [[33.0, 3.4], [48.0, 14.9]];
 document.getElementById("reg-all").addEventListener("click", () => map && map.fitBounds(ETH, { padding: 20 }));
 document.getElementById("ramp").innerHTML = [1, 2, 3, 4, 5, 6].map(i => `<i style="background:var(--r${i})"></i>`).join("");
@@ -636,8 +854,9 @@ function tierColor() {
   return ["match", ["get", prop], 3, css("--sev"), 2, css("--elev"), 1, css("--minor"), css("--ctx")];
 }
 function hfColor() {
-  return ["case", ["==", ["typeof", ["get", "d"]], "number"],
-    ["step", ["get", "d"], css("--d0"), 5, css("--d1"), 15, css("--d2"), 30, css("--d3"), 60, css("--d4")], css("--d0")];
+  const k = state.model === "fric" ? "fd" : "d";
+  return ["case", ["==", ["typeof", ["get", k]], "number"],
+    ["step", ["get", k], css("--d0"), 5, css("--d1"), 15, css("--d2"), 30, css("--d3"), 60, css("--d4")], css("--d0")];
 }
 function applyFilter() {
   if (!map || !map.getLayer("roads")) return;
@@ -680,6 +899,11 @@ function init() {
     map.resize(); map.fitBounds(ETH, { padding: 20, duration: 0 });
     const hb = SUMMARY.hillshade_bounds;
     map.addSource("hs", { type: "image", url: "data/hillshade.png", coordinates: [[hb[0], hb[3]], [hb[2], hb[3]], [hb[2], hb[1]], [hb[0], hb[1]]] });
+    if (H.fr && H.fr.bounds) {
+      const fb = H.fr.bounds;
+      map.addSource("fric", { type: "image", url: "data/friction.png", coordinates: [[fb[0], fb[3]], [fb[2], fb[3]], [fb[2], fb[1]], [fb[0], fb[1]]] });
+      map.addLayer({ id: "fric", type: "raster", source: "fric", layout: { visibility: "none" }, paint: { "raster-opacity": 0.85, "raster-resampling": "nearest", "raster-fade-duration": 0 } });
+    }
     map.addLayer({ id: "hs", type: "raster", source: "hs", paint: { "raster-opacity": ["interpolate", ["linear"], ["zoom"], 5, 0.45, 9, 0.8], "raster-fade-duration": 0 } });
     const [rain, adm] = await Promise.all([getJSON("data/rain.geojson"), getJSON("data/adm1.geojson")]);
     map.addSource("rain", { type: "geojson", data: rain });
@@ -738,12 +962,15 @@ function sync() {
   vis("hs", document.getElementById("opt-hs").checked);
   vis("ctx", document.getElementById("opt-ctx").checked);
   vis("slip", document.getElementById("opt-slip").checked);
+  const frOn = document.getElementById("opt-fric").checked;
+  vis("fric", frOn);
+  ["leg-fric", "leg-fric2", "leg-fric3"].forEach(id => document.getElementById(id).hidden = !frOn);
   const hfOn = document.getElementById("opt-hf").checked;
   vis("hf-hp", hfOn); vis("hf-main", hfOn);
   document.getElementById("leg-hf").hidden = !hfOn; document.getElementById("leg-hf2").hidden = !hfOn;
   document.getElementById("leg-slip").hidden = !document.getElementById("opt-slip").checked;
 }
-["opt-rain", "opt-hs", "opt-ctx", "opt-slip", "opt-hf"].forEach(id => document.getElementById(id).addEventListener("change", sync));
+["opt-rain", "opt-hs", "opt-ctx", "opt-slip", "opt-hf", "opt-fric"].forEach(id => document.getElementById(id).addEventListener("change", sync));
 document.getElementById("opt-terrain").addEventListener("change", e => { state.terrain = e.target.checked; applyFilter(); });
 
 const TIER_NAME = ["Normal", "Minor", "Elevated", "Severe"], TIER_TOK = ["--ctx", "--minor", "--elev", "--sev"];
@@ -765,7 +992,12 @@ function popupHTML(p) {
 }
 const TYN = ["Health post", "Health centre", "Hospital"];
 const hrs = m => m == null ? "–" : m >= 90 ? `${(m / 60).toFixed(1)} h` : `${m} min`;
-function facilityHTML(p) {
+function facilityHTML(p0) {
+  const fr = state.model === "fric" && p0.fh0 !== undefined;
+  const p = fr ? Object.assign({}, p0, { h0: p0.fh0, h1: p0.fh1, c0: p0.fc0, c1: p0.fc1, d: p0.fd, ch: p0.fch || p0.ch,
+                                          cf: p0.fcf, c30: p0.fc30, cm: p0.fcm }) : p0;
+  const other = fr ? `Road model: ${p0.ty === 0 ? hrs(p0.c0) + " → " + hrs(p0.c1) : hrs(p0.h0) + " → " + hrs(p0.h1)}`
+                   : (p0.fh0 !== undefined && p0.fh0 !== null ? `MAP friction: ${p0.ty === 0 ? hrs(p0.fc0) + " → " + hrs(p0.fc1) : hrs(p0.fh0) + " → " + hrs(p0.fh1)}` : "");
   const target = p.ty === 0 ? (p.hc ? p.hc : "health centre") : (p.ch ? p.ch : "hospital");
   const t0 = p.ty === 0 ? p.c0 : p.h0, t1 = p.ty === 0 ? p.c1 : p.h1;
   const tok = p.d == null ? "--d0" : p.d >= 60 ? "--d4" : p.d >= 30 ? "--d3" : p.d >= 15 ? "--d2" : p.d >= 5 ? "--d1" : "--d0";
@@ -774,8 +1006,9 @@ function facilityHTML(p) {
     : `<span class="k">To ${p.ty === 0 ? "health centre" : "hospital"}</span><span class="v">${hrs(t0)} normally, ${hrs(t1)} under the forecast</span><span class="s">+${p.d ?? "–"}</span>`;
   if (p.ty === 0) rows += `<span class="k">To hospital</span><span class="v">${hrs(p.h0)} → ${hrs(p.h1)}${p.ch ? ` (${esc(p.ch)})` : ""}</span><span class="s"></span>`;
   else if (p.ty === 1 && p.ch) rows += `<span class="k">Hospital</span><span class="v">${esc(p.ch)}</span><span class="s"></span>`;
+  if (other && p.ty !== 2) rows += `<span class="k">Other model</span><span class="v">${other}</span><span class="s"></span>`;
   rows += `<span class="k">Roads nearby</span><span class="v">${p.s5 == null ? "no mapped roads within 5 km" : Math.round(p.s5 * 100) + "% Elevated / Severe within 5 km"}; nearest road ${esc(p.nt)}</span><span class="s"></span>`;
-  return `<div class="pp-h">${esc(p.n)}</div><div class="pp-sub">${TYN[p.ty]} · ${esc(p.a3)}, ${esc(p.a2)}</div>
+  return `<div class="pp-h">${esc(p.n)}</div><div class="pp-sub">${TYN[p.ty]} · ${esc(p.a3)}, ${esc(p.a2)} · ${fr ? "MAP friction surface" : "road + slope model"}</div>
     ${p.ty !== 2 ? `<span class="pill"><i style="background:var(${tok})"></i>+${p.d ?? "–"} min to reach ${esc(target)}</span>` : ""}
     <div class="pp-grid">${rows}</div>
     <div class="pp-foot">${p.off ? `${p.gap} km from the nearest mapped road · ` : ""}${p.sl ? "<b>slip / rock-fall exposed road</b> within 5 km" : "no slip-exposed road within 5 km"}</div>`;

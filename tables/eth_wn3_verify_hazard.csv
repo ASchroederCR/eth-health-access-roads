@@ -1,0 +1,15 @@
+run,model,class,fc_share,obs_share,hit_rate,false_alarm_ratio
+2026-11-01,WN3 calibrated,moderate+,0.1389,0.6053,0.207,0.096
+2026-11-01,WN3 calibrated,high,0.0163,0.3178,0.039,0.238
+2026-11-01,WN3 wet end,obs wettest day <= p90 wettest day,,,0.193,
+2026-11-02,WN3 calibrated,moderate+,0.2997,0.6046,0.447,0.098
+2026-11-02,WN3 calibrated,high,0.0676,0.3182,0.163,0.23
+2026-11-02,WN3 wet end,obs wettest day <= p90 wettest day,,,0.319,
+2026-11-03,WN3 calibrated,moderate+,0.3674,0.6043,0.534,0.121
+2026-11-03,WN3 calibrated,high,0.0827,0.3181,0.206,0.208
+2026-11-03,WN3 wet end,obs wettest day <= p90 wettest day,,,0.361,
+2026-11-04,WN3 calibrated,moderate+,0.3442,0.6032,0.504,0.117
+2026-11-04,WN3 calibrated,high,0.1065,0.3179,0.246,0.265
+2026-11-04,WN3 wet end,obs wettest day <= p90 wettest day,,,0.37,
+2026-11-01,WN2 members,moderate+,0.1125,0.5987,0.173,0.078
+2026-11-01,WN2 members,high,0.0135,0.2997,0.036,0.2

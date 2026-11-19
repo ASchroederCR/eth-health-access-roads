@@ -9,7 +9,9 @@ GEM-15 elevation (15_fetch_gem15_dem.py) and the ADM1 boundaries, and writes com
   adm1.geojson             region outlines
   slip.json                slip / rock-fall exposed road stretches (compact, as the road files)
   mask.geojson             everything outside Ethiopia, drawn white on the map
-  facilities.geojson       hospitals, health centres, health posts with access results (17_health_access.py)
+  facilities.geojson       hospitals, health centres, health posts with access results (17_health_access.py) and,
+                           where available, the MAP friction-surface results (20_friction_access.py) as fr* fields
+  friction.png             MAP 2019 motorized friction as travel-speed classes, transparent outside Ethiopia
   hillshade.png            GEM-15 hillshade at 0.01 deg, transparent outside Ethiopia
   summary.json             run, totals by tier, by region, slip exposure
 
@@ -162,6 +164,22 @@ if __name__ == "__main__":
     # --- health facilities (from 17_health_access.py) ------------------------------------------
     hfa = pd.read_csv(os.path.join(ROOT, "data", "processed", "tables", f"eth_health_access_{tag}.csv"))
     hfa["Name"] = hfa.Name.str.strip()
+    FRF = os.path.join(ROOT, "data", "processed", "tables", f"eth_health_access_friction_{tag}.csv")
+    HAS_FR = os.path.exists(FRF)
+    if HAS_FR:
+        fr = pd.read_csv(FRF)
+        fcols = ["fr_to_hosp_min", "fr_to_hosp_fc_min", "fr_to_hosp_added_min", "fr_to_hc_min", "fr_to_hc_fc_min",
+                 "fr_to_hc_added_min", "fr_nearest_hospital"]
+        hfa = hfa.merge(fr[["Id"] + fcols], on="Id", how="left")
+        hfa["fr_nearest_hospital"] = hfa.fr_nearest_hospital.str.strip()
+        lk = hfa[hfa.Type.isin(["Health Center", "Health Post"]) & ~hfa.off_network]
+        frl = lk.groupby("fr_nearest_hospital").agg(fcf=("Id", "size"), fc30=("fr_to_hosp_added_min", lambda s_: int((s_ >= 30).sum())),
+                                                    fcm=("fr_to_hosp_added_min", "median"))
+        hfa = hfa.merge(frl, left_on="Name", right_index=True, how="left")
+        hfa.loc[hfa.Type != "Hospital", ["fcf", "fc30", "fcm"]] = np.nan
+        print(f"friction results merged for {hfa.fr_to_hosp_min.notna().sum():,} facilities")
+    else:
+        print("no friction results for this run (20_friction_access.py) - web map will offer the road model only")
     TY = {"Hospital": 2, "Health Center": 1, "Health Post": 0}
     hfeats = []
     for r in hfa.itertuples(index=False):
@@ -175,6 +193,14 @@ if __name__ == "__main__":
              "gap": num(r.road_gap_km, 1), "off": int(bool(r.off_network))}
         if r.Type == "Hospital":
             p |= {"cf": num(r.linked_facilities), "c30": num(r.linked_30min_plus), "cm": num(r.linked_median_added_min)}
+        if HAS_FR:
+            fadd = r.fr_to_hc_added_min if r.Type == "Health Post" else r.fr_to_hosp_added_min
+            p |= {"fh0": num(r.fr_to_hosp_min), "fh1": num(r.fr_to_hosp_fc_min), "fc0": num(r.fr_to_hc_min),
+                  "fc1": num(r.fr_to_hc_fc_min), "fd": num(fadd),
+                  "fch": r.fr_nearest_hospital if isinstance(r.fr_nearest_hospital, str) else ""}
+            if r.Type == "Hospital":
+                p |= {"fcf": num(r.fcf) or 0, "fc30": num(r.fc30) or 0, "fcm": num(r.fcm)}
+            if r.Type == "Hospital": p["fd"] = 0
         hfeats.append({"type": "Feature", "properties": p,
                        "geometry": {"type": "Point", "coordinates": [round(r.Longitude, 5), round(r.Latitude, 5)]}})
     with open(os.path.join(OUT, "facilities.geojson"), "w", encoding="utf-8") as fh:
@@ -190,6 +216,35 @@ if __name__ == "__main__":
                           "x": r.Longitude, "y": r.Latitude} for r in top_hc.itertuples()],
               "top_h": [{"n": r.Name, "a2": r.admin2Name, "cf": int(r.linked_facilities),
                          "c30": int(r.linked_30min_plus), "x": r.Longitude, "y": r.Latitude} for r in top_h.itertuples()]}
+    if HAS_FR:
+        hcf = hfa[on & (hfa.Type == "Health Center")].dropna(subset=["fr_to_hosp_added_min"])
+        hpf = hfa[on & (hfa.Type == "Health Post")].dropna(subset=["fr_to_hc_added_min"])
+        tf = hcf.nlargest(10, "fr_to_hosp_added_min")
+        th = hfa[hfa.Type == "Hospital"].sort_values(["fc30", "fcm"], ascending=False).head(10)
+        health["fr"] = {"hc_n": len(hcf), "hc_30": int((hcf.fr_to_hosp_added_min >= 30).sum()),
+                        "hc_60": int((hcf.fr_to_hosp_added_min >= 60).sum()), "hp_n": len(hpf),
+                        "hp_30": int((hpf.fr_to_hc_added_min >= 30).sum()),
+                        "top_hc": [{"n": r.Name, "a2": r.admin2Name, "h0": round(r.fr_to_hosp_min), "h1": round(r.fr_to_hosp_fc_min),
+                                    "x": r.Longitude, "y": r.Latitude} for r in tf.itertuples()],
+                        "top_h": [{"n": r.Name, "a2": r.admin2Name, "cf": int(r.fcf or 0), "c30": int(r.fc30 or 0),
+                                   "x": r.Longitude, "y": r.Latitude} for r in th.itertuples()],
+                        "hc_median_normal": round(float(hcf.fr_to_hosp_min.median()), 1),
+                        "road_hc_median_normal": round(float(hc_.to_hosp_min.median()), 1)}
+        # friction speed image (km/h classes), transparent outside Ethiopia
+        FRT = os.path.join(ROOT, "data", "raw", "friction", "map_friction_motorized_2019_v5_1_eth.tif")
+        with rasterio.open(FRT) as d_:
+            Fr = d_.read(1).astype("float32"); ftr = d_.transform; fb = d_.bounds
+        spd = 60.0 / (Fr * 1000.0)
+        inside_ = rasterize([(gm, 1) for gm in rr.wn.GEOMS], out_shape=Fr.shape, transform=ftr, fill=0) == 1
+        SPC = [(0, 3, (241, 239, 232)), (3, 5, (215, 227, 220)), (5, 10, (169, 207, 195)), (10, 30, (111, 178, 164)),
+               (30, 60, (47, 138, 128)), (60, 1e9, (15, 92, 90))]
+        img = np.zeros(Fr.shape + (4,), "uint8")
+        for lo_, hi_, rgb in SPC:
+            k_ = inside_ & np.isfinite(spd) & (spd >= lo_) & (spd < hi_)
+            img[k_, :3] = rgb; img[k_, 3] = 235
+        Image.fromarray(img, "RGBA").save(os.path.join(OUT, "friction.png"), optimize=True)
+        health["fr"]["bounds"] = [fb.left, fb.bottom, fb.right, fb.top]
+        print(f"friction.png {os.path.getsize(os.path.join(OUT, 'friction.png')) / 1e6:.1f} MB")
 
     # --- summary ---------------------------------------------------------------------------
     tab = pd.read_csv(os.path.join(ROOT, "data", "processed", "tables", f"eth_roads_rain_risk_adm1_{tag}.csv"), index_col=0)

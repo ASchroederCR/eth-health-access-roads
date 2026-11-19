@@ -14,7 +14,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 WEB = os.path.join(ROOT, "webmap")
 CSS_URL = "https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css"
 DATA = ["roads_severe.json", "roads_elevated.json", "roads_minor.json", "roads_context.json", "rain.geojson",
-        "adm1.geojson", "facilities.geojson", "hillshade.png", "slip.json", "mask.geojson"]
+        "adm1.geojson", "facilities.geojson", "hillshade.png", "slip.json", "mask.geojson", "friction.png"]
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(); ap.add_argument("--pages-dir", default=os.path.join(ROOT, "docs")); a = ap.parse_args()
@@ -40,6 +40,7 @@ if __name__ == "__main__":
     os.makedirs(os.path.join(a.pages_dir, "data"), exist_ok=True)
     open(os.path.join(a.pages_dir, "index.html"), "w", encoding="utf-8").write(doc)
     for f in DATA:
+        if not os.path.exists(os.path.join(WEB, "data", f)): continue
         shutil.copyfile(os.path.join(WEB, "data", f), os.path.join(a.pages_dir, "data", f))
     open(os.path.join(a.pages_dir, ".nojekyll"), "w").close()
     print(f"wrote webmap/index.html and {a.pages_dir}/index.html + {len(DATA)} data files")

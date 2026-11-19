@@ -1,106 +1,205 @@
 admin1Name,admin2Name,admin3Name,health_posts,posts_30min_plus,median_added_min
-South West Ethiopia,Kefa,Decha,45,15,17.5
-South West Ethiopia,Dawuro,Tocha,29,13,26.7
-South West Ethiopia,Mirab Omo,Maji,21,13,33.5
-Amhara,West Gojam,Dega Damot,33,9,13.5
-Amhara,West Gojam,Quarit,28,8,12.05
-South West Ethiopia,Dawuro,Isara,29,8,18.5
-South West Ethiopia,Mirab Omo,Menit Goldiye,23,8,10.0
-Amhara,East Gojam,Hulet Ej Enese,47,7,4.7
-Amhara,North Wello,Gidan,34,7,11.2
-South West Ethiopia,Bench Sheko,Semen Bench,21,7,19.9
-SNNP,Gofa,Melekoza,29,7,15.5
-Oromia,Ilu Aba Bora,Alge Sachi,26,7,18.0
-South West Ethiopia,Bench Sheko,Gurafereda,27,7,4.4
-Gambela,Majang,Mengesh,15,6,5.1
-South West Ethiopia,Kefa,Saylem,26,6,10.65
-Oromia,Jimma,Limu Seka,40,6,10.1
+South West Ethiopia,Kefa,Decha,45,17,21.6
+Oromia,Jimma,Limu Seka,40,15,22.7
+South West Ethiopia,Dawuro,Tocha,29,14,26.9
+SNNP,Gofa,Melekoza,29,14,30.8
+South West Ethiopia,Mirab Omo,Maji,21,13,37.3
+Amhara,North Wello,Raya Kobo,44,12,14.8
+Amhara,East Gojam,Hulet Ej Enese,47,11,4.7
+South West Ethiopia,Bench Sheko,Semen Bench,21,10,26.1
+Amhara,South Wello,Kutaber,25,10,10.6
+South West Ethiopia,Mirab Omo,Menit Goldiye,23,10,26.7
+Amhara,North Wello,Gidan,34,10,16.45
+Amhara,North Shewa (AM),Mida Woremo,20,9,18.0
+Amhara,West Gojam,Dega Damot,33,9,14.0
+Oromia,Jimma,Gera,32,8,14.100000000000001
+Amhara,West Gojam,Quarit,28,8,16.75
+Amhara,East Gojam,Senan,17,8,28.3
+South West Ethiopia,Bench Sheko,Sheko,24,8,25.8
+Oromia,Jimma,Mena (Jimma),26,8,15.3
+South West Ethiopia,Dawuro,Isara,29,8,19.2
+Oromia,Buno Bedele,Borecha,31,7,12.3
+South West Ethiopia,Bench Sheko,Gurafereda,27,7,3.9
+SNNP,Amaro,Amaro,47,7,2.3
+Oromia,Buno Bedele,Dedesa,34,7,9.55
+Oromia,West Shewa,Adda Berga,29,7,9.1
+Afar,Gabi /Zone 3,Arguba,12,7,48.2
+Afar,Hari /Zone 5,Dawe,11,7,42.2
+Gambela,Majang,Mengesh,15,7,9.1
+South West Ethiopia,Kefa,Saylem,26,6,17.25
+Amhara,East Gojam,Bibugn,17,6,20.7
 Amhara,South Gondar,Farta,28,6,9.3
-Amhara,South Gondar,Lay Gayint,32,5,7.6
-Oromia,Ilu Aba Bora,Didu,16,5,6.25
-Oromia,West Shewa,Abuna Ginde Beret,27,5,3.5
-Oromia,Jimma,Gera,32,5,5.1
-Oromia,Ilu Aba Bora,Sale Nono,7,5,68.7
-Amhara,East Gojam,Senan,17,5,13.2
-Amhara,North Wello,Guba Lafto,23,5,12.5
-South West Ethiopia,Sheka,Masha,16,5,13.75
+Amhara,South Wello,Ambasel,22,6,9.45
+Amhara,South Wello,Worebabu,22,6,14.95
+Amhara,North Wello,Guba Lafto,23,6,12.8
+Gambela,Majang,Godere,14,5,18.799999999999997
+Amhara,South Gondar,Lay Gayint,32,5,7.699999999999999
+Amhara,South Wello,Dessie Zuria,30,5,10.05
 Oromia,Ilu Aba Bora,Ale,18,5,16.0
-Amhara,East Gojam,Bibugn,17,5,18.9
-Amhara,South Wello,Mehal Sayint,16,4,9.7
+Oromia,Ilu Aba Bora,Didu,16,5,6.25
+Oromia,Jimma,Goma,39,5,6.8
+South West Ethiopia,Kefa,Tullo,25,5,5.7
+South West Ethiopia,Sheka,Masha,16,5,13.95
+Oromia,West Shewa,Abuna Ginde Beret,27,5,6.5
+Oromia,Ilu Aba Bora,Sale Nono,7,5,71.3
+Oromia,North Shewa (OR),Wara Jarso,13,5,12.8
+Oromia,Horo Gudru Wellega,Horo Buluk,8,4,37.599999999999994
 Oromia,East Hararge,Kurfa Chele,19,4,0.0
-Amhara,West Gojam,Gonje,31,4,1.8
-Amhara,North Gondar,Beyeda,23,4,8.8
-Oromia,West Arsi,Adaba,25,4,0.2
-Amhara,South Wello,Sayint,34,4,8.6
-Oromia,Ilu Aba Bora,Bilo Nopha,15,4,19.9
-Oromia,North Shewa (OR),Wara Jarso,13,4,11.1
-South West Ethiopia,Kefa,Tullo,25,4,5.7
-SNNP,Basketo,Basketo SP Woreda,19,4,9.0
-South West Ethiopia,Sheka,Anderacha,25,4,15.6
+Oromia,Horo Gudru Wellega,Jimma Rare,21,4,4.5
+Oromia,Horo Gudru Wellega,Jimma Genete,16,4,15.8
 Oromia,Ilu Aba Bora,Yayu,17,4,17.6
-Oromia,Kelem Wellega,Anfilo,19,4,20.1
-Oromia,Ilu Aba Bora,Dorani,12,4,18.950000000000003
-Gambela,Majang,Godere,14,3,7.3999999999999995
-Amhara,North Wello,Raya Kobo,44,3,4.15
-Oromia,West Shewa,Jeldu,11,3,6.9
-Oromia,Ilu Aba Bora,Darimu,40,3,12.4
+Oromia,Jimma,Chora (Jimma),18,4,18.75
+Oromia,Jimma,Kersa (Jimma),32,4,9.850000000000001
+Amhara,North Shewa (AM),Ankober,25,4,4.2
+Afar,Gabi /Zone 3,Hanruka,8,4,36.9
+Afar,Gabi /Zone 3,Gelalu,11,4,17.6
+Amhara,South Wello,Kalu,34,4,7.8500000000000005
+Amhara,North Gondar,Beyeda,23,4,8.8
+Amhara,West Gojam,Sekela,30,4,5.7
+Amhara,West Gojam,Gonje,31,4,1.9
+Afar,Gabi /Zone 3,Gewane,12,4,14.9
+Afar,Hari /Zone 5,Dalefage,7,4,33.1
+Amhara,North Shewa (AM),Tarema Ber,20,4,5.15
+Amhara,South Wello,Sayint,34,4,13.15
+Amhara,South Wello,Mehal Sayint,16,4,11.9
+Oromia,West Shewa,Tikur Enchini,17,4,9.4
+Oromia,North Shewa (OR),Gerar Jarso,16,4,7.449999999999999
+South West Ethiopia,Sheka,Anderacha,25,4,15.9
+Tigray,Southern,Ofla,13,4,8.2
+Oromia,Ilu Aba Bora,Bilo Nopha,15,4,19.9
+Oromia,West Arsi,Adaba,25,4,0.0
+Oromia,Kelem Wellega,Anfilo,19,4,18.8
+Oromia,West Shewa,Ginde Beret,6,4,40.45
+SNNP,South Omo,North Ari,25,4,4.6
+SNNP,Basketo,Basketo SP Woreda,19,4,9.0
+Afar,Gabi /Zone 3,Dulecha,11,3,22.3
+Afar,Hari /Zone 5,Hadelela,5,3,42.75
+Gambela,Agnewak,Dima (GM),10,3,14.3
+Oromia,West Shewa,Liban Jawi,13,3,3.6
+Oromia,Jimma,Setema,19,3,8.4
+Oromia,Jimma,Nono Benja,21,3,8.0
+Oromia,Jimma,Seka Chekorsa,38,3,11.399999999999999
+Oromia,East Hararge,Goro Gutu,30,3,10.05
+Amhara,Oromia,Bati,31,3,7.6
+Amhara,North Shewa (AM),Gishe Rabel,11,3,4.7
+Amhara,South Gondar,Guna Begemider,18,3,14.399999999999999
+Amhara,North Wello,Habru,47,3,5.65
+Amhara,South Wello,Albuko,18,3,15.450000000000001
+SNNP,Wolayita,Kindo Koyesha,39,3,8.7
+Tigray,Southern,Endamehoni,9,3,10.55
+South West Ethiopia,Bench Sheko,Shay Bench,17,3,21.4
+South West Ethiopia,Kefa,Gewata,28,3,8.25
+South West Ethiopia,Kefa,Chena,26,3,10.05
+SNNP,Wolayita,Gesuba town,3,3,31.4
+Tigray,Southern,Korem town,3,3,33.6
+Oromia,Jimma,Limu Kosa,43,3,12.2
+Oromia,West Shewa,Jeldu,11,3,19.1
+South West Ethiopia,Kefa,Adiyio,25,3,18.5
+Oromia,Ilu Aba Bora,Dorani,12,3,12.4
 Oromia,Ilu Aba Bora,Becho (Ilu Aba Bora),16,3,9.85
-Amhara,North Wello,Habru,47,3,2.2
-Amhara,South Gondar,Mena Meketewa,13,3,14.1
-Amhara,South Gondar,Guna Begemider,18,3,14.100000000000001
-Oromia,Horo Gudru Wellega,Horo Buluk,8,3,23.3
-Oromia,West Shewa,Ginde Beret,6,2,18.450000000000003
-South West Ethiopia,Kefa,Adiyio,25,2,12.2
-South West Ethiopia,Kefa,Cheta,15,2,11.2
-SNNP,South Omo,North Ari,25,2,4.4
-South West Ethiopia,Bench Sheko,Shay Bench,17,2,16.9
-Amhara,North Gondar,Janamora,30,2,6.1
-Amhara,South Gondar,Semada,28,2,9.9
-Amhara,East Gojam,Enebse Sarmder,32,2,2.15
-Amhara,North Shewa (AM),Mida Woremo,20,2,8.1
-Amhara,West Gojam,Sekela,30,2,1.9
-Amhara,East Gojam,Sedae,15,2,13.1
-Oromia,Buno Bedele,Chora (Buno Bedele),33,2,8.3
-SNNP,Hadiya,Gimbichu town,4,2,29.95
-SNNP,South Omo,South Ari,17,2,7.8
-Somali,Liban,Dolo Ado,21,2,0.0
-South West Ethiopia,Kefa,Chena,26,2,10.05
-Oromia,Ilu Aba Bora,Hurumu,8,2,4.2
-SNNP,Gamo,Daramalo,23,2,7.0
-Oromia,East Wellega,Haro Limu,11,2,4.1
-Amhara,South Wello,Ambasel,22,2,3.45
+South West Ethiopia,Dawuro,Disa,16,2,13.0
+South West Ethiopia,Sheka,Yeki,21,2,8.7
+SNNP,Gamo,Daramalo,23,2,14.4
+SNNP,Gofa,O'yida,19,2,13.6
+SNNP,Gedeo,Dila Zuria,30,2,11.95
 Amhara,South Gondar,Tach Gayint,21,2,5.9
-Oromia,North Shewa (OR),Gerar Jarso,16,2,6.550000000000001
-Oromia,Jimma,Kersa (Jimma),32,2,5.449999999999999
-Oromia,Jimma,Chora (Jimma),18,2,6.800000000000001
-SNNP,Gamo,Kemba,12,2,13.7
-Amhara,West Gojam,Yilmana Densa,35,1,3.1
+Amhara,South Gondar,Semada,28,2,5.55
+Amhara,South Wello,Legambo,37,2,6.1
+Oromia,Arsi,Seru,16,2,14.8
+Amhara,North Gondar,Janamora,30,2,4.0
+Amhara,East Gojam,Enebse Sarmder,32,2,2.15
+Afar,Gabi /Zone 3,Amibara,9,2,20.5
+Afar,Hari /Zone 5,Samurobi,8,2,14.3
+Amhara,South Wello,Thehulederie,18,2,7.8999999999999995
+Afar,Gabi /Zone 3,Awash,9,2,20.5
+South West Ethiopia,Bench Sheko,Debub Bench,28,2,15.45
+South West Ethiopia,Kefa,Bita,24,2,6.8
+South West Ethiopia,Kefa,Cheta,15,2,14.7
+South West Ethiopia,Mirab Omo,Gori Gesha,13,2,15.5
+Sidama,Sidama,Malga,23,2,9.1
+Somali,Liban,Dolo Ado,21,2,0.0
+SNNP,Yem Special,Yem SP Woreda,34,2,13.5
+SNNP,South Omo,South Ari,17,2,14.5
+SNNP,Wolayita,Kawo Koisha,16,2,10.7
+SNNP,Gamo,Kemba,12,2,14.7
+SNNP,Gamo,Dita,21,2,4.2
+Oromia,Horo Gudru Wellega,Abe Dongoro,17,2,8.5
+Oromia,East Wellega,Haro Limu,11,2,4.1
+Oromia,Ilu Aba Bora,Darimu,40,2,10.5
+Oromia,Horo Gudru Wellega,Jarte Jardega,19,2,11.6
+Oromia,Ilu Aba Bora,Hurumu,8,2,4.2
+Amhara,East Gojam,Sedae,15,2,13.1
+Amhara,Oromia,Artuma Fursi,23,2,12.6
+Amhara,East Gojam,Michakel,24,2,3.95
+Amhara,East Gojam,Baso Liben,19,2,2.6
+Amhara,Oromia,Dewa Harewa,11,2,7.7
+Amhara,South Wello,Argoba,7,2,7.8
+Oromia,Buno Bedele,Chora (Buno Bedele),33,2,9.6
+Oromia,Jimma,Tiro Afeta,25,2,7.6
+Oromia,West Arsi,Nenesebo,21,2,6.1
+Oromia,West Shewa,Meta Robi,16,2,15.9
+Oromia,West Arsi,Dodola,22,2,0.5
+Oromia,Jimma,Sigmo,22,2,6.45
+SNNP,Kembata Tembaro,Hadero Tunto,18,2,2.55
+SNNP,Gofa,Uba Debre Tsehay,22,2,0.0
+SNNP,Hadiya,Gimbichu town,4,2,29.95
+SNNP,South Omo,Boko Dawula,11,2,5.6
+Oromia,Jimma,Dedo,35,2,14.2
+Oromia,Finfine Special,Mulo,4,2,21.65
+Oromia,West Hararge,Anchar,23,2,6.4
+SNNP,Hadiya,Soro,31,2,2.7
+Oromia,Bale,Goba (OR),22,1,3.2
+Dire Dawa,Dire Dawa rural,Jeldessa,4,1,24.549999999999997
+Dire Dawa,Dire Dawa rural,Biyoawale,14,1,13.0
 Amhara,Wag Hamra,Sahila,12,1,0.0
-Oromia,Buno Bedele,Dedesa,34,1,8.5
-Oromia,Bale,Goba (OR),22,1,2.95
+Oromia,Arsi,Munessa,23,1,4.8
+Amhara,Oromia,Dewa Cheffa,25,1,5.0
+Amhara,South Gondar,Andabet/ West Esite,23,1,2.5
+Amhara,North Shewa (AM),Eferatana Gidem,17,1,7.2
+Amhara,North Gondar,Debark,19,1,1.25
+Amhara,East Gojam,Debay Telatgen,18,1,14.7
+Amhara,East Gojam,Goncha Siso Enebse,20,1,8.4
+Afar,Kilbati /Zone2,Dalol,8,1,6.800000000000001
+Amhara,West Gojam,Yilmana Densa,35,1,4.1
+Amhara,South Wello,Jama,7,1,15.8
+Amhara,South Wello,Mekdela,28,1,3.6
 Amhara,South Wello,Delanta,36,1,3.3
-Amhara,South Wello,Jama,7,1,5.3
-Amhara,North Gondar,Debark,19,1,2.45
-Afar,Gabi /Zone 3,Hanruka,8,1,15.85
-Amhara,East Gojam,Goncha Siso Enebse,20,1,5.6
-Amhara,East Gojam,Michakel,24,1,1.3
-Amhara,South Wello,Kutaber,25,1,8.7
-Amhara,South Wello,Legambo,37,1,5.1
-Oromia,Horo Gudru Wellega,Horo,9,1,5.9
-Oromia,East Wellega,Limu (OR),14,1,0.0
-Oromia,West Arsi,Dodola,22,1,0.35
-Oromia,Kelem Wellega,Gidami,17,1,3.3
-Oromia,Jimma,Sigmo,22,1,2.1
-Oromia,Jimma,Setema,19,1,4.9
-Oromia,Jimma,Limu Kosa,43,1,7.2
-Oromia,Jimma,Gumay,16,1,7.05
-Oromia,Ilu Aba Bora,Halu /Huka,13,1,17.2
+Amhara,South Wello,Borena /Debresina,34,1,6.85
+Amhara,East Gojam,Guzamn,26,1,3.3499999999999996
+Amhara,North Shewa (AM),Menze Gera Midir,20,1,4.95
+Amhara,North Wello,Lasta,21,1,1.4
+Amhara,North Shewa (AM),Kewet,25,1,9.8
 Oromia,Ilu Aba Bora,Metu Zuria,32,1,8.85
-Oromia,East Wellega,Wama Hagalo,12,1,3.7
-SNNP,South Omo,Boko Dawula,11,1,1.8
-Oromia,West Wellega,Sayo Nole,21,1,13.1
-Oromia,West Shewa,Liban Jawi,13,1,1.2
-South West Ethiopia,Bench Sheko,Debub Bench,28,1,11.8
-South West Ethiopia,Bench Sheko,Sheko,24,1,13.05
-South West Ethiopia,Kefa,Bita,24,1,3.1
-South West Ethiopia,Sheka,Yeki,21,1,4.4
+Oromia,Ilu Aba Bora,Halu /Huka,13,1,17.2
+Oromia,West Hararge,Habro,34,1,2.3
+Oromia,North Shewa (OR),Kuyu,5,1,19.2
+Oromia,South West Shewa,Ameya,29,1,1.3
+Oromia,West Hararge,Gumbi Bordede,22,1,5.4
+Oromia,Jimma,Shebe Sambo,13,1,1.2
+Oromia,Jimma,Gumay,16,1,9.75
+Oromia,Jimma,Omo Nada,30,1,2.1
+Oromia,East Wellega,Guto Gida,19,1,0.2
+Oromia,Horo Gudru Wellega,Horo,9,1,7.7
+Oromia,Horo Gudru Wellega,Amuru,16,1,7.65
+Oromia,East Wellega,Limu (OR),14,1,0.0
+Oromia,East Wellega,Wama Hagalo,12,1,1.2000000000000002
+Oromia,East Shewa,Fentale,17,1,6.05
+Oromia,East Hararge,Deder,40,1,0.0
+SNNP,Hadiya,Duna,28,1,13.600000000000001
+SNNP,Gamo,Chencha Zuriya,25,1,5.8
+Sidama,Sidama,Wonosho,17,1,9.0
+Sidama,Sidama,Wondo-Genet,24,1,5.949999999999999
+Sidama,Sidama,Shebe Dino,22,1,2.3499999999999996
+Sidama,Sidama,Dale,37,1,4.5
+Sidama,Sidama,Aleta Wendo,25,1,8.0
+SNNP,Wolayita,Boloso Bombe,21,1,8.5
+SNNP,Wolayita,Boloso Sore,32,1,7.8
+SNNP,Wolayita,Damot Sore,18,1,5.0
+Oromia,West Wellega,Sayo Nole,21,1,5.5
+South West Ethiopia,Dawuro,Loma,15,1,7.75
+South West Ethiopia,Kefa,Gimbo,36,1,4.75
+South West Ethiopia,Kefa,Goba (SP),15,1,6.6
+South West Ethiopia,Mirab Omo,Gachit,8,1,19.7
+South West Ethiopia,Konta Special,Konta,35,1,14.3
+Tigray,Southern,Raya Alamata,16,1,4.1
+Tigray,Southern,Zata,2,1,17.95

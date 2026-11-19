@@ -14,13 +14,12 @@ Inputs
 
 Method (illustrative thresholds, not calibrated against observed travel times)
   Three factors per road segment, each sampled every ~110 m along the line:
-  R  rain hazard 0-3 at the segment's 0.1 deg cell, from WeatherNext 3. WN3 publishes the ensemble mean and
-     percentiles, not members, so the old "half of the 64 members give a day >= X" tests use the wettest day of the wet
-     end instead (hourly p90 summed per day, p90max), with thresholds calibrated by 22_calibrate_wn3_hazard.py to
-     reproduce the WeatherNext 2 member-rule areas on runs both models made (data/processed/wn3_hazard_thresholds.json):
-      3 high      p90max >= H (24 mm), or the wettest 3 days of the mean >= 40 mm
-      2 moderate  p90max >= M (13 mm), or the wettest 3 days of the mean >= 20 mm
-      1 low       15-day mean >= 10 mm
+  R  rain hazard 0-3 at the segment's 0.1 deg cell, from WeatherNext 3 daily rain bias-corrected against PARDIG by
+     quantile mapping (24_bias_correct_wn3.py; per lead band and region; data/processed/wn3_qm.npz), with the plain rule:
+      3 high      a day >= 20 mm, or the wettest 3 days >= 40 mm
+      2 moderate  a day >= 10 mm, or the wettest 3 days >= 20 mm
+      1 low       15-day total >= 10 mm
+     Without the mapping file it falls back to the wet-end rule (22_calibrate_wn3_hazard.py): p90 wettest day >= 13 / 24 mm.
   S  surface 0-2: paved 0, unpaved 1; +1 if OSM smoothness is bad/very_bad/horrible/very_horrible/impassable
   T  steepness 0-2, after the Ethiopian Roads Authority terrain classes (flat/rolling < 25 % ground slope,
      mountainous 25-50 %, escarpment > 50 %) plus the road's own gradient:
@@ -122,19 +121,30 @@ def classify_surface(g):
 THRESH = os.path.join(ROOT, "data", "processed", "wn3_hazard_thresholds.json")
 
 
+QMF = os.path.join(ROOT, "data", "processed", "wn3_qm.npz")
+
+
 def hazard(run):
-    """WeatherNext 3 run (daily mean / p90 [day, y, x] mm) -> hazard level 0-3 per cell plus the fields behind it.
-    Wet-end thresholds come from 22_calibrate_wn3_hazard.py."""
+    """WeatherNext 3 run -> hazard level 0-3 per cell plus the fields behind it.
+    Preferred: bias-corrected daily rain (24_) with the plain rule. Fallback: wet-end rule (22_)."""
+    p90 = np.nan_to_num(run["p90"]); p90max = p90.max(0)
+    if os.path.exists(QMF):
+        spec_ = importlib.util.spec_from_file_location("bc", os.path.join(ROOT, "scripts", "24_bias_correct_wn3.py"))
+        bc = importlib.util.module_from_spec(spec_); spec_.loader.exec_module(bc)
+        m = bc.correct(run)
+        mean15, dmax = m.sum(0), m.max(0)
+        r3 = np.stack([m[i:i + 3].sum(0) for i in range(m.shape[0] - 2)]).max(0)
+        return bc.rule(m), dict(mean15=mean15, dmax=dmax, r3=r3, p90max=p90max, daily=m, method="bias-corrected")
     import json
     t = json.load(open(THRESH)); M, Hh = t["moderate_p90_day_mm"], t["high_p90_day_mm"]
-    m = np.nan_to_num(run["mean"]); p90 = np.nan_to_num(run["p90"])
-    mean15, dmax, p90max = m.sum(0), m.max(0), p90.max(0)
+    m = np.nan_to_num(run["mean"])
+    mean15, dmax = m.sum(0), m.max(0)
     r3 = np.stack([m[i:i + 3].sum(0) for i in range(m.shape[0] - 2)]).max(0)
     h = np.zeros(mean15.shape, "int8")
     h[mean15 >= 10] = 1
     h[(p90max >= M) | (r3 >= 20)] = 2
     h[(p90max >= Hh) | (r3 >= 40)] = 3
-    return h, dict(mean15=mean15, dmax=dmax, r3=r3, p90max=p90max, M=M, H=Hh)
+    return h, dict(mean15=mean15, dmax=dmax, r3=r3, p90max=p90max, daily=m, method="wet-end rule")
 
 
 DEM = os.path.join(ROOT, "data", "raw", "dem", "gem15_eth_0p001.tif")
@@ -270,7 +280,7 @@ if __name__ == "__main__":
     g["wettest_3d_mm"] = fld["r3"][r, c].round(1)
     g["wettest_day_mm"] = fld["dmax"][r, c].round(1)
     g["p90_wettest_day_mm"] = fld["p90max"][r, c].round(1)
-    daymean = np.nan_to_num(RUN["mean"])                    # [day, y, x]
+    daymean = fld["daily"]                                  # [day, y, x], bias-corrected where available
     g["peak_day"] = days[daymean[:, r, c].argmax(0)].strftime("%Y-%m-%d")
     reg = gpd.GeoDataFrame({"region": wn.NAMES}, geometry=wn.GEOMS, crs="EPSG:4326")
     pts = gpd.GeoDataFrame(geometry=gpd.points_from_xy(mx, my), crs="EPSG:4326")
@@ -371,14 +381,13 @@ if __name__ == "__main__":
     cax = axs[1].inset_axes([0.64, -0.12, 0.36, 0.03])     # right of the slip-marker legend
     cb = fig.colorbar(im, cax=cax, orientation="horizontal", ticks=RAIN_LV[1:-1])
     cb.outline.set_visible(False); cb.ax.tick_params(labelsize=7.5, length=0, colors=INK2)
-    cax.set_title("15-day rain, mm (ensemble mean)", fontsize=8, color=INK2, loc="left")
+    cax.set_title("15-day rain, mm (bias-corrected)", fontsize=8, color=INK2, loc="left")
     fig.canvas.draw()                                       # footnote goes under the lowest legend / colour bar
     yb = min([ax_.get_position().y0 for ax_ in axs] + [cax.get_position().y0 - 0.03] +
              [l_.get_window_extent().transformed(fig.transFigure.inverted()).y0 for l_ in (leg, axs[1].get_legend())])
     fig.text(0.01, yb - 0.02, "Tier = rain hazard (0–3) + surface (paved 0, unpaved 1, +1 if tagged bad/horrible) + steepness (0–2) − 1, "
-                 "capped at one tier above the rain hazard; no rain = Normal.\nRain (WeatherNext 3, 0.1°): high = wet-end (p90) day ≥ " + f"{fld['H']:.0f}" + " mm or "
-                 "mean wettest 3 days ≥ 40 mm; moderate = wet-end day ≥ " + f"{fld['M']:.0f}" + " mm or 3 days ≥ 20 mm; low = 15-day mean ≥ 10 mm "
-                 "(wet-end thresholds calibrated to the earlier 64-member rule). "
+                 "capped at one tier above the rain hazard; no rain = Normal.\nRain: WeatherNext 3 (0.1°) daily rain bias-corrected to PARDIG by quantile mapping; "
+                 "high = a day ≥ 20 mm or 3 days ≥ 40 mm; moderate = a day ≥ 10 mm or 3 days ≥ 20 mm; low = 15 days ≥ 10 mm. "
                  "Steepness: mountainous = terrain ≥ 14° or road grade ≥ 5 %; escarpment = ≥ 26.6° or ≥ 10 %.\n"
                  "Slip / rock-fall exposure, per ~110 m piece: moderate+ rain and either ground ≥ 26.6° with NASA landslide susceptibility moderate+, "
                  "or very high susceptibility on ground ≥ 14°. Speed factors are illustrative, not calibrated. "
@@ -419,15 +428,15 @@ if __name__ == "__main__":
     x = np.arange(len(days))
     fig, ax = plt.subplots(figsize=(11, 4.6))
     ax.bar(x, dw, width=0.78, facecolor="none", edgecolor=INK2, linewidth=0.9, ls=(0, (2, 2)), label="wet end (p90) ≥ 10 mm, all roads")
-    ax.bar(x, du, width=0.7, color=TCOL["Elevated"], label="mean ≥ 10 mm, unpaved", edgecolor=SURF, linewidth=1)
-    ax.bar(x, dp, width=0.7, bottom=du, color=TCOL["Normal"], label="mean ≥ 10 mm, paved", edgecolor=SURF, linewidth=1)
+    ax.bar(x, du, width=0.7, color=TCOL["Elevated"], label="corrected ≥ 10 mm, unpaved", edgecolor=SURF, linewidth=1)
+    ax.bar(x, dp, width=0.7, bottom=du, color=TCOL["Normal"], label="corrected ≥ 10 mm, paved", edgecolor=SURF, linewidth=1)
     for i, v in enumerate(du + dp):
         if v > 0: ax.text(i, v, f"{v / 1000:.1f}k", ha="center", va="bottom", fontsize=8, color=INK2)
     ax.set_xticks(x, [f"{d:%d %b}" for d in days], fontsize=8.5)
     ax.set_ylabel("road km under ≥ 10 mm that day"); ax.grid(axis="x", visible=False)
     ax.legend(loc="upper left", frameon=False, fontsize=9)
     wn.title(ax, "When the wet days fall on the road network",
-             "Road length where the forecast for that UTC day is ≥ 10 mm: ensemble mean (bars) and wet end (dashed)")
+             "Road length where the bias-corrected forecast for that UTC day is ≥ 10 mm (bars); raw wet end (p90) dashed")
     wn.foot(fig, f"WeatherNext 3, run {init:%d %b %Y} 00Z, 0.1°; each segment takes the cell at its midpoint. Wet end = hourly 90th percentiles "
                  "summed over the day, an upper envelope rather than a true daily percentile.")
     wn.save(fig, os.path.join(wn.OUT, "ETH_roads_rain_risk_daily.png"))
