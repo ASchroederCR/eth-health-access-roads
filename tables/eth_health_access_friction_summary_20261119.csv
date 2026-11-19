@@ -1,15 +1,15 @@
 measure,road_model,friction_model
-health centres compared,3569.0,3569.0
-"median normal minutes, health centre to its hospital",64.8,17.3
-health centres over 2 h to their hospital (normal),828.0,123.0
-health centres 30+ min longer under the forecast,924.0,129.0
-health centres 60+ min longer under the forecast,489.0,19.0
-health posts 30+ min longer to their health centre,813.0,217.0
-"median added minutes, health centres with any added time",19.1,5.5
-"log-time correlation, health centre normal times",0.89,
-"rank correlation, health centre added minutes",0.94,
-top-25 health centres in common,6,
-health centres assigned the same nearest hospital,76%,
-"rank correlation, hospitals by linked facilities 30+",0.68,
-top-10 hospitals in common,3,
+health centres compared,3572.0,3572.0
+"median normal minutes, health centre to its hospital",41.0,17.3
+health centres over 2 h to their hospital (normal),373.0,123.0
+health centres 30+ min longer under the forecast,600.0,129.0
+health centres 60+ min longer under the forecast,238.0,19.0
+health posts 30+ min longer to their health centre,423.0,217.0
+"median added minutes, health centres with any added time",12.6,5.6
+"log-time correlation, health centre normal times",0.93,
+"rank correlation, health centre added minutes",0.96,
+top-25 health centres in common,8,
+health centres assigned the same nearest hospital,81%,
+"rank correlation, hospitals by linked facilities 30+",0.71,
+top-10 hospitals in common,4,
 facility-list check NW clip: median minutes our facilities on MAP friction vs MAP published,62.2,63.3

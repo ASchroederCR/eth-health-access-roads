@@ -100,8 +100,13 @@ INK, INK2, MUTED, SURF = wn.INK, wn.INK2, wn.MUTED, wn.SURF
 
 def load_roads():
     if os.path.exists(CACHE): return gpd.read_parquet(CACHE)
-    cols = ["highway", "surface", "smoothness", "combined_surface_osm_priority", "osm_length", "name", "name:en"]
+    cols = ["osm_id", "highway", "surface", "smoothness", "combined_surface_osm_priority", "osm_length", "name", "name:en"]
     g = gpd.read_file(SRC, columns=cols, engine="pyogrio", use_arrow=True)
+    # the HeiGIT file repeats ~90k ways verbatim (same osm_id and geometry): keep one copy, or road km double-count
+    # and the routing graph in 17_ sums the repeated edges into one twice-as-slow edge
+    dup = pd.DataFrame({"id": g.osm_id.values, "wkb": shapely.to_wkb(g.geometry.values, output_dimension=2)}).duplicated()
+    print(f"dropped {int(dup.sum()):,} duplicate road rows, {g.osm_length[dup.values].sum() / 1000:,.0f} km")
+    g = g[~dup.values]
     g = g[g.highway.isin(VEHICLE)].rename(columns={"combined_surface_osm_priority": "surf_known", "name:en": "name_en"})
     g = g.reset_index(drop=True); g.to_parquet(CACHE); return g
 

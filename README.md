@@ -21,13 +21,13 @@ The current outputs are for the **19 Nov 2026 00Z** WeatherNext 3 run, covering 
 
 | | |
 |---|---|
-| Vehicle road network scored | ~447,000 km |
-| Severe / Elevated / Minor slowdown, worst window | 76,061 / 82,056 / 68,730 km |
-| Road stretches exposed to slips / rock fall, any window | ~1,180 km |
-| Health centres taking 30+ min longer to reach their nearest hospital | 924 of ~3,600 (489 take an hour or more); 129 on the MAP friction surface |
-| Health posts taking 30+ min longer to reach their nearest health centre | 813 (217 on the MAP friction surface) |
+| Vehicle road network scored | ~320,000 km |
+| Severe / Elevated / Minor slowdown, worst window | 54,809 / 59,336 / 49,546 km |
+| Road stretches exposed to slips / rock fall, any window | ~830 km |
+| Health centres taking 30+ min longer to reach their nearest hospital | 600 of ~3,600 (238 take an hour or more); 129 on the MAP friction surface |
+| Health posts taking 30+ min longer to reach their nearest health centre | 423 (217 on the MAP friction surface) |
 
-The hardest-hit areas are the south-west highlands (Ilu Aba Bora, Kefa, Sheka, Bench Sheko, Jimma) and the Amhara highlands (North Gondar, West and East Gojam, South Gondar).
+The hardest-hit areas are the south-west highlands (Buno Bedele, Kefa, Sheka, Bench Sheko, Jimma, South Omo) and the Amhara highlands (North Gondar, West and East Gojam, South Gondar).
 
 ## Method
 
@@ -84,7 +84,7 @@ Each road segment's tier, per window, is **accumulation (0–3) + surface (0–2
 - **Rain bias correction:** forecast rain is corrected toward observed rain before any of these levels are applied; see *Rain bias correction* above.
 - **Tiers and assumed speeds:** Normal, Minor (~10% slower), Elevated (~25% slower), Severe (~50% slower).
 - **Slip / rock-fall exposure:** judged on each ~110 m piece of road, not the whole segment. A piece is exposed when the forecast rain over it is moderate or high, and either the ground is ≥ 26.6° where NASA's global landslide susceptibility map rates it moderate or higher, or susceptibility is very high on ground ≥ 14°. Only the exposed stretches are counted (km) and drawn on the maps. The flag is reported separately and doesn't change the slowdown tier.
-- **Removed:** about 5,200 km of seismic survey cut-lines in the Ogaden that OSM maps as tracks.
+- **Removed:** about 4,700 km of seismic survey cut-lines in the Ogaden that OSM maps as tracks, and about 90,000 rows that the HeiGIT file repeats verbatim (same OSM id and geometry). Before 19 Nov 2026 those repeats were kept, which counted ~28% of road length twice and made road trips about 1.5× too long.
 
 ### Health facility access
 - **Road graph:** every road vertex is a node. Dead ends within 30 m of another road are linked to it.
@@ -94,12 +94,13 @@ Each road segment's tier, per window, is **accumulation (0–3) + surface (0–2
 - **Assignment:** each facility is assigned its nearest hospital by road at normal speeds. Health posts are also assigned their nearest health centre.
 - **Added minutes:** the forecast time minus the normal time for that same trip.
 - **Linked facilities:** a hospital's linked facilities are the health centres and posts for which it is the nearest hospital. This is a road-network grouping, not a population catchment or the official referral pathway.
+- **Check against a standard router** (`34_ors_check.py --router osrm`, `charts/ETH_osrm_check.png`): 200 health centre / post → hospital trips, stratified by region and trip length, routed on the public OSRM car profile with our walking legs removed. Routes come out the same length (median ratio 1.00) and rank the same way (rank correlation 0.93). Our normal times run about 1.3× OSRM's (middle half 1.19–1.42), as expected: we slow unpaved roads to 70%, and about three-quarters of route length is unpaved, while OSRM drives untagged roads at full speed. The same script runs against openrouteservice with `--router ors` and an API key in `ORS_API_KEY` or `~/.ors_key`.
 
 ### Caveats
 - Thresholds and speed factors are illustrative and haven't been checked against observed travel times or closures.
 - Road grades come from a ~110 m elevation grid, so they run high where roads cut across hillsides.
 - The bias corrections rest on 2–3 years of WeatherNext 3 runs; Bega (dry-season) hazard is caught poorly by any version (about a third, with 40–55% false alarms). PARDIG itself ran about 11% wetter than CHIRPS over the past year, but about 8% drier in the short rains (see *Rain compared with normal*).
-- Absolute delays depend on the travel surface. Rerun on the Malaria Atlas Project motorized friction surface (`20_friction_access.py`), the same health centres come out most affected (rank correlation 0.9) with similar percentage slowdowns. But MAP's baseline trips are about 3.8 times shorter, so far fewer cross a fixed 30-minute threshold (`charts/ETH_friction_vs_road_*.png`).
+- Absolute delays depend on the travel surface. Rerun on the Malaria Atlas Project motorized friction surface (`20_friction_access.py`), the same health centres come out most affected (rank correlation 0.96) with similar percentage slowdowns. But MAP's baseline trips are about 2.4 times shorter, so far fewer cross a fixed 30-minute threshold (`charts/ETH_friction_vs_road_*.png`).
 - The landslide susceptibility map is ~1 km, so it describes the hillside setting, not the road cut itself.
 - Routing is by road only. Seasonal river crossings, ferries and closures aren't modelled.
 
@@ -129,6 +130,7 @@ scripts/
   30_hospital_rain_charts.py   forecast rain charts for hospitals in the wettest zones, with intense-rain periods
   19_travel_surface_compare.py compare with MAP 2020 motorized travel time (north-west clip)
   20_friction_access.py        rerun facility routing on the MAP motorized friction surface
+  34_ors_check.py              normal-speed trip times vs a standard router (OSRM demo server or openrouteservice)
 webmap/index.src.html  web map source (MapLibre GL)
 charts/               PNG outputs
 tables/               CSV outputs (per region, per facility, top lists, woredas)
