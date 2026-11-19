@@ -73,6 +73,25 @@ section { display: flex; flex-direction: column; gap: 6px; }
 .tier.off { opacity: .42; }
 .tiers.muted-all { opacity: .4; pointer-events: none; }
 [hidden] { display: none !important; }
+.infocard { position: absolute; top: 12px; right: calc(52px + env(safe-area-inset-right, 0px)); width: min(352px, calc(100% - 76px)); max-height: calc(100% - 64px);
+  display: flex; flex-direction: column; border: 1px solid var(--rule); border-radius: 10px; box-shadow: 0 8px 28px rgba(0,0,0,.16);
+  background: color-mix(in srgb, var(--panel) 84%, transparent); -webkit-backdrop-filter: blur(10px) saturate(1.1); backdrop-filter: blur(10px) saturate(1.1); color: var(--ink); z-index: 3; }
+.infocard header { display: flex; align-items: center; gap: 6px; padding: 9px 8px 7px 13px; border-bottom: 1px solid var(--rule); }
+.infocard header h3 { margin: 0; flex: 1; min-width: 0; font-family: var(--f-display); font-weight: 600; font-size: 16px; line-height: 1.15; }
+.infocard header small { display: block; font-family: var(--f-body); font-weight: 400; font-size: 11.5px; color: var(--muted); }
+.infocard .icbtn { border: 0; background: none; color: var(--ink2); font: inherit; font-size: 15px; width: 28px; height: 28px; border-radius: 6px; cursor: pointer; flex: none; }
+.infocard .icbtn:hover { background: var(--chip); }
+.infocard .icbtn:focus-visible { outline: 2px solid var(--focus); }
+.infocard .icbody { overflow-y: auto; padding: 8px 13px 11px; overscroll-behavior: contain; font-size: 13px; }
+.infocard.collapsed .icbody { display: none; }
+.infocard .icbody .pp-h, .infocard .icbody .pp-sub { display: none; }
+.exportbtn { position: absolute; bottom: 40px; right: calc(12px + env(safe-area-inset-right, 0px)); z-index: 2; border: 1px solid var(--rule); border-radius: 7px;
+  background: color-mix(in srgb, var(--panel) 92%, transparent); color: var(--ink); font: inherit; font-size: 12.5px; font-weight: 600; padding: 6px 10px; cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+.exportbtn:hover { background: var(--panel); }
+.exportbtn:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+.toast { position: absolute; left: 50%; bottom: 48px; transform: translateX(-50%); background: var(--ink); color: var(--panel); font-size: 12.5px; padding: 6px 12px; border-radius: 999px; z-index: 4; }
+@media (max-width: 760px) { .infocard { top: auto; bottom: 30px; left: max(8px, env(safe-area-inset-left, 0px)); right: max(8px, env(safe-area-inset-right, 0px)); width: auto; max-height: 55%; } }
 .rchart { margin-top: 8px; }
 .rchart svg { display: block; width: 100%; height: auto; }
 .rchart .cap { font-size: 11px; color: var(--muted); display: flex; gap: 10px; flex-wrap: wrap; margin-top: 2px; }
@@ -115,7 +134,7 @@ section { display: flex; flex-direction: column; gap: 6px; }
 .status { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); background: var(--panel); color: var(--ink2);
   border: 1px solid var(--rule); border-radius: 999px; padding: 5px 14px; font-size: 12.5px; font-family: var(--f-data); white-space: nowrap; }
 /* popup */
-.maplibregl-popup-content { max-height: min(68vh, 560px); overflow-y: auto; overscroll-behavior: contain; background: var(--panel); color: var(--ink); border-radius: 8px; padding: 12px 14px 10px;
+.maplibregl-popup-content { max-height: min(68vh, 560px); overflow-y: auto; overscroll-behavior: contain; background: color-mix(in srgb, var(--panel) 90%, transparent); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); color: var(--ink); border-radius: 8px; padding: 12px 14px 10px;
   box-shadow: 0 6px 24px rgba(0,0,0,.18); font-family: var(--f-body); font-size: 13px; min-width: 250px; }
 .maplibregl-popup-tip { border-top-color: var(--panel) !important; border-bottom-color: var(--panel) !important; }
 .maplibregl-popup-close-button { color: var(--muted); font-size: 18px; padding: 2px 8px; }
@@ -232,6 +251,14 @@ section { display: flex; flex-direction: column; gap: 6px; }
   <div class="mapwrap">
     <div id="map" role="region" aria-label="Map of Ethiopian roads coloured by slowdown tier"></div>
     <div class="status" id="status">Loading roads…</div>
+    <button type="button" class="exportbtn" id="exportbtn" title="Save the current map view, with a legend, as a PNG image">Export PNG</button>
+    <aside class="infocard" id="infocard" hidden aria-label="Hospital details">
+      <header><h3 id="ic-title"></h3>
+        <button type="button" class="icbtn" id="ic-collapse" aria-expanded="true" title="Collapse">▾</button>
+        <button type="button" class="icbtn" id="ic-close" title="Close">✕</button></header>
+      <div class="icbody" id="ic-body"></div>
+    </aside>
+    <div class="toast" id="toast" hidden></div>
     <div class="legend" aria-hidden="true">
       <div>15-day rain, mm (bias-corrected)</div>
       <div class="ramp" id="ramp"></div>
@@ -896,6 +923,7 @@ function setModel(m) {
   document.getElementById("model-fric").setAttribute("aria-checked", m === "fric");
   renderHealth();
   if (map) ["hf-hp", "hf-main", "hf-linked"].forEach(id => map.getLayer(id) && map.setPaintProperty(id, "circle-color", hfColor()));
+  if (cardHosp) { const h = cardHosp; clearNetwork(); showCard(h); showNetwork(h); }
 }
 document.getElementById("model-road").addEventListener("click", () => setModel("road"));
 document.getElementById("model-fric").addEventListener("click", () => setModel("fric"));
@@ -921,7 +949,7 @@ function decode(d) {
   return feats;
 }
 // data files keep fixed names, so tag each request with this build's version: browsers then never mix a new page with old data
-const DATA_VERSION = "202611191235-a55a5c";
+const DATA_VERSION = "202611191259-a55a5c";
 const dv = u => `${u}?v=${DATA_VERSION}`;
 const getJSON = u => fetch(dv(u), { cache: "no-cache" }).then(r => { if (!r.ok) throw new Error(u + " " + r.status); return r.json(); });
 
@@ -968,6 +996,7 @@ function init() {
   map = new maplibregl.Map({
     container: "map", bounds: ETH, fitBoundsOptions: { padding: 20 }, maxBounds: [[28, 0], [53, 18]],
     attributionControl: false, dragRotate: false, pitchWithRotate: false,
+    preserveDrawingBuffer: true, canvasContextAttributes: { preserveDrawingBuffer: true },
     style: { version: 8, sources: {}, layers: [{ id: "bg", type: "background", paint: { "background-color": css("--mapbg") } }] },
   });
   map.touchZoomRotate.disableRotation();
@@ -1110,7 +1139,7 @@ function facilityHTML(p0) {
     ${p.ty !== 2 ? `<span class="pill"><i style="background:var(${tok})"></i>+${p.d ?? "–"} min to reach ${esc(target)}</span>` : ""}
     ${p.ty === 2 ? (p0.hs ? forecastChart(p0.hs) : p0.rs ? rainChart(p0.rs) : `<div class="netnote">The forecast series hasn't loaded. Reload the page to fetch the latest data.</div>`) : ""}
     <div class="pp-grid">${rows}</div>
-    ${p.ty === 2 ? `<div class="netnote">Its linked health centres and posts are highlighted on the map, coloured by added travel time; other facilities are faded. Close this popup to clear.</div>` : ""}
+    ${p.ty === 2 ? `<div class="netnote">Its linked health centres and posts are highlighted on the map, coloured by added travel time; other facilities are faded. Close this card to clear.</div>` : ""}
     <div class="pp-foot">${p.off ? `${p.gap} km from the nearest mapped road · ` : ""}${p.sl ? "<b>slip / rock-fall exposed road</b> within 5 km" : "no slip-exposed road within 5 km"}</div>`;
 }
 function rainChart(rs) {
@@ -1191,6 +1220,112 @@ function forecastChart(hs) {
     <div class="cap"><span><i style="background:var(--r4)"></i>forecast, mm per 3 h</span><span>- - wet end (90th pct)</span><span><i style="background:var(--int1)"></i>intense rain possible</span><span><i style="background:var(--int2)"></i>very intense</span></div>
     <div class="cap">Days 1–3 · 4–7 · 8–15 split by solid lines. Raw WeatherNext 3 ensemble, which runs low on amounts. Last 10 days observed (PARDIG): ${hs.obs10} mm.</div></div>`;
 }
+// ---- docked hospital card (keeps the hospital and its network visible) ----
+let cardHosp = null;
+function showCard(p) {
+  cardHosp = p;
+  const fr = state.model === "fric";
+  document.getElementById("ic-title").innerHTML = `${esc(p.n)}<small>${esc(p.a3)}, ${esc(p.a2)} · ${fr ? "MAP friction surface" : "road + slope model"}</small>`;
+  document.getElementById("ic-body").innerHTML = facilityHTML(p);
+  const c = document.getElementById("infocard"); c.hidden = false; c.classList.remove("collapsed");
+  document.getElementById("ic-collapse").setAttribute("aria-expanded", "true"); document.getElementById("ic-collapse").textContent = "▾";
+}
+function hideCard() { cardHosp = null; document.getElementById("infocard").hidden = true; clearNetwork(); }
+document.getElementById("ic-close").addEventListener("click", hideCard);
+document.getElementById("ic-collapse").addEventListener("click", e => {
+  const c = document.getElementById("infocard"), col = c.classList.toggle("collapsed");
+  e.currentTarget.setAttribute("aria-expanded", String(!col)); e.currentTarget.textContent = col ? "▸" : "▾";
+});
+
+// ---- export the current view as a PNG with a legend ----
+function toast(msg) { const t = document.getElementById("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toast._t); toast._t = setTimeout(() => t.hidden = true, 3200); }
+function legendItems() {
+  const on = id => document.getElementById(id)?.checked;
+  const W = state.win ? ["", "Days 1–3", "Days 4–7", "Days 8–15"][state.win] : "All 15 days (worst window)";
+  const L = [];
+  if (on("opt-roads")) L.push({ h: `Road slowdown tier · ${W}` }, ...[[3, "Severe (~50% slower)"], [2, "Elevated (~25% slower)"], [1, "Minor (~10% slower)"]]
+    .filter(([t]) => state.on[t]).map(([t, l]) => ({ line: css(TIER_TOK[t]), w: 4, l })));
+  if (on("opt-slip")) L.push({ line: css("--slip"), w: 2, dash: [4, 3], l: "Slip / rock-fall exposed stretch" });
+  if (on("opt-ctx")) L.push({ line: css("--ctx"), w: 2, l: "Main road network" });
+  if (on("opt-int")) L.push({ h: `Intense rain possible · ${W}` }, { box: css("--int1"), l: "≥ 10 mm in an hour" }, { box: css("--int2"), l: "≥ 20 mm in an hour" });
+  if (on("opt-rain")) L.push({ h: "15-day forecast rain, mm (bias-corrected)" }, { ramp: [1, 2, 3, 4, 5, 6].map(i => css(`--r${i}`)), ticks: ["5", "10", "25", "50", "100", "150"] });
+  if (on("opt-fric")) L.push({ h: "MAP travel speed, km/h" }, ...[["#a8320f", "< 3"], ["#e0701f", "3–10"], ["#f2b33d", "10–30"], ["#c9c8c2", "30+"]].map(([c, l]) => ({ box: c, l })));
+  if (on("opt-hf")) L.push({ h: `Facilities: added travel minutes · ${state.model === "fric" ? "MAP friction" : "road + slope"} model` },
+    ...[["--d0", "< 5"], ["--d1", "5–15"], ["--d2", "15–30"], ["--d3", "30–60"], ["--d4", "60+"]].map(([t, l]) => ({ dot: css(t), l: l + " min" })),
+    { dot: css("--d0"), ring: css("--ink"), l: "Hospital (dark ring)" });
+  if (cardHosp) L.push({ h: "Selected network" }, { dot: css("--d2"), ring: css("--ink"), l: `Linked to ${cardHosp.n}` }, { dot: css("--d0"), fade: true, l: "Other facilities (faded)" });
+  return L;
+}
+async function exportPNG() {
+  if (!map) return;
+  const btn = document.getElementById("exportbtn"); btn.disabled = true; btn.textContent = "Preparing…";
+  try {
+    await new Promise(res => { map.once("render", res); map.triggerRepaint(); });
+    const mc = map.getCanvas(), dpr = mc.width / mc.clientWidth;
+    const S = v => Math.round(v * dpr);
+    const legendW = S(300), headH = S(66), pad = S(16);
+    const wrap = (g_, text, maxW) => { const out = []; let line = "";
+      for (const w of String(text).split(" ")) { const t = line ? line + " " + w : w; if (line && g_.measureText(t).width > maxW) { out.push(line); line = w; } else line = t; }
+      if (line) out.push(line); return out; };
+    const meas = document.createElement("canvas").getContext("2d");
+    meas.font = `400 ${S(10.5)}px "Source Sans 3", "Segoe UI", sans-serif`;
+    const foot1 = "Roads © OpenStreetMap contributors, surface model HeiGIT · Elevation Google GEM-15 · Rain Google WeatherNext 3, bias-corrected to Google PARDIG · Facilities: Ethiopian health facility register · Regions geoBoundaries · Travel speed: Malaria Atlas Project";
+    const foot2 = `Speed factors and thresholds are illustrative. Exported ${new Date().toISOString().slice(0, 16).replace("T", " ")} UTC.`;
+    const footLines = wrap(meas, foot1, mc.width + legendW - 2 * pad).concat([foot2]);
+    const footH = S(14) + footLines.length * S(14) + S(8);
+    const cv = document.createElement("canvas");
+    cv.width = mc.width + legendW; cv.height = mc.height + headH + footH;
+    const g = cv.getContext("2d");
+    const ink = css("--ink"), ink2 = css("--ink2"), muted = css("--muted"), rule = css("--rule");
+    g.fillStyle = css("--panel"); g.fillRect(0, 0, cv.width, cv.height);
+    g.drawImage(mc, 0, headH, mc.width, mc.height);
+    g.strokeStyle = rule; g.lineWidth = S(1); g.strokeRect(0, headH, mc.width, mc.height);
+    const font = (w, px, fam) => `${w} ${S(px)}px ${fam}`;
+    g.textBaseline = "alphabetic";
+    g.fillStyle = ink; g.font = font(700, 22, '"Barlow Condensed", "Arial Narrow", sans-serif');
+    g.fillText("Ethiopia roads under the next 15 days of rain", pad, S(30));
+    g.fillStyle = ink2; g.font = font(400, 12.5, '"Source Sans 3", "Segoe UI", sans-serif');
+    const c = map.getCenter();
+    g.fillText(`WeatherNext 3 run ${SUMMARY.init} 00Z · ${SUMMARY.start} – ${SUMMARY.end} · ${state.win ? ["", "days 1–3", "days 4–7", "days 8–15"][state.win] : "all 15 days"} · view centred ${c.lat.toFixed(2)}°N ${c.lng.toFixed(2)}°E, zoom ${map.getZoom().toFixed(1)}`, pad, S(52));
+    // legend panel
+    let x = mc.width + pad, y = headH + S(2), first = true;
+    for (const it of legendItems()) {
+      if (it.h) { y += first ? S(16) : S(28); first = false; g.font = font(600, 12.5, '"Source Sans 3", "Segoe UI", sans-serif'); g.fillStyle = ink;
+        const ls = wrap(g, it.h, legendW - 2 * pad); ls.forEach((l, i) => { if (i) y += S(15); g.fillText(l, x, y); }); y += S(4); continue; }
+      y += S(19);
+      g.font = font(400, 12, '"Source Sans 3", "Segoe UI", sans-serif');
+      if (it.line) { g.strokeStyle = it.line; g.lineWidth = S(it.w); g.setLineDash((it.dash || []).map(S)); g.beginPath(); g.moveTo(x, y - S(4)); g.lineTo(x + S(24), y - S(4)); g.stroke(); g.setLineDash([]); }
+      if (it.box) { g.fillStyle = it.box; g.fillRect(x, y - S(10), S(24), S(11)); }
+      if (it.dot) { g.globalAlpha = it.fade ? 0.25 : 1; g.fillStyle = it.dot; g.beginPath(); g.arc(x + S(12), y - S(4), S(5), 0, 7); g.fill();
+        if (it.ring) { g.strokeStyle = it.ring; g.lineWidth = S(2); g.stroke(); } g.globalAlpha = 1; }
+      if (it.ramp) { it.ramp.forEach((col, i) => { g.fillStyle = col; g.fillRect(x + i * S(34), y - S(10), S(34), S(10)); });
+        g.fillStyle = muted; g.font = font(400, 10.5, '"Source Sans 3", "Segoe UI", sans-serif'); it.ticks.forEach((t, i) => g.fillText(t, x + i * S(34), y + S(12))); y += S(12); continue; }
+      g.fillStyle = ink2; const ls = wrap(g, it.l, legendW - 2 * pad - S(32)); ls.forEach((l, i) => { if (i) y += S(14); g.fillText(l, x + S(32), y); });
+    }
+    // scale bar on the map image
+    const mpp = 40075016.686 * Math.cos(c.lat * Math.PI / 180) / (512 * Math.pow(2, map.getZoom()));   // metres per CSS pixel
+    const target = 110 * mpp, p10 = Math.pow(10, Math.floor(Math.log10(target))), nice = [1, 2, 5, 10].map(k => k * p10).filter(v => v <= target).pop();
+    const barPx = S(nice / mpp), bx = pad, by = headH + mc.height - S(18);
+    g.fillStyle = "rgba(255,255,255,.8)"; g.fillRect(bx - S(6), by - S(16), barPx + S(12), S(26));
+    g.fillStyle = ink; g.fillRect(bx, by, barPx, S(3));
+    g.font = font(600, 11, '"Source Sans 3", "Segoe UI", sans-serif'); g.fillText(nice >= 1000 ? `${nice / 1000} km` : `${nice} m`, bx, by - S(4));
+    // footer
+    g.fillStyle = muted; g.font = font(400, 10.5, '"Source Sans 3", "Segoe UI", sans-serif');
+    footLines.forEach((l, i) => g.fillText(l, pad, mc.height + headH + S(20) + i * S(14)));
+    const blob = await new Promise(res => cv.toBlob(res, "image/png"));
+    const name = `ethiopia-roads-rain-${(SUMMARY.init || "").replace(/ /g, "")}${state.win ? "-days" + ["", "1-3", "4-7", "8-15"][state.win] : ""}.png`;
+    const dl = window.claude?.use ? await window.claude.use("downloads").catch(() => null) : null;
+    if (dl) {
+      try { await dl.save({ filename: name, data: blob }); toast("Map image saved"); }
+      catch (e) { toast(e && e.code === "declined" ? "Export cancelled" : e && e.code === "rate_limited" ? "A save is already waiting for you" : "Saving isn't available here"); }
+    } else {
+      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click();
+      setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000); toast("Map image downloaded");
+    }
+  } catch (e) { console.warn(e); toast("The map image couldn't be created"); }
+  finally { btn.disabled = false; btn.textContent = "Export PNG"; }
+}
+document.getElementById("exportbtn").addEventListener("click", exportPNG);
 let openFacility = () => {};
 function wirePopup() {
   const pop = new maplibregl.Popup({ closeButton: true, closeOnClick: false, maxWidth: "340px", offset: 8 });
@@ -1206,8 +1341,10 @@ function wirePopup() {
   };
   openFacility = (name, x, y) => {
     const f = map.querySourceFeatures("hf", { filter: ["==", ["get", "n"], name] })[0];
-    if (f) { clearNetwork(); pinned = true; pop.setLngLat([x, y]).setHTML(facilityHTML(f.properties)).addTo(map);
-      if (f.properties.ty === 2) showNetwork(f.properties); }
+    if (!f) return;
+    clearNetwork();
+    if (f.properties.ty === 2) { pop.remove(); showCard(f.properties); showNetwork(f.properties); }
+    else { hideCard(); pinned = true; pop.setLngLat([x, y]).setHTML(facilityHTML(f.properties)).addTo(map); }
   };
   map.on("mousemove", e => {                         // hover only changes the cursor; details open on click
     const q = map.queryRenderedFeatures(box(e), { layers: hfLayers().concat(["roads"].filter(id => map.getLayer(id) && map.getLayoutProperty(id, "visibility") !== "none")) });
@@ -1216,10 +1353,11 @@ function wirePopup() {
   map.on("click", e => {
     const f = hit(e);
     clearNetwork();
-    if (f) { pinned = true; pop.setLngLat(e.lngLat).setHTML(f.html).addTo(map); if (f.hosp) showNetwork(f.hosp); }
-    else { pinned = false; pop.remove(); }
+    if (f && f.hosp) { pinned = false; pop.remove(); showCard(f.hosp); showNetwork(f.hosp); }
+    else if (f) { hideCard(); pinned = true; pop.setLngLat(e.lngLat).setHTML(f.html).addTo(map); }
+    else { hideCard(); pinned = false; pop.remove(); }
   });
-  pop.on("close", () => { pinned = false; clearNetwork(); });
+  pop.on("close", () => { pinned = false; if (!cardHosp) clearNetwork(); });
 }
 
 window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", applyTheme);
