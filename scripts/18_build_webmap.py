@@ -20,7 +20,10 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser(); ap.add_argument("--pages-dir", default=os.path.join(ROOT, "docs")); a = ap.parse_args()
     src = open(os.path.join(WEB, "index.src.html"), encoding="utf-8").read()
     summary = open(os.path.join(WEB, "data", "summary.json"), encoding="utf-8").read()
-    page = src.replace("/*SUMMARY*/", summary)
+    import hashlib, time
+    ver = time.strftime("%Y%m%d%H%M") + "-" + hashlib.sha1(summary.encode()).hexdigest()[:6]
+    page = src.replace("/*SUMMARY*/", summary).replace("/*DATAVER*/", ver)
+    print("data version", ver)
 
     css_cache = os.path.join(WEB, "vendor", "maplibre-gl.css")
     if not os.path.exists(css_cache):

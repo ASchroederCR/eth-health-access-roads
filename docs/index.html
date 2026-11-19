@@ -115,7 +115,7 @@ section { display: flex; flex-direction: column; gap: 6px; }
 .status { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); background: var(--panel); color: var(--ink2);
   border: 1px solid var(--rule); border-radius: 999px; padding: 5px 14px; font-size: 12.5px; font-family: var(--f-data); white-space: nowrap; }
 /* popup */
-.maplibregl-popup-content { background: var(--panel); color: var(--ink); border-radius: 8px; padding: 12px 14px 10px;
+.maplibregl-popup-content { max-height: min(68vh, 560px); overflow-y: auto; overscroll-behavior: contain; background: var(--panel); color: var(--ink); border-radius: 8px; padding: 12px 14px 10px;
   box-shadow: 0 6px 24px rgba(0,0,0,.18); font-family: var(--f-body); font-size: 13px; min-width: 250px; }
 .maplibregl-popup-tip { border-top-color: var(--panel) !important; border-bottom-color: var(--panel) !important; }
 .maplibregl-popup-close-button { color: var(--muted); font-size: 18px; padding: 2px 8px; }
@@ -920,7 +920,10 @@ function decode(d) {
   }
   return feats;
 }
-const getJSON = u => fetch(u).then(r => { if (!r.ok) throw new Error(u + " " + r.status); return r.json(); });
+// data files keep fixed names, so tag each request with this build's version: browsers then never mix a new page with old data
+const DATA_VERSION = "202611191235-a55a5c";
+const dv = u => `${u}?v=${DATA_VERSION}`;
+const getJSON = u => fetch(dv(u), { cache: "no-cache" }).then(r => { if (!r.ok) throw new Error(u + " " + r.status); return r.json(); });
 
 function tierColor() {
   const prop = tierProp();
@@ -978,10 +981,10 @@ function init() {
   map.on("load", async () => {
     map.resize(); map.fitBounds(ETH, { padding: 20, duration: 0 });
     const hb = SUMMARY.hillshade_bounds;
-    map.addSource("hs", { type: "image", url: "data/hillshade.png", coordinates: [[hb[0], hb[3]], [hb[2], hb[3]], [hb[2], hb[1]], [hb[0], hb[1]]] });
+    map.addSource("hs", { type: "image", url: dv("data/hillshade.png"), coordinates: [[hb[0], hb[3]], [hb[2], hb[3]], [hb[2], hb[1]], [hb[0], hb[1]]] });
     if (H.fr && H.fr.bounds) {
       const fb = H.fr.bounds;
-      map.addSource("fric", { type: "image", url: "data/friction.png", coordinates: [[fb[0], fb[3]], [fb[2], fb[3]], [fb[2], fb[1]], [fb[0], fb[1]]] });
+      map.addSource("fric", { type: "image", url: dv("data/friction.png"), coordinates: [[fb[0], fb[3]], [fb[2], fb[3]], [fb[2], fb[1]], [fb[0], fb[1]]] });
       map.addLayer({ id: "fric", type: "raster", source: "fric", layout: { visibility: "none" }, paint: { "raster-opacity": 0.85, "raster-resampling": "nearest", "raster-fade-duration": 0 } });
     }
     map.addLayer({ id: "hs", type: "raster", source: "hs", paint: { "raster-opacity": ["interpolate", ["linear"], ["zoom"], 5, 0.45, 9, 0.8], "raster-fade-duration": 0 } });
@@ -1105,8 +1108,8 @@ function facilityHTML(p0) {
   rows += `<span class="k">Roads nearby</span><span class="v">${p.s5 == null ? "no mapped roads within 5 km" : Math.round(p.s5 * 100) + "% Elevated / Severe within 5 km"}; nearest road ${esc(p.nt)}</span><span class="s"></span>`;
   return `<div class="pp-h">${esc(p.n)}</div><div class="pp-sub">${TYN[p.ty]} · ${esc(p.a3)}, ${esc(p.a2)} · ${fr ? "MAP friction surface" : "road + slope model"}</div>
     ${p.ty !== 2 ? `<span class="pill"><i style="background:var(${tok})"></i>+${p.d ?? "–"} min to reach ${esc(target)}</span>` : ""}
+    ${p.ty === 2 ? (p0.hs ? forecastChart(p0.hs) : p0.rs ? rainChart(p0.rs) : `<div class="netnote">The forecast series hasn't loaded. Reload the page to fetch the latest data.</div>`) : ""}
     <div class="pp-grid">${rows}</div>
-    ${p.ty === 2 ? (p0.hs ? forecastChart(p0.hs) : rainChart(p0.rs)) : ""}
     ${p.ty === 2 ? `<div class="netnote">Its linked health centres and posts are highlighted on the map, coloured by added travel time; other facilities are faded. Close this popup to clear.</div>` : ""}
     <div class="pp-foot">${p.off ? `${p.gap} km from the nearest mapped road · ` : ""}${p.sl ? "<b>slip / rock-fall exposed road</b> within 5 km" : "no slip-exposed road within 5 km"}</div>`;
 }
@@ -1134,17 +1137,14 @@ function rainChart(rs) {
 }
 function showNetwork(hp) {
   if (!map || !map.getLayer("hf-linked")) return 0;
+  if (!Number.isFinite(+hp.id) || hp.id === undefined || hp.id === null) return 0;      // no ids in the data: do nothing
+  hp = Object.assign({}, hp, { id: +hp.id });
   const key = state.model === "fric" ? "fhid" : "hid";
   const hpt = HF_ALL.find(f => f.properties.id === hp.id); if (!hpt) return 0;
   const linked = HF_ALL.filter(f => f.properties[key] === hp.id && f.properties.ty !== 2);
   map.setFilter("hf-linked", ["any", ["==", ["get", key], hp.id], ["==", ["get", "id"], hp.id]]);
   map.setPaintProperty("hf-linked", "circle-color", hfColor());
   ["hf-main", "hf-hp"].forEach(id => { if (map.getLayer(id)) { map.setPaintProperty(id, "circle-opacity", 0.15); map.setPaintProperty(id, "circle-stroke-opacity", 0.15); } });
-  if (linked.length) {
-    const xs = linked.map(f => f.geometry.coordinates[0]).concat(hpt.geometry.coordinates[0]);
-    const ys = linked.map(f => f.geometry.coordinates[1]).concat(hpt.geometry.coordinates[1]);
-    map.fitBounds([[Math.min(...xs), Math.min(...ys)], [Math.max(...xs), Math.max(...ys)]], { padding: 60, maxZoom: 10.5, duration: 600 });
-  }
   return linked.length;
 }
 function clearNetwork() {
