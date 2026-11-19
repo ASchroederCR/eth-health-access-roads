@@ -69,6 +69,9 @@ section { display: flex; flex-direction: column; gap: 6px; }
 .tier .lbl span { color: var(--muted); font-size: 12.5px; margin-left: 4px; }
 .tier .km { font-family: var(--f-data); font-size: 12.5px; color: var(--ink2); }
 .tier.off { opacity: .42; }
+.tiers.muted-all { opacity: .4; pointer-events: none; }
+[hidden] { display: none !important; }
+.toggle:disabled { opacity: .45; cursor: not-allowed; }
 .tier.off .sw { background: var(--rule) !important; }
 .tier:focus-within { outline: 2px solid var(--focus); outline-offset: 1px; }
 /* switches */
@@ -172,13 +175,16 @@ section { display: flex; flex-direction: column; gap: 6px; }
     <section aria-labelledby="h-layers">
       <h2 id="h-layers">Map layers</h2>
       <div class="switches">
+        <div class="subh">Roads</div>
+        <label class="sw-row" for="opt-roads"><span>Roads by slowdown tier<small>Off hides all coloured roads</small></span><input type="checkbox" class="toggle" id="opt-roads" checked></label>
         <label class="sw-row" for="opt-terrain"><span>Include terrain in the score<small>Off shows rain and surface only</small></span><input type="checkbox" class="toggle" id="opt-terrain" checked></label>
-        <label class="sw-row" for="opt-hf"><span>Health facilities<small>Coloured by added travel time; health posts from zoom 7</small></span><input type="checkbox" class="toggle" id="opt-hf" checked></label>
         <label class="sw-row" for="opt-slip"><span>Slip / rock-fall exposure<small>Exposed stretches: moderate+ rain on steep, landslide-prone ground</small></span><input type="checkbox" class="toggle" id="opt-slip" checked></label>
+        <label class="sw-row" for="opt-ctx"><span>Main road network</span><input type="checkbox" class="toggle" id="opt-ctx" checked></label>
+        <div class="subh">Other layers</div>
+        <label class="sw-row" for="opt-hf"><span>Health facilities<small>Coloured by added travel time; health posts from zoom 7</small></span><input type="checkbox" class="toggle" id="opt-hf" checked></label>
         <label class="sw-row" for="opt-rain"><span>Forecast rain, 15-day total</span><input type="checkbox" class="toggle" id="opt-rain" checked></label>
         <label class="sw-row" for="opt-fric"><span>MAP travel speed (friction surface)<small>Malaria Atlas Project 2019, motorized</small></span><input type="checkbox" class="toggle" id="opt-fric"></label>
         <label class="sw-row" for="opt-hs"><span>Hillshade (GEM-15)</span><input type="checkbox" class="toggle" id="opt-hs" checked></label>
-        <label class="sw-row" for="opt-ctx"><span>Main road network</span><input type="checkbox" class="toggle" id="opt-ctx" checked></label>
       </div>
     </section>
 
@@ -420,6 +426,10 @@ function sync() {
   vis("rain", document.getElementById("opt-rain").checked);
   vis("hs", document.getElementById("opt-hs").checked);
   vis("ctx", document.getElementById("opt-ctx").checked);
+  const roadsOn = document.getElementById("opt-roads").checked;
+  vis("roads", roadsOn);
+  document.getElementById("tiers").classList.toggle("muted-all", !roadsOn);
+  document.getElementById("opt-terrain").disabled = !roadsOn;
   vis("slip", document.getElementById("opt-slip").checked);
   const frOn = document.getElementById("opt-fric").checked;
   vis("fric", frOn);
@@ -429,7 +439,7 @@ function sync() {
   document.getElementById("leg-hf").hidden = !hfOn; document.getElementById("leg-hf2").hidden = !hfOn;
   document.getElementById("leg-slip").hidden = !document.getElementById("opt-slip").checked;
 }
-["opt-rain", "opt-hs", "opt-ctx", "opt-slip", "opt-hf", "opt-fric"].forEach(id => document.getElementById(id).addEventListener("change", sync));
+["opt-roads", "opt-rain", "opt-hs", "opt-ctx", "opt-slip", "opt-hf", "opt-fric"].forEach(id => document.getElementById(id).addEventListener("change", sync));
 document.getElementById("opt-terrain").addEventListener("change", e => { state.terrain = e.target.checked; applyFilter(); });
 
 const TIER_NAME = ["Normal", "Minor", "Elevated", "Severe"], TIER_TOK = ["--ctx", "--minor", "--elev", "--sev"];
