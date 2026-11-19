@@ -11,7 +11,7 @@ GEM-15 elevation (15_fetch_gem15_dem.py) and the ADM1 boundaries, and writes com
   mask.geojson             everything outside Ethiopia, drawn white on the map
   facilities.geojson       hospitals, health centres, health posts with access results (17_health_access.py) and,
                            where available, the MAP friction-surface results (20_friction_access.py) as fr* fields
-  friction.png             MAP 2019 motorized friction as travel-speed classes, transparent outside Ethiopia
+  friction.png             MAP 2019 motorized friction as 4 travel-speed classes in the slowdown-tier colours
   hillshade.png            GEM-15 hillshade at 0.01 deg, transparent outside Ethiopia
   summary.json             run, totals by tier, by region, slip exposure
 
@@ -236,8 +236,11 @@ if __name__ == "__main__":
             Fr = d_.read(1).astype("float32"); ftr = d_.transform; fb = d_.bounds
         spd = 60.0 / (Fr * 1000.0)
         inside_ = rasterize([(gm, 1) for gm in rr.wn.GEOMS], out_shape=Fr.shape, transform=ftr, fill=0) == 1
-        SPC = [(0, 3, (241, 239, 232)), (3, 5, (215, 227, 220)), (5, 10, (169, 207, 195)), (10, 30, (111, 178, 164)),
-               (30, 60, (47, 138, 128)), (60, 1e9, (15, 92, 90))]
+        # same palette as the road slowdown tiers: slower travel = "worse" tier colour
+        SPC = [(0, 3, (168, 50, 15)),       # Severe   #a8320f   < 3 km/h
+               (3, 10, (224, 112, 31)),     # Elevated #e0701f   3-10 km/h
+               (10, 30, (242, 179, 61)),    # Minor    #f2b33d   10-30 km/h
+               (30, 1e9, (201, 200, 194))]  # Normal   #c9c8c2   >= 30 km/h
         img = np.zeros(Fr.shape + (4,), "uint8")
         for lo_, hi_, rgb in SPC:
             k_ = inside_ & np.isfinite(spd) & (spd >= lo_) & (spd < hi_)
