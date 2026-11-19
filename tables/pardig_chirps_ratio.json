@@ -1,0 +1,37 @@
+{
+ "window": "04 Nov - 19 Dec",
+ "years": [
+  2023,
+  2024,
+  2025
+ ],
+ "ratio_pardig_over_chirps": {
+  "Ethiopia": 0.809,
+  "Addis Ababa": 0.338,
+  "Afar": 0.314,
+  "Amhara": 0.9,
+  "Beneshangul Gumu": 0.916,
+  "Dire Dawa": 0.611,
+  "Gambela": 0.975,
+  "Hareri": 1.01,
+  "Oromia": 0.775,
+  "SNNPR": 0.926,
+  "Somali": 0.707,
+  "Tigray": 0.871
+ },
+ "chirps_mm_per_day": {
+  "Ethiopia": 1.18,
+  "Addis Ababa": 0.21,
+  "Afar": 0.27,
+  "Amhara": 0.62,
+  "Beneshangul Gumu": 1.09,
+  "Dire Dawa": 0.35,
+  "Gambela": 2.89,
+  "Hareri": 0.37,
+  "Oromia": 1.31,
+  "SNNPR": 2.46,
+  "Somali": 1.12,
+  "Tigray": 0.47
+ },
+ "note": "area-weighted total-rain ratio; CHIRPS v3 DAILY_SAT on PARDIG's 0.1 deg grid"
+}

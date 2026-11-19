@@ -16,6 +16,7 @@
   --r1: #e6effa; --r2: #cde2fb; --r3: #9ec5f4; --r4: #6da7ec; --r5: #3987e5; --r6: #256abf;
   --hs-min: 0; --focus: #2a6fb8;
   --outside: #ffffff; --int1: #cdb7e6; --int2: #8656bd;
+  --pn1: #8c510a; --pn2: #d8b365; --pn3: #ecebe6; --pn4: #9ec5f4; --pn5: #256abf;
   --d0: #d4d3cc; --d1: #f6cf7a; --d2: #ec9a3b; --d3: #c95a1c; --d4: #7d2a0c; --hfring: #fbfbf9;
   --f-display: "Barlow Condensed", "Arial Narrow", "Segoe UI", sans-serif;
   --f-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
@@ -27,7 +28,7 @@
     --mapbg: #1f2321; --chip: #232826;
     --minor: #e3a83f; --elev: #f2812f; --sev: #ff5a3c; --slip: #f4f6f3; --ctx: #66706a; --adm: #a2aaa4;
     --r1: #1d2a37; --r2: #213651; --r3: #24456d; --r4: #285b93; --r5: #2f74bd; --r6: #4691dc;
-    --hs-min: 0.32; --outside: #141716; --int1: #5d4a78; --int2: #b38be0; --d0: #4d5450; --d1: #6e5a24; --d2: #a8661f; --d3: #e27b33; --d4: #ffb07a; --hfring: #141716; --focus: #6aa8ec; color-scheme: dark;
+    --pn1: #e0a458; --pn2: #8a6630; --pn3: #3a3f3c; --pn4: #2f6aa8; --pn5: #6aa8ec; --hs-min: 0.32; --outside: #141716; --int1: #5d4a78; --int2: #b38be0; --d0: #4d5450; --d1: #6e5a24; --d2: #a8661f; --d3: #e27b33; --d4: #ffb07a; --hfring: #141716; --focus: #6aa8ec; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
@@ -35,7 +36,7 @@
   --mapbg: #1f2321; --chip: #232826;
   --minor: #e3a83f; --elev: #f2812f; --sev: #ff5a3c; --slip: #f4f6f3; --ctx: #66706a; --adm: #a2aaa4;
   --r1: #1d2a37; --r2: #213651; --r3: #24456d; --r4: #285b93; --r5: #2f74bd; --r6: #4691dc;
-  --hs-min: 0.32; --outside: #141716; --int1: #5d4a78; --int2: #b38be0; --d0: #4d5450; --d1: #6e5a24; --d2: #a8661f; --d3: #e27b33; --d4: #ffb07a; --hfring: #141716; --focus: #6aa8ec; color-scheme: dark;
+  --pn1: #e0a458; --pn2: #8a6630; --pn3: #3a3f3c; --pn4: #2f6aa8; --pn5: #6aa8ec; --hs-min: 0.32; --outside: #141716; --int1: #5d4a78; --int2: #b38be0; --d0: #4d5450; --d1: #6e5a24; --d2: #a8661f; --d3: #e27b33; --d4: #ffb07a; --hfring: #141716; --focus: #6aa8ec; color-scheme: dark;
 }
 html, body { height: 100%; }
 body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 14px; line-height: 1.45; }
@@ -218,7 +219,12 @@ section { display: flex; flex-direction: column; gap: 6px; }
         <div class="subh">Other layers</div>
         <label class="sw-row" for="opt-int"><span>Intense rain possible<small>≥ 10 / 20 mm in an hour, follows the forecast window</small></span><input type="checkbox" class="toggle" id="opt-int" checked></label>
         <label class="sw-row" for="opt-hf"><span>Health facilities<small>Coloured by added travel time; health posts from zoom 7</small></span><input type="checkbox" class="toggle" id="opt-hf" checked></label>
-        <label class="sw-row" for="opt-rain"><span>Forecast rain, 15-day total</span><input type="checkbox" class="toggle" id="opt-rain" checked></label>
+        <label class="sw-row" for="opt-rain"><span>Forecast rain<small id="rainsub">15-day total, mm</small></span><input type="checkbox" class="toggle" id="opt-rain" checked></label>
+        <div class="seg" role="radiogroup" aria-label="Rain shown as" id="rainseg">
+          <button type="button" role="radio" aria-checked="true" data-m="mm">mm</button>
+          <button type="button" role="radio" aria-checked="false" data-m="pn">% of normal</button>
+        </div>
+        <p class="note" id="pnnote" hidden></p>
         <label class="sw-row" for="opt-fric"><span>MAP travel speed (friction surface)<small>Malaria Atlas Project 2019, motorized</small></span><input type="checkbox" class="toggle" id="opt-fric"></label>
         <label class="sw-row" for="opt-hs"><span>Hillshade (GEM-15)</span><input type="checkbox" class="toggle" id="opt-hs" checked></label>
       </div>
@@ -255,9 +261,10 @@ section { display: flex; flex-direction: column; gap: 6px; }
     </aside>
     <div class="toast" id="toast" hidden></div>
     <div class="legend" aria-hidden="true">
-      <div>15-day rain, mm (bias-corrected)</div>
+      <div id="leg-rain">15-day rain, mm (bias-corrected)</div>
       <div class="ramp" id="ramp"></div>
-      <div class="ticks"><span>5</span><span>10</span><span>25</span><span>50</span><span>100</span><span>150</span></div>
+      <div class="ticks" id="rticks"><span>5</span><span>10</span><span>25</span><span>50</span><span>100</span><span>150</span></div>
+      <div id="leg-pnnote" hidden style="font-size:11px;color:var(--muted)">blank: dry season, not compared</div>
       <div class="slip" id="leg-slip"><i></i>slip / rock-fall exposure</div>
       <div id="leg-fric" hidden>MAP travel speed, km/h</div>
       <div class="dots" id="leg-fric2" hidden><span><i style="background:#a8320f;border-radius:2px"></i>&lt;3</span><span><i style="background:#e0701f;border-radius:2px"></i>3–10</span><span><i style="background:#f2b33d;border-radius:2px"></i>10–30</span><span><i style="background:#c9c8c2;border-radius:2px"></i>30+</span></div>
@@ -313,7 +320,7 @@ function renderTiers() {
 function setWindow(w) {
   state.win = w;
   document.querySelectorAll("#winseg button").forEach(b => b.setAttribute("aria-checked", String(+b.dataset.w === w)));
-  renderTiers(); applyFilter();
+  renderTiers(); applyFilter(); rainPaint(); rainLegend();
 }
 document.querySelectorAll("#winseg button").forEach(b => b.addEventListener("click", () => setWindow(+b.dataset.w)));
 renderTiers();
@@ -361,7 +368,38 @@ if (!H.fr) { document.getElementById("model-fric").disabled = true; document.get
 renderHealth();
 const ETH = [[33.0, 3.4], [48.0, 14.9]];
 document.getElementById("reg-all").addEventListener("click", () => map && map.fitBounds(ETH, { padding: 20 }));
-document.getElementById("ramp").innerHTML = [1, 2, 3, 4, 5, 6].map(i => `<i style="background:var(--r${i})"></i>`).join("");
+const PN_TICKS = ["<50", "50", "80", "120", "200+"];
+function rainLegend() {
+  const pn = state.rain === "pn", W = ["15-day", "Days 1–3", "Days 4–7", "Days 8–15"][state.win || 0];
+  document.getElementById("ramp").innerHTML = (pn ? [1, 2, 3, 4, 5].map(i => `var(--pn${i})`) : [1, 2, 3, 4, 5, 6].map(i => `var(--r${i})`))
+    .map(c => `<i style="background:${c}"></i>`).join("");
+  document.getElementById("rticks").innerHTML = (pn ? PN_TICKS : ["5", "10", "25", "50", "100", "150"]).map(t => `<span>${t}</span>`).join("");
+  document.getElementById("leg-rain").textContent = pn ? `${W} rain, % of normal (1991–2020)` : "15-day rain, mm (bias-corrected)";
+  document.getElementById("leg-pnnote").hidden = !pn;
+  document.getElementById("rainsub").textContent = pn ? `${W} forecast vs 1991–2020 normal` : "15-day total, mm";
+}
+state.rain = "mm";
+(function () {
+  const N = SUMMARY.normal, el = document.getElementById("pnnote");
+  if (!N) { document.getElementById("rainseg").hidden = true; return; }
+  el.innerHTML = `Next 15 days: <b>${N.all}%</b> of normal (days 1–3 ${N.w1}%, 4–7 ${N.w2}%, 8–15 ${N.w3}%); ${N.above}% of the compared area above normal, ${N.below}% below. Last 10 days observed: <b>${N.obs}%</b>. Normal: CHIRPS 1991–2020 for the same days; forecast and PARDIG put into CHIRPS terms first. Dry-season areas are not compared.`;
+})();
+function setRain(m) {
+  state.rain = m;
+  document.querySelectorAll("#rainseg button").forEach(b => b.setAttribute("aria-checked", String(b.dataset.m === m)));
+  document.getElementById("pnnote").hidden = m !== "pn";
+  rainPaint(); rainLegend();
+}
+function rainPaint() {
+  if (!map || !map.getLayer("rain")) return;
+  const fill = state.rain === "pn"
+    ? ["step", ["get", state.win ? `pn${state.win}` : "pn"], "rgba(0,0,0,0)", 0, css("--pn1"), 50, css("--pn2"), 80, css("--pn3"), 120, css("--pn4"), 200, css("--pn5")]
+    : ["step", ["get", "m"], "rgba(0,0,0,0)", 5, css("--r1"), 10, css("--r2"), 25, css("--r3"), 50, css("--r4"), 100, css("--r5"), 150, css("--r6")];
+  map.setPaintProperty("rain", "fill-color", fill);
+  map.setPaintProperty("rain", "fill-opacity", state.rain === "pn" ? 0.7 : 0.55);
+}
+document.querySelectorAll("#rainseg button").forEach(b => b.addEventListener("click", () => setRain(b.dataset.m)));
+rainLegend();
 
 // ---- map ----
 const status = document.getElementById("status");
@@ -411,7 +449,7 @@ function applyTheme() {
   if (!map) return;
   const has = id => map.getLayer(id);
   map.setPaintProperty("bg", "background-color", css("--mapbg"));
-  if (has("rain")) map.setPaintProperty("rain", "fill-color", ["step", ["get", "m"], "rgba(0,0,0,0)", 5, css("--r1"), 10, css("--r2"), 25, css("--r3"), 50, css("--r4"), 100, css("--r5"), 150, css("--r6")]);
+  if (has("rain")) rainPaint();
   if (has("hs")) map.setPaintProperty("hs", "raster-brightness-min", parseFloat(css("--hs-min")) || 0);
   if (has("ctx")) map.setPaintProperty("ctx", "line-color", css("--ctx"));
   if (has("adm")) map.setPaintProperty("adm", "line-color", css("--adm"));
@@ -648,7 +686,8 @@ function forecastChart(hs) {
   return `<div class="rchart"><div class="netnote" style="margin:0 0 4px">${head} Wettest hour (wet end): ${hs.pkv} mm on ${tl(at(hs.pk))} UTC.</div>
     <svg viewBox="0 0 ${W} ${Ht}" role="img" aria-label="Forecast rain at this hospital, mm per 3 hours, with intense-rain periods shaded">${g}</svg>
     <div class="cap"><span><i style="background:var(--r4)"></i>forecast, mm per 3 h</span><span>- - wet end (90th pct)</span><span><i style="background:var(--int1)"></i>intense rain possible</span><span><i style="background:var(--int2)"></i>very intense</span></div>
-    <div class="cap">Days 1–3 · 4–7 · 8–15 split by solid lines. Raw WeatherNext 3 ensemble, which runs low on amounts. Last 10 days observed (PARDIG): ${hs.obs10} mm.</div></div>`;
+    <div class="cap">Days 1–3 · 4–7 · 8–15 split by solid lines. Raw WeatherNext 3 ensemble, which runs low on amounts. Last 10 days observed (PARDIG): ${hs.obs10} mm.</div>
+    ${hs.pn >= 0 || hs.po >= 0 ? `<div class="netnote" style="margin-top:6px">Compared with normal (CHIRPS 1991–2020) here: next 15 days ${hs.pn >= 0 ? `<b>${hs.pn}%</b>` : "n/a"}, last 10 days ${hs.po >= 0 ? `<b>${hs.po}%</b>` : "n/a"}.</div>` : ""}</div>`;
 }
 // ---- docked hospital card (keeps the hospital and its network visible) ----
 let cardHosp = null;
@@ -678,7 +717,10 @@ function legendItems() {
   if (on("opt-slip")) L.push({ line: css("--slip"), w: 2, dash: [4, 3], l: "Slip / rock-fall exposed stretch" });
   if (on("opt-ctx")) L.push({ line: css("--ctx"), w: 2, l: "Main road network" });
   if (on("opt-int")) L.push({ h: `Intense rain possible · ${W}` }, { box: css("--int1"), l: "≥ 10 mm in an hour" }, { box: css("--int2"), l: "≥ 20 mm in an hour" });
-  if (on("opt-rain")) L.push({ h: "15-day forecast rain, mm (bias-corrected)" }, { ramp: [1, 2, 3, 4, 5, 6].map(i => css(`--r${i}`)), ticks: ["5", "10", "25", "50", "100", "150"] });
+  if (on("opt-rain")) L.push(...(state.rain === "pn"
+    ? [{ h: `${state.win ? ["", "Days 1–3", "Days 4–7", "Days 8–15"][state.win] : "15-day"} forecast rain, % of normal (CHIRPS 1991–2020)` },
+       { ramp: [1, 2, 3, 4, 5].map(i => css(`--pn${i}`)), ticks: PN_TICKS }, { l: "Blank: dry season, not compared", note: true }]
+    : [{ h: "15-day forecast rain, mm (bias-corrected)" }, { ramp: [1, 2, 3, 4, 5, 6].map(i => css(`--r${i}`)), ticks: ["5", "10", "25", "50", "100", "150"] }]));
   if (on("opt-fric")) L.push({ h: "MAP travel speed, km/h" }, ...[["#a8320f", "< 3"], ["#e0701f", "3–10"], ["#f2b33d", "10–30"], ["#c9c8c2", "30+"]].map(([c, l]) => ({ box: c, l })));
   if (on("opt-hf")) L.push({ h: `Facilities: added travel minutes · ${state.model === "fric" ? "MAP friction" : "road + slope"} model` },
     ...[["--d0", "< 5"], ["--d1", "5–15"], ["--d2", "15–30"], ["--d3", "30–60"], ["--d4", "60+"]].map(([t, l]) => ({ dot: css(t), l: l + " min" })),
@@ -699,7 +741,8 @@ async function exportPNG() {
       if (line) out.push(line); return out; };
     const meas = document.createElement("canvas").getContext("2d");
     meas.font = `400 ${S(10.5)}px "Source Sans 3", "Segoe UI", sans-serif`;
-    const foot1 = "Roads © OpenStreetMap contributors, surface model HeiGIT · Elevation Google GEM-15 · Rain Google WeatherNext 3, bias-corrected to Google PARDIG · Facilities: Ethiopian health facility register · Regions geoBoundaries · Travel speed: Malaria Atlas Project";
+    const foot1 = "Roads © OpenStreetMap contributors, surface model HeiGIT · Elevation Google GEM-15 · Rain Google WeatherNext 3, bias-corrected to Google PARDIG · Facilities: Ethiopian health facility register · Regions geoBoundaries · Travel speed: Malaria Atlas Project" +
+      (state.rain === "pn" && document.getElementById("opt-rain").checked ? " · Normal: CHIRPS v3 1991–2020 (UCSB CHC); forecast put into CHIRPS terms by the regional PARDIG ÷ CHIRPS ratio" : "");
     const foot2 = `Speed factors and thresholds are illustrative. Exported ${new Date().toISOString().slice(0, 16).replace("T", " ")} UTC.`;
     const footLines = wrap(meas, foot1, mc.width + legendW - 2 * pad).concat([foot2]);
     const footH = S(14) + footLines.length * S(14) + S(8);
@@ -730,6 +773,8 @@ async function exportPNG() {
         if (it.ring) { g.strokeStyle = it.ring; g.lineWidth = S(2); g.stroke(); } g.globalAlpha = 1; }
       if (it.ramp) { it.ramp.forEach((col, i) => { g.fillStyle = col; g.fillRect(x + i * S(34), y - S(10), S(34), S(10)); });
         g.fillStyle = muted; g.font = font(400, 10.5, '"Source Sans 3", "Segoe UI", sans-serif'); it.ticks.forEach((t, i) => g.fillText(t, x + i * S(34), y + S(12))); y += S(12); continue; }
+      if (it.note) { g.fillStyle = muted; g.font = font(400, 11, '"Source Sans 3", "Segoe UI", sans-serif'); y += S(4);
+        wrap(g, it.l, legendW - 2 * pad).forEach((l, i) => { if (i) y += S(14); g.fillText(l, x, y); }); continue; }
       g.fillStyle = ink2; const ls = wrap(g, it.l, legendW - 2 * pad - S(32)); ls.forEach((l, i) => { if (i) y += S(14); g.fillText(l, x + S(32), y); });
     }
     // scale bar on the map image

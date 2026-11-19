@@ -139,6 +139,19 @@ if __name__ == "__main__":
     _P, _ = wn.load_pardig(); _have = set(pd.to_datetime(_P.time.values))
     OBS10 = np.stack([np.nan_to_num(_P.sel(time=init - pd.Timedelta(days=k)).values) if (init - pd.Timedelta(days=k)) in _have
                       else np.full(mask.shape if hasattr(mask, "shape") else z["mask"].shape, np.nan) for k in range(10, 0, -1)])
+    PN = None
+    try:
+        _s = importlib.util.spec_from_file_location("pn", os.path.join(ROOT, "scripts", "33_percent_of_normal.py"))
+        _pn = importlib.util.module_from_spec(_s); _s.loader.exec_module(_pn)
+        PN = _pn.fields(init, fld["daily"], OBS10, mask.shape)
+    except SystemExit as e_:
+        print("no % of normal:", e_)
+
+    def pv(k, i, j, f="pct"):
+        """% of normal (int, -1 = not compared) or tercile (-1/0/1, 9 = not compared)."""
+        v = PN[k][f][i, j] if PN else np.nan
+        if not np.isfinite(v): return -1 if f == "pct" else 9
+        return int(round(float(v))) if f == "pct" else int(v)
     gx0, gy0, gres = float(z["x0"]), float(z["y0"]), float(z["res"])
     feats = []
     for i in range(int(z["ny"])):
@@ -150,7 +163,9 @@ if __name__ == "__main__":
                 "m": round(float(fld["mean15"][i, j]), 1), "r3": round(float(fld["r3"][i, j]), 1),
                 "p20": round(float(fld["p90max"][i, j]), 1), "h": int(H[i, j]),
                 "a1": int(WH["A"][0][i, j]), "a2": int(WH["A"][1][i, j]), "a3": int(WH["A"][2][i, j]),
-                "i1": int(WH["I"][0][i, j]), "i2": int(WH["I"][1][i, j]), "i3": int(WH["I"][2][i, j])},
+                "i1": int(WH["I"][0][i, j]), "i2": int(WH["I"][1][i, j]), "i3": int(WH["I"][2][i, j]),
+                "pn": pv("all", i, j), "pn1": pv("w1", i, j), "pn2": pv("w2", i, j), "pn3": pv("w3", i, j),
+                "po": pv("obs", i, j), "pt": pv("all", i, j, "ter")},
                 "geometry": {"type": "Polygon", "coordinates": [[[x0, y0], [x1, y0], [x1, y1], [x0, y1], [x0, y0]]]}})
     json.dump({"type": "FeatureCollection", "features": feats}, open(os.path.join(OUT, "rain.geojson"), "w"),
               separators=(",", ":"))
@@ -231,7 +246,8 @@ if __name__ == "__main__":
                 pk = int(np.argmax(hw))
                 p["hs"] = {"t0": f"{init:%Y-%m-%dT%H}", "m": [round(float(v), 1) for v in hm.reshape(120, 3).sum(1)],
                            "w": [round(float(v), 1) for v in hw.reshape(120, 3).sum(1)], "i1": i1, "i2": i2,
-                           "pk": pk, "pkv": round(float(hw[pk]), 1), "obs10": round(float(np.nansum(OBS10[:, ci, cj])), 1)}
+                           "pk": pk, "pkv": round(float(hw[pk]), 1), "obs10": round(float(np.nansum(OBS10[:, ci, cj])), 1),
+                           "pn": pv("all", ci, cj), "po": pv("obs", ci, cj)}
             p["rs"] = {"o": [None if np.isnan(v) else round(float(v), 1) for v in OBS10[:, ci, cj]],
                        "f": [round(float(v), 1) for v in fld["daily"][:, ci, cj]],
                        "w": [round(float(v), 1) for v in np.nan_to_num(z["p90"])[:, ci, cj]],
@@ -298,6 +314,10 @@ if __name__ == "__main__":
     tab = pd.read_csv(os.path.join(ROOT, "data", "processed", "tables", f"eth_roads_rain_risk_adm1_{tag}.csv"), index_col=0)
     tab = tab[tab.index != "Unassigned"]
     reg_bbox = {n: [round(v, 3) for v in gm.bounds] for n, gm in zip(wn.NAMES, wn.GEOMS)}
+    _lat = float(z["y0"]) - float(z["res"]) * (np.arange(int(z["ny"])) + 0.5)
+    _w = np.cos(np.deg2rad(_lat))[:, None] * np.ones(z["mask"].shape)
+    if PN:
+        _ter = PN["all"]["ter"]; _tok = z["mask"] & np.isfinite(_ter)
     win = []
     for w_, (a_, b_) in enumerate(rr.WINDOWS, start=1):
         kmw = g.groupby(f"tier_w{w_}").km.sum()
@@ -313,6 +333,13 @@ if __name__ == "__main__":
             "regions": [{"name": n, **{t: round(float(tab.loc[n, t])) for t in TIERS},
                          "share": float(tab.loc[n, "share_slowed_%"]), "slide": round(float(tab.loc[n, "slide_exposure_km"])),
                          "bbox": reg_bbox.get(n)} for n in tab.sort_values("share_slowed_%", ascending=False).index],
-            "hillshade_bounds": [bounds.left, bounds.bottom, bounds.right, bounds.top], "health": health, "windows": win}
+            "hillshade_bounds": [bounds.left, bounds.bottom, bounds.right, bounds.top], "health": health, "windows": win,
+            "normal": None if not PN else {
+                "ratio_window": PN["ratio_window"],
+                **{k: round(float(100 * (np.nan_to_num(PN[k]["obs" if k == "obs" else "fc"])[z["mask"]] * _w[z["mask"]]).sum()
+                                  / max((PN[k]["normal"][z["mask"]] * _w[z["mask"]]).sum(), 1e-6)))
+                   for k in ("obs", "w1", "w2", "w3", "all")},
+                **{lab: round(float(100 * (_w[_tok] * (_ter[_tok] == v)).sum() / _w[_tok].sum()))
+                   for lab, v in (("above", 1), ("below", -1))}}}
     json.dump(summ, open(os.path.join(OUT, "summary.json"), "w"), indent=1)
     print(json.dumps({k: summ[k] for k in ["init", "tiers", "slide_km", "raised_km"]}))

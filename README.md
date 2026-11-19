@@ -37,6 +37,16 @@ Rain is judged two ways, each for days 1–3, 4–7 and 8–15 (`charts/ETH_road
 - **Intense rain** marks where a downpour is possible. It is the wettest hour of WeatherNext 3's hourly 90th percentile (`27_wn3_hourly.py`), with thresholds set so it flags as often as PARDIG observed ≥ 10 mm, or ≥ 20 mm, in an hour (1–18 Nov 2026; `28_pardig_hourly.py`, `29_calibrate_intensity.py`). Exact cell-days are hard to hit: about 15% hit rate, 86% false alarms, though still 8–10× better than random. At the scale the map uses it (per window, ~20 km tolerance), flags are rarely false: 6–14% false alarms. It catches 23% (days 1–3), 53% (4–7) and 67% (8–15) of observed downpour areas.
 - The **overall** tier is the worst window, and drives routing. Slip / rock-fall exposure needs intense rain or high accumulation on steep, landslide-prone ground.
 
+### Rain compared with normal
+The web map can show rain as **% of normal** (switch under *Forecast rain*). It follows the forecast window, and the hospital card shows the same comparison at each hospital (`charts/ETH_rain_percent_of_normal.png`, `33_percent_of_normal.py`).
+- **Normal:** CHIRPS v3 daily, 1991–2020, for the same calendar days (`31_chirps_normal.py`).
+- **Same terms:** the forecast and the observed rain are both scaled to PARDIG, which runs drier than CHIRPS in these weeks. Each is divided by its region's PARDIG ÷ CHIRPS ratio for 4 Nov – 19 Dec 2023–25 (0.71–0.97) before comparing. Regions drier than 0.5 mm/day in those weeks use the national 0.81.
+- **Not compared:** cells with a 15-day normal under 5 mm are dry season, and a few mm there swings the percentage wildly.
+- **Terciles:** below / near / above normal is where the total falls among the 30 years. The forecast is an ensemble mean, which smooths away extremes, so "above normal" is if anything understated.
+- **19 Nov 2026 run:** the last 10 days had 269% of normal. The next 15 days are forecast at 117%: dry for a week (days 1–3 35%, days 4–7 41%), then wet (days 8–15 236%).
+
+**PARDIG vs CHIRPS for the short rains** (`32_pardig_vs_chirps_short_rains.py`, `charts/ETH_pardig_chirps_short_rains.png`). The forecast is corrected to PARDIG, not CHIRPS. Over Oct–Dec 2023–2025 the two agree on total rain (PARDIG 0.92× CHIRPS) and on 10-day totals ≥ 50 mm (0.95×), the accumulation classes that set the slowdown tier. They differ on heavy days: PARDIG has 0.80× CHIRPS's days ≥ 20 mm overall, 0.54× in Somali, and 1.37× in Amhara and Tigray. Correcting to CHIRPS would add heavy-rain days in the south-east and remove some in the north; the slowdown tiers would change little.
+
 ### Road slowdown tier
 Each road segment's tier, per window, is **accumulation (0–3) + surface (0–2) + steepness (0–2) − 1**, kept between 0 and 3. A road can be at most one tier above its rain score, and a road with no forecast rain is always Normal.
 
@@ -65,7 +75,7 @@ Each road segment's tier, per window, is **accumulation (0–3) + surface (0–2
 ### Caveats
 - Thresholds and speed factors are illustrative and haven't been checked against observed travel times or closures.
 - Road grades come from a ~110 m elevation grid, so they run high where roads cut across hillsides.
-- The bias corrections rest on 2–3 years of WeatherNext 3 runs; Bega (dry-season) hazard is caught poorly by any version (about a third, with 40–55% false alarms). PARDIG itself ran about 11% wetter than CHIRPS over the past year.
+- The bias corrections rest on 2–3 years of WeatherNext 3 runs; Bega (dry-season) hazard is caught poorly by any version (about a third, with 40–55% false alarms). PARDIG itself ran about 11% wetter than CHIRPS over the past year, but about 8% drier in the short rains (see *Rain compared with normal*).
 - Absolute delays depend on the travel surface. Rerun on the Malaria Atlas Project motorized friction surface (`20_friction_access.py`), the same health centres come out most affected (rank correlation 0.9) with similar percentage slowdowns. But MAP's baseline trips are about 3.8 times shorter, so far fewer cross a fixed 30-minute threshold (`charts/ETH_friction_vs_road_*.png`).
 - The landslide susceptibility map is ~1 km, so it describes the hillside setting, not the road cut itself.
 - Routing is by road only. Seasonal river crossings, ferries and closures aren't modelled.
@@ -89,6 +99,10 @@ scripts/
   16_export_webmap.py          compact web-map data files
   17_health_access.py          routing, facility rankings, charts
   18_build_webmap.py           build webmap/index.html (artifact) and docs/index.html (Pages)
+  08_fetch_pardig_chirps.py    PARDIG and CHIRPS v3 daily on one 0.1° grid (Earth Engine)
+  31_chirps_normal.py          CHIRPS 1991–2020 daily for the run's calendar days (Earth Engine)
+  32_pardig_vs_chirps_short_rains.py  PARDIG vs CHIRPS over the short rains; PARDIG ÷ CHIRPS ratios
+  33_percent_of_normal.py      forecast and observed rain as % of normal, with terciles
   30_hospital_rain_charts.py   forecast rain charts for hospitals in the wettest zones, with intense-rain periods
   19_travel_surface_compare.py compare with MAP 2020 motorized travel time (north-west clip)
   20_friction_access.py        rerun facility routing on the MAP motorized friction surface
