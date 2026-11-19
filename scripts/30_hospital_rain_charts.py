@@ -28,7 +28,9 @@ INK, INK2, MUTED, SURF = "#0b0b0b", "#52514e", "#898781", "#fcfcfb"
 C_MEAN, C_INT1, C_INT2 = "#6da7ec", "#cdb7e6", "#8656bd"
 RAIN_SEQ = ["#fcfcfb", "#e6effa", "#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf"]
 RAIN_LV = [0, 5, 10, 25, 50, 100, 150, 1e4]
-plt.rcParams.update({"font.family": ["Segoe UI", "DejaVu Sans"], "font.size": 9, "axes.edgecolor": "#c3c2b7",
+from matplotlib import font_manager as _fm
+for _f in __import__("glob").glob(os.path.join(ROOT, "assets", "fonts", "roboto", "*.ttf")): _fm.fontManager.addfont(_f)
+plt.rcParams.update({"font.family": ["Roboto", "DejaVu Sans"], "font.size": 9, "axes.edgecolor": "#c3c2b7",
                      "axes.labelcolor": INK2, "xtick.color": MUTED, "ytick.color": INK2, "axes.spines.top": False,
                      "axes.spines.right": False, "figure.facecolor": SURF, "axes.facecolor": SURF, "savefig.dpi": 200,
                      "savefig.bbox": "tight"})
@@ -97,15 +99,15 @@ if __name__ == "__main__":
         geo = ft["geometry"]; polys = geo["coordinates"] if geo["type"] == "MultiPolygon" else [geo["coordinates"]]
         for poly in polys:
             ring = np.array(poly[0]); axm.plot(ring[:, 0], ring[:, 1], color=INK2, lw=0.4)
-    axm.scatter(D.lon, D.lat, s=5, color="#b8b6ae", zorder=3, linewidths=0)
+    axm.scatter(D.lon, D.lat, marker="s", s=7, facecolors="none", edgecolors="#000000", zorder=3, linewidths=0.35, alpha=0.45)
     for i, r in C.iterrows():
-        axm.scatter(r.lon, r.lat, s=70, color=C_INT2 if r.ih else INK, edgecolor=SURF, linewidth=0.8, zorder=4)
-        axm.text(r.lon, r.lat, f"{i + 1}", color=SURF, fontsize=6.5, ha="center", va="center", zorder=5, fontweight="bold")
+        axm.scatter(r.lon, r.lat, marker="s", s=60, facecolor=SURF, edgecolor="#000000", linewidth=1.1, zorder=4)
+        axm.text(r.lon, r.lat, f"{i + 1}", color=C_INT2 if r.ih else INK, fontsize=6.5, ha="center", va="center", zorder=5, fontweight="bold")
     axm.set_aspect("equal"); axm.set_xticks([]); axm.set_yticks([]); [sp.set_visible(False) for sp in axm.spines.values()]
     axm.set_title("Where they are", loc="left", fontsize=11, color=INK)
-    axm.legend(handles=[Line2D([], [], marker="o", ls="", color=C_INT2, markersize=8, label="intense rain forecast"),
-                        Line2D([], [], marker="o", ls="", color=INK, markersize=8, label="wet zone, no intense rain"),
-                        Line2D([], [], marker="o", ls="", color="#b8b6ae", markersize=4, label="other hospitals")]
+    axm.legend(handles=[Line2D([], [], marker="$1$", ls="", color=C_INT2, markersize=7, label="intense rain forecast (number)"),
+                        Line2D([], [], marker="s", ls="", markerfacecolor="none", markeredgecolor="#000000", markeredgewidth=1.1, markersize=7, label="hospital shown in a panel"),
+                        Line2D([], [], marker="s", ls="", markerfacecolor="none", markeredgecolor="#000000", markeredgewidth=0.5, alpha=0.45, markersize=4, label="other hospitals")]
                + [Patch(color=c, label=l) for c, l in zip(RAIN_SEQ[2:], ["10–25 mm", "25–50", "50–100", "100–150", "150+"])],
                loc="upper left", bbox_to_anchor=(0, -0.02), fontsize=7.5, frameon=False, ncol=2, title="15-day forecast rain (bias-corrected)",
                title_fontsize=7.5)
@@ -134,7 +136,7 @@ if __name__ == "__main__":
                        ("Comperhensive Specialized  Hospital", "Comp. Spec. H."), ("Primary Hospital", "PH"), ("Primery Hospital", "PH"),
                        ("Primary Hosiptal", "PH"), ("General Hospital", "GH"), ("General hospital", "GH")]:
             nm = nm.replace(a_, b_)
-        ax.set_title(f"{i + 1}. {nm}", loc="left", fontsize=9.5, color=INK, pad=26, fontweight="bold")
+        ax.set_title(f"{i + 1}. {nm}", loc="left", fontsize=9.5, color=INK, pad=31, fontweight="bold")
         sp_ = spans(hs["i1"])
         line2 = (f"intense rain: {len(sp_)} period{'s' if len(sp_) > 1 else ''}, first {at(sp_[0][0]):%d %b %H}:00 UTC" if r.ih else "no intense rain forecast")
         ax.text(0, 1.03, f"{r.zone} · 15-day forecast {r.total15:.0f} mm\n{line2}", transform=ax.transAxes, fontsize=7.3,

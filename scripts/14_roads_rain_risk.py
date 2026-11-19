@@ -427,10 +427,10 @@ if __name__ == "__main__":
     hosp, hc = hf[hf.Type == "Hospital"], hf[hf.Type == "Health Center"]
     inb = lambda d: d[(d.Longitude > box[0]) & (d.Longitude < box[2]) & (d.Latitude > box[1]) & (d.Latitude < box[3])]
     ax.scatter(inb(hc).Longitude, inb(hc).Latitude, marker="o", s=15, facecolor=SURF, edgecolor=INK, linewidth=0.8, zorder=9)
-    ax.scatter(inb(hosp).Longitude, inb(hosp).Latitude, marker="P", s=70, color=INK, edgecolor=SURF, linewidth=0.7, zorder=10)
-    axs[0].scatter(hosp.Longitude, hosp.Latitude, marker="P", s=11, color=INK, edgecolor=SURF, linewidth=0.3, zorder=9)
+    ax.scatter(inb(hosp).Longitude, inb(hosp).Latitude, marker="s", s=52, facecolor="none", edgecolor="#000000", linewidth=1.4, zorder=10)
+    axs[0].scatter(hosp.Longitude, hosp.Latitude, marker="s", s=12, facecolor="none", edgecolor="#000000", linewidth=0.7, zorder=9)
     ax.legend(handles=[Line2D([], [], color=INK, lw=2.2, label=f"slip / rock-fall exposed stretch ({g.slide_km.sum():,.0f} km nationally)"),
-                       Line2D([], [], marker="P", ls="", color=INK, markeredgecolor=SURF, markersize=8, label="hospital (both maps)"),
+                       Line2D([], [], marker="s", ls="", markerfacecolor="none", markeredgecolor="#000000", markeredgewidth=1.4, markersize=7, label="hospital (both maps)"),
                        Line2D([], [], marker="o", ls="", markerfacecolor=SURF, markeredgecolor=INK, markersize=5, label="health centre")],
               loc="upper left", bbox_to_anchor=(0, -0.01), fontsize=8.5, frameon=False)
     for s in ax.spines.values(): s.set_visible(True); s.set_color(INK2); s.set_linewidth(0.8)
@@ -496,7 +496,7 @@ if __name__ == "__main__":
     fig.legend(handles=hd, loc="lower center", ncol=6, frameon=False, fontsize=9, bbox_to_anchor=(0.5, -0.02))
     fig.suptitle("When the risk falls: slowdown tiers and intense rain by forecast window", x=0.01, ha="left", fontsize=13.5,
                  fontweight="bold", color=INK, y=1.02)
-    fig.text(0.01, 0.965, f"WeatherNext 3 run {init:%d %b %Y} 00Z · tiers from 10-day running rain (PARDIG observed before the run + bias-corrected forecast), "
+    fig.text(0.01, 0.95, f"WeatherNext 3 run {init:%d %b %Y} 00Z · tiers from 10-day running rain (PARDIG observed before the run + bias-corrected forecast), "
              f"surface and terrain · intense rain from the hourly 90th percentile, calibrated to PARDIG hourly rates", fontsize=9.5, color=INK2)
     fig.text(0.01, -0.07, "Accumulation: wettest 10-day running total in the window ≥ 25 / 50 / 100 mm = low / moderate / high. Intense rain: wettest hour of the "
              "hourly 90th percentile above thresholds that flag as often as PARDIG observed ≥ 10 / 20 mm in an hour (1–18 Nov 2026).\n"

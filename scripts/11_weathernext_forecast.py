@@ -51,7 +51,9 @@ THRESH = 25   # mm in 15 days, for the probability map
 INK, INK2, MUTED, GRIDC, AXIS, SURF = "#0b0b0b", "#52514e", "#898781", "#e1e0d9", "#c3c2b7", "#fcfcfb"
 C_FC, C_OBS = "#2a78d6", "#eb6834"
 SEQ = ["#f0efec", "#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95", "#0d366b"]
-plt.rcParams.update({"font.family": ["Segoe UI", "DejaVu Sans"], "font.size": 10, "axes.edgecolor": AXIS,
+from matplotlib import font_manager as _fm
+for _f in __import__("glob").glob(os.path.join(ROOT, "assets", "fonts", "roboto", "*.ttf")): _fm.fontManager.addfont(_f)
+plt.rcParams.update({"font.family": ["Roboto", "DejaVu Sans"], "font.size": 10, "axes.edgecolor": AXIS,
                      "axes.labelcolor": INK2, "xtick.color": MUTED, "ytick.color": INK2, "axes.grid": True,
                      "grid.color": GRIDC, "grid.linewidth": 0.6, "axes.spines.top": False,
                      "axes.spines.right": False, "figure.facecolor": SURF, "axes.facecolor": SURF,

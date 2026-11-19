@@ -135,10 +135,10 @@ if __name__ == "__main__":
         ax.minorticks_off(); ax.set_xlim(0.25, 4.5)
         ax.set_yticks(yy); ax.set_yticklabels(order if k == 0 else [], fontsize=9)
         ax.grid(axis="y", visible=False); ax.set_ylim(-0.7, len(order) - 0.3)
-        ax.set_title(ttl, loc="left", fontsize=11, color=INK, fontweight="semibold", pad=4)
+        ax.set_title(ttl, loc="left", fontsize=11, color=INK, fontweight="medium", pad=4)
         ax.set_xlabel("PARDIG ÷ CHIRPS", fontsize=9)
         if k == 0:
-            ax.get_yticklabels()[0].set_fontweight("semibold")
+            ax.get_yticklabels()[0].set_fontweight("medium")
     # national exceedance curve
     ax = fig.add_subplot(gs[3])
     sel = D.year.isin(SEASONS) & D.month.isin([10, 11, 12])
@@ -146,11 +146,11 @@ if __name__ == "__main__":
     for arr, col, lab in ((C[sel][:, mask], C_CH, "CHIRPS"), (P[sel][:, mask], C_PD, "PARDIG")):
         f = np.array([(arr >= x).mean() for x in xs]) * 100
         ax.plot(xs, f, color=col, lw=2)
-        i = 55; ax.text(xs[i] + 1, f[i] * 1.25, lab, color=INK2, fontsize=9, fontweight="semibold")
+        i = 55; ax.text(xs[i] + 1, f[i] * 1.25, lab, color=INK2, fontsize=9, fontweight="medium")
     ax.set_yscale("log"); ax.set_xlim(1, 80)
     ax.set_yticks([0.01, 0.1, 1, 10, 50]); ax.set_yticklabels(["0.01%", "0.1%", "1%", "10%", "50%"])
     ax.set_xlabel("daily rain, mm", fontsize=9)
-    ax.set_title("Share of cell-days at least this wet", loc="left", fontsize=11, color=INK, fontweight="semibold", pad=4)
+    ax.set_title("Share of cell-days at least this wet", loc="left", fontsize=11, color=INK, fontweight="medium", pad=4)
     fig.text(0.1, 0.94, "PARDIG vs CHIRPS over the Oct–Dec short rains, 2023–2025",
              fontsize=15, fontweight="bold", color=INK, ha="left")
     pn = Tp.loc["Ethiopia"]

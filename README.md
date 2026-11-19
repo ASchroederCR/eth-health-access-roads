@@ -132,6 +132,7 @@ scripts/
 webmap/index.src.html  web map source (MapLibre GL)
 charts/               PNG outputs
 tables/               CSV outputs (per region, per facility, top lists, woredas)
+assets/fonts/roboto/  Roboto (Apache 2.0), registered by the chart scripts so charts render the same everywhere
 ```
 
 ## Reproducing
