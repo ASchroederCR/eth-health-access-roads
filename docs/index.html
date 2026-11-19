@@ -17,7 +17,7 @@
   --minor: #f2b33d; --elev: #e0701f; --sev: #a8320f; --slip: #1d211f; --ctx: #8e9590; --adm: #5d635f;
   --r1: #e6effa; --r2: #cde2fb; --r3: #9ec5f4; --r4: #6da7ec; --r5: #3987e5; --r6: #256abf;
   --hs-min: 0; --focus: #2a6fb8;
-  --outside: #ffffff;
+  --outside: #ffffff; --int1: #cdb7e6; --int2: #8656bd;
   --d0: #d4d3cc; --d1: #f6cf7a; --d2: #ec9a3b; --d3: #c95a1c; --d4: #7d2a0c; --hfring: #fbfbf9;
   --f-display: "Barlow Condensed", "Arial Narrow", "Segoe UI", sans-serif;
   --f-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
@@ -29,7 +29,7 @@
     --mapbg: #1f2321; --chip: #232826;
     --minor: #e3a83f; --elev: #f2812f; --sev: #ff5a3c; --slip: #f4f6f3; --ctx: #66706a; --adm: #a2aaa4;
     --r1: #1d2a37; --r2: #213651; --r3: #24456d; --r4: #285b93; --r5: #2f74bd; --r6: #4691dc;
-    --hs-min: 0.32; --outside: #141716; --d0: #4d5450; --d1: #6e5a24; --d2: #a8661f; --d3: #e27b33; --d4: #ffb07a; --hfring: #141716; --focus: #6aa8ec; color-scheme: dark;
+    --hs-min: 0.32; --outside: #141716; --int1: #5d4a78; --int2: #b38be0; --d0: #4d5450; --d1: #6e5a24; --d2: #a8661f; --d3: #e27b33; --d4: #ffb07a; --hfring: #141716; --focus: #6aa8ec; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
@@ -37,7 +37,7 @@
   --mapbg: #1f2321; --chip: #232826;
   --minor: #e3a83f; --elev: #f2812f; --sev: #ff5a3c; --slip: #f4f6f3; --ctx: #66706a; --adm: #a2aaa4;
   --r1: #1d2a37; --r2: #213651; --r3: #24456d; --r4: #285b93; --r5: #2f74bd; --r6: #4691dc;
-  --hs-min: 0.32; --outside: #141716; --d0: #4d5450; --d1: #6e5a24; --d2: #a8661f; --d3: #e27b33; --d4: #ffb07a; --hfring: #141716; --focus: #6aa8ec; color-scheme: dark;
+  --hs-min: 0.32; --outside: #141716; --int1: #5d4a78; --int2: #b38be0; --d0: #4d5450; --d1: #6e5a24; --d2: #a8661f; --d3: #e27b33; --d4: #ffb07a; --hfring: #141716; --focus: #6aa8ec; color-scheme: dark;
 }
 html, body { height: 100%; }
 body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 14px; line-height: 1.45; }
@@ -73,6 +73,13 @@ section { display: flex; flex-direction: column; gap: 6px; }
 .tier.off { opacity: .42; }
 .tiers.muted-all { opacity: .4; pointer-events: none; }
 [hidden] { display: none !important; }
+.rchart { margin-top: 8px; }
+.rchart svg { display: block; width: 100%; height: auto; }
+.rchart .cap { font-size: 11px; color: var(--muted); display: flex; gap: 10px; flex-wrap: wrap; margin-top: 2px; }
+.rchart .cap i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 3px; vertical-align: -1px; }
+.netnote { margin-top: 6px; font-size: 12px; color: var(--ink2); }
+.winrow { display: flex; flex-direction: column; gap: 6px; }
+.seg.wide button { padding: 5px 8px; font-size: 12.5px; }
 .toggle:disabled { opacity: .45; cursor: not-allowed; }
 .tier.off .sw { background: var(--rule) !important; }
 .tier:focus-within { outline: 2px solid var(--focus); outline-offset: 1px; }
@@ -159,7 +166,16 @@ section { display: flex; flex-direction: column; gap: 6px; }
 
     <section aria-labelledby="h-tier">
       <h2 id="h-tier">Slowdown tier</h2>
-      <label class="sw-row" for="opt-roads"><span>Show slowdown tiers on the map<small>Off hides all coloured roads</small></span><input type="checkbox" class="toggle" id="opt-roads" checked></label>
+      <label class="sw-row" for="opt-roads"><span>Show slowdown tiers on the map<small>Off hides all coloured roads</small></span><input type="checkbox" class="toggle" id="opt-roads"></label>
+      <div class="winrow">
+        <div class="seg wide" role="radiogroup" aria-label="Forecast window" id="winseg">
+          <button type="button" role="radio" aria-checked="true" data-w="0">All 15 days</button>
+          <button type="button" role="radio" aria-checked="false" data-w="1">Days 1–3</button>
+          <button type="button" role="radio" aria-checked="false" data-w="2">Days 4–7</button>
+          <button type="button" role="radio" aria-checked="false" data-w="3">Days 8–15</button>
+        </div>
+        <p class="note" id="winnote"></p>
+      </div>
       <div class="tiers" id="tiers"></div>
       <p class="note" id="totline"></p>
     </section>
@@ -186,6 +202,7 @@ section { display: flex; flex-direction: column; gap: 6px; }
         <label class="sw-row" for="opt-slip"><span>Slip / rock-fall exposure<small>Exposed stretches: moderate+ rain on steep, landslide-prone ground</small></span><input type="checkbox" class="toggle" id="opt-slip" checked></label>
         <label class="sw-row" for="opt-ctx"><span>Main road network</span><input type="checkbox" class="toggle" id="opt-ctx" checked></label>
         <div class="subh">Other layers</div>
+        <label class="sw-row" for="opt-int"><span>Intense rain possible<small>≥ 10 / 20 mm in an hour, follows the forecast window</small></span><input type="checkbox" class="toggle" id="opt-int" checked></label>
         <label class="sw-row" for="opt-hf"><span>Health facilities<small>Coloured by added travel time; health posts from zoom 7</small></span><input type="checkbox" class="toggle" id="opt-hf" checked></label>
         <label class="sw-row" for="opt-rain"><span>Forecast rain, 15-day total</span><input type="checkbox" class="toggle" id="opt-rain" checked></label>
         <label class="sw-row" for="opt-fric"><span>MAP travel speed (friction surface)<small>Malaria Atlas Project 2019, motorized</small></span><input type="checkbox" class="toggle" id="opt-fric"></label>
@@ -203,7 +220,8 @@ section { display: flex; flex-direction: column; gap: 6px; }
     <section aria-labelledby="h-how">
       <h2 id="h-how">How the score works</h2>
       <p class="note">Tier = rain (0–3) + surface (paved 0, unpaved 1, +1 if mapped in bad condition) + steepness (0–2) − 1, kept to 0–3 and at most one tier above the rain score. No forecast rain means Normal. Speed losses (Minor ~10%, Elevated ~25%, Severe ~50%) are illustrative assumptions, not measured.</p>
-      <p class="note">Rain: WeatherNext 3 (0.1°) daily ensemble-mean rain, bias-corrected against Google PARDIG observations by quantile mapping for each forecast range and region. Two corrections are used, each where it tested best across Bega, Belg, Kiremt and the short rains of 2024–2026. The rain amounts shown (map layer, totals, road details) use a year-round monthly correction, which came closest to observed totals. The hazard classes use a stronger correction trained on the short rains, which caught the most observed hazard in every season (about 70–85% of the moderate-or-higher area in the rainy seasons). Because of this, a road can be in a higher rain class than its displayed total alone suggests. High = a day ≥ 20 mm or the wettest 3 days ≥ 40 mm; moderate = a day ≥ 10 mm or 3 days ≥ 20 mm; low = 15 days ≥ 10 mm. Steepness after the Ethiopian Roads Authority terrain classes: mountainous ≥ 14° ground or ≥ 5 % road grade, escarpment ≥ 26.6° or ≥ 10 %.</p>
+      <p class="note">Rain is judged two ways, each for days 1–3, 4–7 and 8–15. Accumulation drives the slowdown tiers: the wettest 10-day running total in the window, counting rain PARDIG observed before the forecast plus WeatherNext 3's bias-corrected forecast (low ≥ 25 mm, moderate ≥ 50 mm, high ≥ 100 mm). Intense rain marks where a downpour is possible: the wettest hour of WeatherNext 3's hourly 90th percentile, with thresholds set so it flags as often as PARDIG observed ≥ 10 mm (or ≥ 20 mm) in an hour in early November 2026. "All 15 days" shows the worst window; travel times and health-facility results use it. Forecast skill falls after about day 7, so days 8–15 are lower confidence.</p>
+      <p class="note">Slip / rock-fall exposure needs intense rain or high accumulation on ground ≥ 26.6° that NASA rates moderately or more landslide-prone, or very high susceptibility on ground ≥ 14°. Rain amounts shown use a year-round monthly bias correction; hazard classes use a stronger correction that caught the most observed hazard in tests.</p>
       <p class="note">Health access: shortest road travel time from each facility to the nearest hospital (health posts: nearest health centre) at normal speeds by road class (trunk 70 … track 15 km/h, unpaved × 0.7), then to that same facility with each road slowed by its tier. A hospital's linked facilities are the health centres and posts for which it is the nearest hospital by road; this is a road-network grouping, not a population catchment or the official referral pathway. Facilities are approved hospitals, health centres and health posts from the Ethiopian health facility register.</p>
       <p class="note">Travel model: the road + slope model routes over the mapped road network with class speeds and walking to the road. The MAP friction surface (Malaria Atlas Project 2019 motorized, ~1 km) routes cell to cell using MAP's road, land-cover and off-road speeds, with cells crossed by a scored road slowed by the same tier factors. Both use the same facilities and the same nearest-hospital rule. MAP's journeys come out about 3–4 times shorter, so the two models usually agree on which facilities are worst hit but not on how many minutes are added.</p>
       <p class="note">Slip / rock-fall exposure is judged on each ~110 m piece of road: moderate or high forecast rain over that piece, and either ground ≥ 26.6° where NASA's global landslide susceptibility map rates it moderate or higher, or very high susceptibility on ground ≥ 14°. Only the exposed stretches are drawn and counted.</p>
@@ -222,6 +240,8 @@ section { display: flex; flex-direction: column; gap: 6px; }
       <div id="leg-fric" hidden>MAP travel speed, km/h</div>
       <div class="dots" id="leg-fric2" hidden><span><i style="background:#a8320f;border-radius:2px"></i>&lt;3</span><span><i style="background:#e0701f;border-radius:2px"></i>3–10</span><span><i style="background:#f2b33d;border-radius:2px"></i>10–30</span><span><i style="background:#c9c8c2;border-radius:2px"></i>30+</span></div>
       <div id="leg-fric3" hidden></div>
+      <div id="leg-int">Intense rain possible</div>
+      <div class="dots" id="leg-int2"><span><i style="background:var(--int1);border-radius:2px"></i>≥ 10 mm/h</span><span><i style="background:var(--int2);border-radius:2px"></i>≥ 20 mm/h</span></div>
       <div id="leg-hf">Facilities: added minutes</div>
       <div class="dots" id="leg-hf2"><span><i style="background:var(--d0)"></i>&lt;5</span><span><i style="background:var(--d1)"></i>5–15</span><span><i style="background:var(--d2)"></i>15–30</span><span><i style="background:var(--d3)"></i>30–60</span><span><i style="background:var(--d4)"></i>60+</span></div>
     </div>
@@ -234,54 +254,24 @@ const SUMMARY = {
  "init": "19 Nov 2026",
  "start": "19 Nov",
  "end": "03 Dec 2026",
- "total_km": 441218,
+ "total_km": 441217,
  "tiers": {
-  "Normal": 223190,
-  "Minor": 63028,
-  "Elevated": 89482,
-  "Severe": 65518
+  "Normal": 214370,
+  "Minor": 68730,
+  "Elevated": 82056,
+  "Severe": 76061
  },
- "slide_km": 5048,
- "raised_km": 99113,
+ "slide_km": 1179,
+ "raised_km": 106173,
  "regions": [
   {
-   "name": "Dire Dawa",
-   "Normal": 5,
-   "Minor": 187,
-   "Elevated": 727,
-   "Severe": 405,
-   "share": 99.6,
-   "slide": 55,
-   "bbox": [
-    41.729,
-    9.472,
-    42.341,
-    9.785
-   ]
-  },
-  {
-   "name": "SNNPR",
-   "Normal": 26378,
-   "Minor": 16945,
-   "Elevated": 27510,
-   "Severe": 21488,
-   "share": 71.4,
-   "slide": 1579,
-   "bbox": [
-    34.878,
-    4.441,
-    39.133,
-    8.459
-   ]
-  },
-  {
    "name": "Amhara",
-   "Normal": 20986,
-   "Minor": 9833,
-   "Elevated": 15040,
-   "Severe": 16123,
-   "share": 66.1,
-   "slide": 2258,
+   "Normal": 15735,
+   "Minor": 11882,
+   "Elevated": 17893,
+   "Severe": 16473,
+   "share": 74.6,
+   "slide": 462,
    "bbox": [
     35.258,
     8.716,
@@ -290,58 +280,28 @@ const SUMMARY = {
    ]
   },
   {
-   "name": "Gambela",
-   "Normal": 2012,
-   "Minor": 2188,
-   "Elevated": 618,
-   "Severe": 669,
-   "share": 63.3,
-   "slide": 8,
+   "name": "SNNPR",
+   "Normal": 24324,
+   "Minor": 15086,
+   "Elevated": 24418,
+   "Severe": 28494,
+   "share": 73.7,
+   "slide": 641,
    "bbox": [
-    33.002,
-    6.282,
-    35.393,
-    8.71
-   ]
-  },
-  {
-   "name": "Oromia",
-   "Normal": 83955,
-   "Minor": 30436,
-   "Elevated": 41045,
-   "Severe": 23976,
-   "share": 53.2,
-   "slide": 749,
-   "bbox": [
-    34.14,
-    3.511,
-    42.981,
-    10.388
-   ]
-  },
-  {
-   "name": "Afar",
-   "Normal": 4262,
-   "Minor": 596,
-   "Elevated": 1211,
-   "Severe": 1157,
-   "share": 41.0,
-   "slide": 56,
-   "bbox": [
-    39.651,
-    8.842,
-    42.356,
-    14.499
+    34.878,
+    4.441,
+    39.133,
+    8.459
    ]
   },
   {
    "name": "Tigray",
-   "Normal": 18063,
-   "Minor": 1144,
-   "Elevated": 1922,
-   "Severe": 1391,
-   "share": 19.8,
-   "slide": 303,
+   "Normal": 7450,
+   "Minor": 6581,
+   "Elevated": 6217,
+   "Severe": 2273,
+   "share": 66.9,
+   "slide": 0,
    "bbox": [
     36.452,
     12.256,
@@ -350,33 +310,93 @@ const SUMMARY = {
    ]
   },
   {
-   "name": "Beneshangul Gumu",
-   "Normal": 8698,
-   "Minor": 189,
-   "Elevated": 303,
-   "Severe": 165,
-   "share": 7.0,
-   "slide": 16,
+   "name": "Afar",
+   "Normal": 3638,
+   "Minor": 1928,
+   "Elevated": 1468,
+   "Severe": 191,
+   "share": 49.6,
+   "slide": 0,
    "bbox": [
-    34.101,
-    8.951,
-    36.693,
-    11.985
+    39.651,
+    8.842,
+    42.356,
+    14.499
+   ]
+  },
+  {
+   "name": "Oromia",
+   "Normal": 91249,
+   "Minor": 29504,
+   "Elevated": 30985,
+   "Severe": 27674,
+   "share": 49.1,
+   "slide": 72,
+   "bbox": [
+    34.14,
+    3.511,
+    42.981,
+    10.388
+   ]
+  },
+  {
+   "name": "Gambela",
+   "Normal": 3224,
+   "Minor": 714,
+   "Elevated": 706,
+   "Severe": 843,
+   "share": 41.2,
+   "slide": 4,
+   "bbox": [
+    33.002,
+    6.282,
+    35.393,
+    8.71
    ]
   },
   {
    "name": "Somali",
-   "Normal": 49454,
-   "Minor": 1510,
-   "Elevated": 1106,
-   "Severe": 144,
-   "share": 5.3,
-   "slide": 24,
+   "Normal": 49024,
+   "Minor": 2944,
+   "Elevated": 245,
+   "Severe": 0,
+   "share": 6.1,
+   "slide": 0,
    "bbox": [
     39.094,
     3.4,
     47.959,
     11.082
+   ]
+  },
+  {
+   "name": "Dire Dawa",
+   "Normal": 1244,
+   "Minor": 29,
+   "Elevated": 50,
+   "Severe": 0,
+   "share": 6.0,
+   "slide": 0,
+   "bbox": [
+    41.729,
+    9.472,
+    42.341,
+    9.785
+   ]
+  },
+  {
+   "name": "Beneshangul Gumu",
+   "Normal": 9105,
+   "Minor": 62,
+   "Elevated": 74,
+   "Severe": 113,
+   "share": 2.7,
+   "slide": 0,
+   "bbox": [
+    34.101,
+    8.951,
+    36.693,
+    11.985
    ]
   },
   {
@@ -418,74 +438,42 @@ const SUMMARY = {
  ],
  "health": {
   "hc_n": 3639,
-  "hc_30": 872,
-  "hc_60": 459,
+  "hc_30": 924,
+  "hc_60": 489,
   "hp_n": 15539,
-  "hp_30": 697,
+  "hp_30": 813,
   "top_hc": [
    {
     "n": "Bobe Liban Health Center",
     "a2": "North Shewa (OR)",
     "h0": 513,
-    "h1": 969,
+    "h1": 917,
     "x": 38.1844443,
     "y": 9.8916468
-   },
-   {
-    "n": "Gore Health Center",
-    "a2": "Ilu Aba Bora",
-    "h0": 386,
-    "h1": 755,
-    "x": 35.5379434,
-    "y": 8.1557659
-   },
-   {
-    "n": "Asandabo Health Center",
-    "a2": "Ilu Aba Bora",
-    "h0": 375,
-    "h1": 737,
-    "x": 35.5194349,
-    "y": 7.9337228
    },
    {
     "n": "Kumba Health Center",
     "a2": "Kefa",
     "h0": 448,
-    "h1": 803,
+    "h1": 800,
     "x": 36.2284998,
     "y": 6.769212
    },
    {
-    "n": "Baroyi Health Center",
+    "n": "Asandabo Health Center",
     "a2": "Ilu Aba Bora",
-    "h0": 389,
-    "h1": 742,
-    "x": 35.3708012,
-    "y": 8.3370883
-   },
-   {
-    "n": "Biriti Health Center",
-    "a2": "North Shewa (OR)",
-    "h0": 476,
-    "h1": 828,
-    "x": 38.2754747,
-    "y": 9.764304
-   },
-   {
-    "n": "Becho Health Center",
-    "a2": "Ilu Aba Bora",
-    "h0": 368,
+    "h0": 375,
     "h1": 720,
-    "x": 35.6812765,
-    "y": 8.203864100000002
+    "x": 35.5194349,
+    "y": 7.9337228
    },
    {
-    "n": "Kemise Health Center",
-    "a2": "Ilu Aba Bora",
-    "h0": 372,
-    "h1": 710,
-    "x": 35.6064685,
-    "y": 8.2187361
+    "n": "Chero Harot Health Center",
+    "a2": "Mirab Omo",
+    "h0": 340,
+    "h1": 678,
+    "x": 35.88983499,
+    "y": 6.48407877
    },
    {
     "n": "Akile Health Center",
@@ -496,12 +484,44 @@ const SUMMARY = {
     "y": 11.0922925
    },
    {
+    "n": "Shash Health Center",
+    "a2": "Kefa",
+    "h0": 403,
+    "h1": 708,
+    "x": 36.2110018,
+    "y": 6.8982827
+   },
+   {
     "n": "Liwarie Health Center",
     "a2": "North Gondar",
     "h0": 348,
-    "h1": 682,
+    "h1": 651,
     "x": 38.5091099,
     "y": 13.2328929
+   },
+   {
+    "n": "Degele health center",
+    "a2": "Sheka",
+    "h0": 306,
+    "h1": 594,
+    "x": 35.3919973,
+    "y": 7.8068033
+   },
+   {
+    "n": "Achagna Health Center",
+    "a2": "Agnewak",
+    "h0": 431,
+    "h1": 712,
+    "x": 34.7713421,
+    "y": 6.755766
+   },
+   {
+    "n": "Chago health center",
+    "a2": "Sheka",
+    "h0": 300,
+    "h1": 580,
+    "x": 35.5409373,
+    "y": 7.7102785
    }
   ],
   "top_h": [
@@ -509,7 +529,7 @@ const SUMMARY = {
     "n": "Wacha Primary Hosiptal",
     "a2": "Kefa",
     "cf": 238,
-    "c30": 184,
+    "c30": 177,
     "x": 35.7979102,
     "y": 7.1454717
    },
@@ -517,17 +537,9 @@ const SUMMARY = {
     "n": "Darimu Primary Hospital",
     "a2": "Ilu Aba Bora",
     "cf": 190,
-    "c30": 171,
+    "c30": 124,
     "x": 35.5074709,
     "y": 8.585586
-   },
-   {
-    "n": "Dembi Dollo Compernsive Specialized Hospital",
-    "a2": "Kelem Wellega",
-    "cf": 154,
-    "c30": 126,
-    "x": 34.807909,
-    "y": 8.521316000000002
    },
    {
     "n": "Setema Primary Hospital",
@@ -538,6 +550,22 @@ const SUMMARY = {
     "y": 7.9820519
    },
    {
+    "n": "Dembi Dollo Compernsive Specialized Hospital",
+    "a2": "Kelem Wellega",
+    "cf": 154,
+    "c30": 103,
+    "x": 34.807909,
+    "y": 8.521316000000002
+   },
+   {
+    "n": "Koybe Primary Hospital",
+    "a2": "South Omo",
+    "cf": 115,
+    "c30": 98,
+    "x": 36.7984921,
+    "y": 5.772249
+   },
+   {
     "n": "Limu Genet Hospital",
     "a2": "Jimma",
     "cf": 113,
@@ -546,34 +574,18 @@ const SUMMARY = {
     "y": 8.0949709
    },
    {
-    "n": "Teppi General Hospital",
-    "a2": "Sheka",
-    "cf": 112,
-    "c30": 89,
-    "x": 35.426415,
-    "y": 7.1966211
-   },
-   {
     "n": "Gedo General Hospital",
     "a2": "West Shewa",
     "cf": 116,
-    "c30": 86,
+    "c30": 89,
     "x": 37.450564,
     "y": 9.0222992
-   },
-   {
-    "n": "Selam General Hospital",
-    "a2": "South Wello",
-    "cf": 99,
-    "c30": 86,
-    "x": 39.6341505,
-    "y": 11.1277854
    },
    {
     "n": "Mekane Eyesus Primary Hospital",
     "a2": "South Gondar",
     "cf": 115,
-    "c30": 85,
+    "c30": 83,
     "x": 38.0519795,
     "y": 11.6047319
    },
@@ -581,115 +593,123 @@ const SUMMARY = {
     "n": "Gida Ayana General Hospital",
     "a2": "East Wellega",
     "cf": 145,
-    "c30": 81,
+    "c30": 82,
     "x": 36.6217331,
     "y": 9.8787112
+   },
+   {
+    "n": "Teppi General Hospital",
+    "a2": "Sheka",
+    "cf": 112,
+    "c30": 81,
+    "x": 35.426415,
+    "y": 7.1966211
    }
   ],
   "fr": {
    "hc_n": 3639,
-   "hc_30": 145,
-   "hc_60": 23,
+   "hc_30": 133,
+   "hc_60": 19,
    "hp_n": 15539,
-   "hp_30": 180,
+   "hp_30": 220,
    "top_hc": [
     {
      "n": "Shekibedo health center",
      "a2": "Sheka",
      "h0": 846,
-     "h1": 1104,
+     "h1": 1091,
      "x": 35.2689202,
      "y": 7.6808947
     },
     {
-     "n": "Degele health center",
-     "a2": "Sheka",
-     "h0": 93,
-     "h1": 178,
-     "x": 35.3919973,
-     "y": 7.8068033
+     "n": "Achagna Health Center",
+     "a2": "Agnewak",
+     "h0": 146,
+     "h1": 243,
+     "x": 34.7713421,
+     "y": 6.755766
+    },
+    {
+     "n": "Kuraze Three Health Center",
+     "a2": "Mirab Omo",
+     "h0": 110,
+     "h1": 190,
+     "x": 35.9118389,
+     "y": 6.069715
+    },
+    {
+     "n": "Dimma Health Center",
+     "a2": "Mirab Omo",
+     "h0": 79,
+     "h1": 156,
+     "x": 35.18616,
+     "y": 6.50273
     },
     {
      "n": "Kumba Health Center",
      "a2": "Kefa",
      "h0": 87,
-     "h1": 170,
+     "h1": 163,
      "x": 36.2284998,
      "y": 6.769212
+    },
+    {
+     "n": "Kuraze One Health Center",
+     "a2": "South Omo",
+     "h0": 97,
+     "h1": 170,
+     "x": 35.9911738,
+     "y": 6.1158712
+    },
+    {
+     "n": "Degele health center",
+     "a2": "Sheka",
+     "h0": 93,
+     "h1": 165,
+     "x": 35.3919973,
+     "y": 7.8068033
+    },
+    {
+     "n": "Gebissa Health center",
+     "a2": "Mirab Omo",
+     "h0": 81,
+     "h1": 152,
+     "x": 35.179186,
+     "y": 6.3576514
     },
     {
      "n": "Qeja health center",
      "a2": "Sheka",
      "h0": 90,
-     "h1": 171,
+     "h1": 158,
      "x": 35.4584893,
      "y": 7.8079981
     },
     {
-     "n": "Samo Health Center",
-     "a2": "Horo Gudru Wellega",
-     "h0": 186,
-     "h1": 266,
-     "x": 37.042997,
-     "y": 10.11183
-    },
-    {
-     "n": "Masha Health Center",
-     "a2": "Sheka",
-     "h0": 81,
-     "h1": 154,
-     "x": 35.4781858,
-     "y": 7.7431169
-    },
-    {
-     "n": "Lalo Health Center",
-     "a2": "Ilu Aba Bora",
-     "h0": 89,
-     "h1": 162,
-     "x": 35.6068111,
-     "y": 7.9056155
-    },
-    {
-     "n": "Asandabo Health Center",
-     "a2": "Ilu Aba Bora",
-     "h0": 81,
-     "h1": 153,
-     "x": 35.5194349,
-     "y": 7.9337228
-    },
-    {
-     "n": "Chago health center",
-     "a2": "Sheka",
-     "h0": 84,
-     "h1": 155,
-     "x": 35.5409373,
-     "y": 7.7102785
-    },
-    {
-     "n": "Metekleya Health Center",
-     "a2": "Gabi /Zone 3",
-     "h0": 79,
-     "h1": 148,
-     "x": 39.8875452,
-     "y": 9.4601623
+     "n": "Bareda Health Center",
+     "a2": "Mirab Omo",
+     "h0": 67,
+     "h1": 133,
+     "x": 35.50259541,
+     "y": 6.62399161
     }
    ],
    "top_h": [
     {
-     "n": "Darimu Primary Hospital",
-     "a2": "Ilu Aba Bora",
-     "cf": 247,
-     "c30": 162,
-     "x": 35.5074709,
-     "y": 8.585586
-    },
-    {
      "n": "Odda Primary Hospital",
      "a2": "Kefa",
      "cf": 178,
-     "c30": 87,
+     "c30": 69,
      "x": 36.4718748,
      "y": 7.1198403
+    },
+    {
+     "n": "Darimu Primary Hospital",
+     "a2": "Ilu Aba Bora",
+     "cf": 247,
+     "c30": 64,
+     "x": 35.5074709,
+     "y": 8.585586
     },
     {
      "n": "Teppi General Hospital",
@@ -703,17 +723,9 @@ const SUMMARY = {
      "n": "Setema Primary Hospital",
      "a2": "Jimma",
      "cf": 105,
-     "c30": 53,
+     "c30": 52,
      "x": 36.2035673,
      "y": 7.9820519
-    },
-    {
-     "n": "Dembi Dollo Compernsive Specialized Hospital",
-     "a2": "Kelem Wellega",
-     "cf": 124,
-     "c30": 51,
-     "x": 34.807909,
-     "y": 8.521316000000002
     },
     {
      "n": "Janamora Primary Hospital",
@@ -724,12 +736,20 @@ const SUMMARY = {
      "y": 13.0101177
     },
     {
-     "n": "Shambu General Hospital",
-     "a2": "Horo Gudru Wellega",
-     "cf": 91,
-     "c30": 32,
-     "x": 37.1210922,
-     "y": 9.5759274
+     "n": "Maji Primary Hospital",
+     "a2": "Mirab Omo",
+     "cf": 60,
+     "c30": 37,
+     "x": 35.5888443,
+     "y": 6.1748015
+    },
+    {
+     "n": "Adet Primary Hospital",
+     "a2": "West Gojam",
+     "cf": 129,
+     "c30": 29,
+     "x": 37.4818119,
+     "y": 11.246865
     },
     {
      "n": "Amhara Sayint Primary Hospital",
@@ -740,20 +760,20 @@ const SUMMARY = {
      "y": 11.0311312
     },
     {
-     "n": "Debre Birhan Comprehensive Specialized Hospital",
-     "a2": "North Shewa (AM)",
-     "cf": 59,
-     "c30": 27,
-     "x": 39.5351612,
-     "y": 9.6790154
+     "n": "Jinka General Hospital",
+     "a2": "South Omo",
+     "cf": 95,
+     "c30": 25,
+     "x": 36.5619494,
+     "y": 5.7821353
     },
     {
-     "n": "Adet Primary Hospital",
-     "a2": "West Gojam",
-     "cf": 129,
-     "c30": 27,
-     "x": 37.4818119,
-     "y": 11.246865
+     "n": "Laha Primary Hospital",
+     "a2": "Gofa",
+     "cf": 58,
+     "c30": 21,
+     "x": 36.5909728,
+     "y": 6.4665405
     }
    ],
    "hc_median_normal": 17.3,
@@ -765,7 +785,36 @@ const SUMMARY = {
     15.0
    ]
   }
- }
+ },
+ "windows": [
+  {
+   "label": "Days 1\u20133",
+   "dates": "19 Nov \u2013 21 Nov",
+   "Minor": 59775,
+   "Elevated": 74267,
+   "Severe": 63929,
+   "slip": 368,
+   "intense_share": 0.002
+  },
+  {
+   "label": "Days 4\u20137",
+   "dates": "22 Nov \u2013 25 Nov",
+   "Minor": 20152,
+   "Elevated": 31794,
+   "Severe": 10190,
+   "slip": 78,
+   "intense_share": 0.008
+  },
+  {
+   "label": "Days 8\u201315",
+   "dates": "26 Nov \u2013 03 Dec",
+   "Minor": 32323,
+   "Elevated": 46782,
+   "Severe": 24657,
+   "slip": 885,
+   "intense_share": 0.023
+  }
+ ]
 };
 const TIERS = [
   { key: "Severe", t: 3, tok: "--sev", note: "~50% slower" },
@@ -777,7 +826,9 @@ const RAIN_LABEL = ["none", "low", "moderate", "high"];
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const fmt = n => Math.round(n).toLocaleString("en-US");
-const state = { on: { 1: true, 2: true, 3: true }, terrain: true };
+const state = { on: { 1: true, 2: true, 3: true }, terrain: true, win: 0 };
+const ACC_LABEL = ["none", "low", "moderate", "high"], INT_LABEL = ["", "intense rain possible", "very intense rain possible"];
+const tierProp = () => state.win ? `t${state.win}` : (state.terrain ? "t" : "tw");
 
 // ---- panel (renders at rest from the inline summary) ----
 document.getElementById("runline").textContent = `WeatherNext 3 · run ${SUMMARY.init} 00Z · ${SUMMARY.start} – ${SUMMARY.end}`;
@@ -787,13 +838,28 @@ TIERS.forEach(T => {
   const lab = document.createElement("label");
   lab.className = "tier"; lab.htmlFor = id;
   lab.innerHTML = `<input type="checkbox" id="${id}" checked><i class="sw" style="background:var(${T.tok})"></i>
-    <span class="lbl"><b>${T.key}</b><span>${T.note}</span></span><span class="km">${fmt(SUMMARY.tiers[T.key])} km</span>`;
+    <span class="lbl"><b>${T.key}</b><span>${T.note}</span></span><span class="km" id="km-${T.t}">${fmt(SUMMARY.tiers[T.key])} km</span>`;
   lab.querySelector("input").addEventListener("change", e => { state.on[T.t] = e.target.checked; lab.classList.toggle("off", !e.target.checked); applyFilter(); });
   tiersEl.appendChild(lab);
 });
-const slowed = SUMMARY.tiers.Minor + SUMMARY.tiers.Elevated + SUMMARY.tiers.Severe;
-document.getElementById("totline").innerHTML =
-  `<span class="num">${fmt(slowed)}</span> of <span class="num">${fmt(SUMMARY.total_km)}</span> km of vehicle road likely slowed (${Math.round(100 * slowed / SUMMARY.total_km)}%). Terrain raises <span class="num">${fmt(SUMMARY.raised_km)}</span> km by at least one tier; <span class="num">${fmt(SUMMARY.slide_km)}</span> km are exposed to slips or rock fall.`;
+function renderTiers() {
+  const W = state.win ? (SUMMARY.windows || [])[state.win - 1] : null;
+  const src = W || SUMMARY.tiers;
+  TIERS.forEach(T => { const el = document.getElementById(`km-${T.t}`); if (el) el.textContent = `${fmt(src[T.key] || 0)} km`; });
+  const slowed = (src.Minor || 0) + (src.Elevated || 0) + (src.Severe || 0);
+  document.getElementById("totline").innerHTML = W
+    ? `<b>${W.label}</b> (${W.dates}): <span class="num">${fmt(slowed)}</span> km of vehicle road likely slowed; <span class="num">${fmt(W.slip)}</span> km exposed to slips or rock fall; intense rain possible over ${Math.round(W.intense_share * 100)}% of the country.`
+    : `<span class="num">${fmt(slowed)}</span> of <span class="num">${fmt(SUMMARY.total_km)}</span> km of vehicle road likely slowed at some point in the 15 days (${Math.round(100 * slowed / SUMMARY.total_km)}%). Terrain raises <span class="num">${fmt(SUMMARY.raised_km)}</span> km by at least one tier; <span class="num">${fmt(SUMMARY.slide_km)}</span> km are exposed to slips or rock fall.`;
+  document.getElementById("winnote").textContent = state.win === 3 ? "Days 8–15 are lower confidence: forecast skill falls after about a week."
+    : state.win ? "Terrain switch applies to the all-15-days view." : "Worst of the three windows. Pick a window to see when the risk falls.";
+}
+function setWindow(w) {
+  state.win = w;
+  document.querySelectorAll("#winseg button").forEach(b => b.setAttribute("aria-checked", String(+b.dataset.w === w)));
+  renderTiers(); applyFilter();
+}
+document.querySelectorAll("#winseg button").forEach(b => b.addEventListener("click", () => setWindow(+b.dataset.w)));
+renderTiers();
 
 const regEl = document.getElementById("regions");
 SUMMARY.regions.forEach(r => {
@@ -829,7 +895,7 @@ function setModel(m) {
   document.getElementById("model-road").setAttribute("aria-checked", m === "road");
   document.getElementById("model-fric").setAttribute("aria-checked", m === "fric");
   renderHealth();
-  if (map) ["hf-hp", "hf-main"].forEach(id => map.getLayer(id) && map.setPaintProperty(id, "circle-color", hfColor()));
+  if (map) ["hf-hp", "hf-main", "hf-linked"].forEach(id => map.getLayer(id) && map.setPaintProperty(id, "circle-color", hfColor()));
 }
 document.getElementById("model-road").addEventListener("click", () => setModel("road"));
 document.getElementById("model-fric").addEventListener("click", () => setModel("fric"));
@@ -842,6 +908,7 @@ document.getElementById("ramp").innerHTML = [1, 2, 3, 4, 5, 6].map(i => `<i styl
 // ---- map ----
 const status = document.getElementById("status");
 let map = null;
+let HF_ALL = [];
 function decode(d) {
   const C = d.cols, L = d.lut, last = C.length, feats = new Array(d.f.length);
   for (let n = 0; n < d.f.length; n++) {
@@ -856,7 +923,7 @@ function decode(d) {
 const getJSON = u => fetch(u).then(r => { if (!r.ok) throw new Error(u + " " + r.status); return r.json(); });
 
 function tierColor() {
-  const prop = state.terrain ? "t" : "tw";
+  const prop = tierProp();
   return ["match", ["get", prop], 3, css("--sev"), 2, css("--elev"), 1, css("--minor"), css("--ctx")];
 }
 function hfColor() {
@@ -866,11 +933,18 @@ function hfColor() {
 }
 function applyFilter() {
   if (!map || !map.getLayer("roads")) return;
-  const prop = state.terrain ? "t" : "tw";
+  const prop = tierProp();
   const on = [1, 2, 3].filter(t => state.on[t]);
-  map.setFilter("roads", ["in", ["get", prop], ["literal", on]]);
+  map.setFilter("roads", ["in", ["coalesce", ["get", prop], 0], ["literal", on]]);
   map.setPaintProperty("roads", "line-color", tierColor());
-  map.setLayoutProperty("roads", "line-sort-key", ["get", prop]);
+  map.setLayoutProperty("roads", "line-sort-key", ["coalesce", ["get", prop], 0]);
+  if (map.getLayer("slip")) map.setFilter("slip", state.win ? ["==", ["get", `w${state.win}`], 1] : null);
+  if (map.getLayer("intense")) {
+    const lvl = state.win ? ["get", `i${state.win}`] : ["max", ["get", "i1"], ["get", "i2"], ["get", "i3"]];
+    map.setFilter("intense", [">=", lvl, 1]);
+    map.setPaintProperty("intense", "fill-color", ["step", lvl, "rgba(0,0,0,0)", 1, css("--int1"), 2, css("--int2")]);
+  }
+  document.getElementById("opt-terrain").disabled = !document.getElementById("opt-roads").checked || state.win !== 0;
 }
 function applyTheme() {
   if (!map) return;
@@ -914,6 +988,8 @@ function init() {
     const [rain, adm] = await Promise.all([getJSON("data/rain.geojson"), getJSON("data/adm1.geojson")]);
     map.addSource("rain", { type: "geojson", data: rain });
     map.addLayer({ id: "rain", type: "fill", source: "rain", paint: { "fill-opacity": 0.55, "fill-antialias": false } });
+    map.addLayer({ id: "intense", type: "fill", source: "rain", filter: [">=", ["max", ["get", "i1"], ["get", "i2"], ["get", "i3"]], 1],
+      paint: { "fill-opacity": 0.55, "fill-antialias": false } });
     map.addSource("adm", { type: "geojson", data: adm });
     const mask = await getJSON("data/mask.geojson").catch(() => null);
     if (mask) { map.addSource("mask", { type: "geojson", data: mask });
@@ -935,7 +1011,7 @@ function init() {
       feats = parts.flat();
     } catch (e) { status.textContent = "Road data did not load. Reload the page to try again."; return; }
     map.addSource("roads", { type: "geojson", data: { type: "FeatureCollection", features: feats }, tolerance: 0.3 });
-    const w = (a, b) => ["interpolate", ["linear"], ["zoom"], 5, ["match", ["get", state.terrain ? "t" : "tw"], 3, a * 1.6, 2, a * 1.15, a], 11, ["match", ["get", "t"], 3, b * 1.4, 2, b * 1.15, b]];
+    const w = (a, b) => ["interpolate", ["linear"], ["zoom"], 5, ["match", ["get", "t"], 3, a * 1.6, 2, a * 1.15, a], 11, ["match", ["get", "t"], 3, b * 1.4, 2, b * 1.15, b]];
     map.addLayer({ id: "roads", type: "line", source: "roads", layout: { "line-cap": "round", "line-join": "round", "line-sort-key": ["get", "t"] },
       paint: { "line-color": tierColor(), "line-width": w(0.55, 3) } });
     const slipD = await getJSON("data/slip.json").catch(() => null);
@@ -947,13 +1023,21 @@ function init() {
     if (map.getLayer("mask")) { map.moveLayer("mask"); map.moveLayer("adm"); }
     try {
       const hfd = await getJSON("data/facilities.geojson");
+      HF_ALL = hfd.features;
       map.addSource("hf", { type: "geojson", data: hfd });
+      map.addSource("links", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+      map.addLayer({ id: "links", type: "line", source: "links", layout: { "line-cap": "round" },
+        paint: { "line-width": ["interpolate", ["linear"], ["zoom"], 6, 0.8, 11, 2], "line-opacity": 0.85,
+                 "line-color": ["step", ["get", "d"], css("--d0"), 5, css("--d1"), 15, css("--d2"), 30, css("--d3"), 60, css("--d4")] } });
       map.addLayer({ id: "hf-hp", type: "circle", source: "hf", minzoom: 7, filter: ["==", ["get", "ty"], 0],
         paint: { "circle-radius": ["interpolate", ["linear"], ["zoom"], 7, 2, 12, 4.5], "circle-stroke-width": 0.6 } });
       map.addLayer({ id: "hf-main", type: "circle", source: "hf", filter: [">=", ["get", "ty"], 1],
         layout: { "circle-sort-key": ["get", "ty"] },
         paint: { "circle-radius": ["interpolate", ["linear"], ["zoom"], 5, ["match", ["get", "ty"], 2, 2.6, 1.7], 8, ["match", ["get", "ty"], 2, 5, 3.2], 11, ["match", ["get", "ty"], 2, 9, 6]],
                  "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 5, ["match", ["get", "ty"], 2, 1, 0.3], 9, ["match", ["get", "ty"], 2, 2, 0.8]] } });
+      map.addLayer({ id: "hf-linked", type: "circle", source: "hf", filter: ["==", ["get", "id"], -1],
+        paint: { "circle-radius": ["interpolate", ["linear"], ["zoom"], 5, 3, 11, 7], "circle-color": hfColor(),
+                 "circle-stroke-width": 1.6, "circle-stroke-color": css("--ink") } });
     } catch (e) { console.warn("facilities did not load", e); }
     status.hidden = true;
     sync(); applyFilter(); applyTheme();
@@ -965,12 +1049,14 @@ function sync() {
   if (!map) return;
   const vis = (id, on) => map.getLayer(id) && map.setLayoutProperty(id, "visibility", on ? "visible" : "none");
   vis("rain", document.getElementById("opt-rain").checked);
+  const intOn = document.getElementById("opt-int").checked;
+  vis("intense", intOn); document.getElementById("leg-int").hidden = !intOn; document.getElementById("leg-int2").hidden = !intOn;
   vis("hs", document.getElementById("opt-hs").checked);
   vis("ctx", document.getElementById("opt-ctx").checked);
   const roadsOn = document.getElementById("opt-roads").checked;
   vis("roads", roadsOn);
   document.getElementById("tiers").classList.toggle("muted-all", !roadsOn);
-  document.getElementById("opt-terrain").disabled = !roadsOn;
+  document.getElementById("opt-terrain").disabled = !roadsOn || state.win !== 0;
   vis("slip", document.getElementById("opt-slip").checked);
   const frOn = document.getElementById("opt-fric").checked;
   vis("fric", frOn);
@@ -980,7 +1066,7 @@ function sync() {
   document.getElementById("leg-hf").hidden = !hfOn; document.getElementById("leg-hf2").hidden = !hfOn;
   document.getElementById("leg-slip").hidden = !document.getElementById("opt-slip").checked;
 }
-["opt-roads", "opt-rain", "opt-hs", "opt-ctx", "opt-slip", "opt-hf", "opt-fric"].forEach(id => document.getElementById(id).addEventListener("change", sync));
+["opt-roads", "opt-int", "opt-rain", "opt-hs", "opt-ctx", "opt-slip", "opt-hf", "opt-fric"].forEach(id => document.getElementById(id).addEventListener("change", sync));
 document.getElementById("opt-terrain").addEventListener("change", e => { state.terrain = e.target.checked; applyFilter(); });
 
 const TIER_NAME = ["Normal", "Minor", "Elevated", "Severe"], TIER_TOK = ["--ctx", "--minor", "--elev", "--sev"];
@@ -994,10 +1080,11 @@ function popupHTML(p) {
     <span class="pill"><i style="background:var(${TIER_TOK[t]})"></i>${TIER_NAME[t]}</span>
     ${p.t !== p.tw ? `<span class="note" style="margin-left:6px">${TIER_NAME[p.tw]} without terrain</span>` : ""}
     <div class="pp-grid">
-      <span class="k">Rain</span><span class="v">${RAIN_LABEL[p.R]}: ${p.r15} mm over 15 days, wettest 3 days ${p.r3} mm; wet end up to ${p.p20} mm in a day</span><span class="s">R ${p.R}</span>
+      <span class="k">Rain</span><span class="v">${ACC_LABEL[p.R]} accumulation at worst; ${p.r15} mm forecast over 15 days, wettest 3 days ${p.r3} mm</span><span class="s">A ${p.R}</span>
       <span class="k">Surface</span><span class="v">${p.sf} (${p.sk ? "mapped" : "inferred from road class"})${cond}</span><span class="s">S ${p.S}</span>
       <span class="k">Terrain</span><span class="v">${esc(p.tc)}: grade ${p.gr}%, ground slope ${p.sm}° mean, ${p.sx}° max, ${fmt(p.el)} m</span><span class="s">T ${p.T}</span>
     </div>
+    <div class="pp-grid" style="margin-top:6px">${[1, 2, 3].map(w => `<span class="k">${["", "Days 1–3", "Days 4–7", "Days 8–15"][w]}</span><span class="v"><b>${TIER_NAME[p["t" + w] ?? 0]}</b> · ${ACC_LABEL[p["a" + w] ?? 0]} accumulation${p["i" + w] ? " · " + INT_LABEL[p["i" + w]] : ""}${p["s" + w] > 0 ? " · slip-exposed" : ""}</span><span class="s"></span>`).join("")}</div>
     <div class="pp-foot">Wettest forecast day ${esc(p.pk)}${p.sl ? ` · <b>slip / rock-fall exposure</b> on ${p.slk >= 1 ? p.slk.toFixed(1) : Math.round(p.slk * 1000)} ${p.slk >= 1 ? "km" : "m"}` : ""}${p.su ? ` · NASA landslide susceptibility ${["", "very low", "low", "moderate", "high", "very high"][p.su]}` : ""}</div>`;
 }
 const TYN = ["Health post", "Health centre", "Hospital"];
@@ -1021,34 +1108,85 @@ function facilityHTML(p0) {
   return `<div class="pp-h">${esc(p.n)}</div><div class="pp-sub">${TYN[p.ty]} · ${esc(p.a3)}, ${esc(p.a2)} · ${fr ? "MAP friction surface" : "road + slope model"}</div>
     ${p.ty !== 2 ? `<span class="pill"><i style="background:var(${tok})"></i>+${p.d ?? "–"} min to reach ${esc(target)}</span>` : ""}
     <div class="pp-grid">${rows}</div>
+    ${p.ty === 2 ? rainChart(p0.rs) : ""}
+    ${p.ty === 2 ? `<div class="netnote">Linked health centres and posts are highlighted on the map, with lines coloured by their added travel time. Close this popup to clear.</div>` : ""}
     <div class="pp-foot">${p.off ? `${p.gap} km from the nearest mapped road · ` : ""}${p.sl ? "<b>slip / rock-fall exposed road</b> within 5 km" : "no slip-exposed road within 5 km"}</div>`;
+}
+function rainChart(rs) {
+  if (typeof rs === "string") { try { rs = JSON.parse(rs); } catch (e) { return ""; } }
+  if (!rs || !rs.f) return "";
+  const o = rs.o || [], f = rs.f, wv = rs.w || [], it = rs.i || [];
+  const n = o.length + f.length, W = 300, Hh = 96, padL = 22, padB = 16, padT = 12, bw = (W - padL - 4) / n;
+  const vmax = Math.max(10, ...o.filter(v => v != null), ...f, ...wv);
+  const y = v => padT + (Hh - padT - padB) * (1 - Math.min(v, vmax) / vmax);
+  let g = "";
+  o.forEach((v, i) => { if (v != null) g += `<rect x="${padL + i * bw + 0.5}" y="${y(v)}" width="${bw - 1}" height="${Hh - padB - y(v)}" fill="var(--muted)" opacity=".55"><title>observed ${v} mm</title></rect>`; });
+  f.forEach((v, i) => { const x = padL + (o.length + i) * bw + 0.5;
+    g += `<rect x="${x}" y="${y(v)}" width="${bw - 1}" height="${Hh - padB - y(v)}" fill="var(--r5)"><title>forecast ${v} mm</title></rect>`;
+    if (it[i]) g += `<circle cx="${x + bw / 2 - 0.5}" cy="${padT - 5}" r="3" fill="var(${it[i] > 1 ? "--int2" : "--int1"})"><title>${INT_LABEL[it[i]]}</title></circle>`; });
+  if (wv.length) g += `<polyline fill="none" stroke="var(--ink2)" stroke-width="1" stroke-dasharray="2 2" points="${wv.map((v, i) => `${padL + (o.length + i + 0.5) * bw},${y(v)}`).join(" ")}"><title>wet end (90th percentile)</title></polyline>`;
+  const x0 = padL + o.length * bw;
+  const d0 = new Date(rs.t0 + "T00:00:00Z"), lab = k => { const d = new Date(d0.getTime() + k * 864e5); return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" }); };
+  g += `<line x1="${x0}" x2="${x0}" y1="${padT - 2}" y2="${Hh - padB}" stroke="var(--ink)" stroke-width="1"/>`;
+  g += `<line x1="${padL}" x2="${W - 4}" y1="${Hh - padB}" y2="${Hh - padB}" stroke="var(--rule)"/>`;
+  g += `<text x="${padL - 3}" y="${padT + 4}" text-anchor="end" font-size="9" fill="var(--muted)">${Math.round(vmax)}</text><text x="${padL - 3}" y="${Hh - padB}" text-anchor="end" font-size="9" fill="var(--muted)">0</text>`;
+  g += `<text x="${padL}" y="${Hh - 3}" font-size="9" fill="var(--muted)">${lab(-o.length)}</text><text x="${x0}" y="${Hh - 3}" text-anchor="middle" font-size="9" fill="var(--ink2)">${lab(0)}</text><text x="${W - 4}" y="${Hh - 3}" text-anchor="end" font-size="9" fill="var(--muted)">${lab(f.length - 1)}</text>`;
+  return `<div class="rchart"><svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Daily rain at this hospital, mm">${g}</svg>
+    <div class="cap"><span><i style="background:var(--muted);opacity:.55"></i>observed (PARDIG)</span><span><i style="background:var(--r5)"></i>forecast, mm/day</span><span>⋯ wet end</span><span><i style="background:var(--int1);border-radius:50%"></i>intense rain possible</span></div></div>`;
+}
+function showNetwork(hp) {
+  if (!map || !map.getSource("links")) return 0;
+  const key = state.model === "fric" ? "fhid" : "hid", dk = state.model === "fric" ? "fd" : "d";
+  const hpt = HF_ALL.find(f => f.properties.id === hp.id); if (!hpt) return 0;
+  const linked = HF_ALL.filter(f => f.properties[key] === hp.id && f.properties.ty !== 2);
+  map.getSource("links").setData({ type: "FeatureCollection", features: linked.map(f => ({ type: "Feature",
+    properties: { d: f.properties[dk] ?? 0 }, geometry: { type: "LineString", coordinates: [f.geometry.coordinates, hpt.geometry.coordinates] } })) });
+  map.setFilter("hf-linked", ["any", ["==", ["get", key], hp.id], ["==", ["get", "id"], hp.id]]);
+  map.setPaintProperty("hf-linked", "circle-color", hfColor());
+  ["hf-main", "hf-hp"].forEach(id => map.getLayer(id) && map.setPaintProperty(id, "circle-opacity", 0.18) && 0);
+  ["hf-main", "hf-hp"].forEach(id => map.getLayer(id) && map.setPaintProperty(id, "circle-stroke-opacity", 0.18));
+  if (linked.length) {
+    const xs = linked.map(f => f.geometry.coordinates[0]).concat(hpt.geometry.coordinates[0]);
+    const ys = linked.map(f => f.geometry.coordinates[1]).concat(hpt.geometry.coordinates[1]);
+    map.fitBounds([[Math.min(...xs), Math.min(...ys)], [Math.max(...xs), Math.max(...ys)]], { padding: 60, maxZoom: 10.5, duration: 600 });
+  }
+  return linked.length;
+}
+function clearNetwork() {
+  if (!map || !map.getSource("links")) return;
+  map.getSource("links").setData({ type: "FeatureCollection", features: [] });
+  map.setFilter("hf-linked", ["==", ["get", "id"], -1]);
+  ["hf-main", "hf-hp"].forEach(id => { if (map.getLayer(id)) { map.setPaintProperty(id, "circle-opacity", 1); map.setPaintProperty(id, "circle-stroke-opacity", 1); } });
 }
 let openFacility = () => {};
 function wirePopup() {
-  const pop = new maplibregl.Popup({ closeButton: true, closeOnClick: false, maxWidth: "330px", offset: 8 });
+  const pop = new maplibregl.Popup({ closeButton: true, closeOnClick: false, maxWidth: "340px", offset: 8 });
   let pinned = false;
   const box = e => [[e.point.x - 5, e.point.y - 5], [e.point.x + 5, e.point.y + 5]];
   const hfLayers = () => ["hf-main", "hf-hp"].filter(id => map.getLayer(id) && map.getLayoutProperty(id, "visibility") !== "none");
   const hit = e => {
     const f = map.queryRenderedFeatures(box(e), { layers: hfLayers() }).sort((a, b) => b.properties.ty - a.properties.ty)[0];
-    if (f) return { html: facilityHTML(f.properties) };
-    const r = map.queryRenderedFeatures(box(e), { layers: ["roads"] }).sort((a, b) => b.properties.t - a.properties.t)[0];
+    if (f) return { html: facilityHTML(f.properties), hosp: f.properties.ty === 2 ? f.properties : null };
+    const rl = ["roads"].filter(id => map.getLayer(id) && map.getLayoutProperty(id, "visibility") !== "none");
+    const r = rl.length ? map.queryRenderedFeatures(box(e), { layers: rl }).sort((a, b) => b.properties.t - a.properties.t)[0] : null;
     return r ? { html: popupHTML(r.properties) } : null;
   };
   openFacility = (name, x, y) => {
     const f = map.querySourceFeatures("hf", { filter: ["==", ["get", "n"], name] })[0];
-    if (f) { pinned = true; pop.setLngLat([x, y]).setHTML(facilityHTML(f.properties)).addTo(map); }
+    if (f) { clearNetwork(); pinned = true; pop.setLngLat([x, y]).setHTML(facilityHTML(f.properties)).addTo(map);
+      if (f.properties.ty === 2) showNetwork(f.properties); }
   };
   map.on("mousemove", e => {                         // hover only changes the cursor; details open on click
-    const q = map.queryRenderedFeatures(box(e), { layers: hfLayers().concat(["roads"]) });
+    const q = map.queryRenderedFeatures(box(e), { layers: hfLayers().concat(["roads"].filter(id => map.getLayer(id) && map.getLayoutProperty(id, "visibility") !== "none")) });
     map.getCanvas().style.cursor = q.length ? "pointer" : "";
   });
   map.on("click", e => {
     const f = hit(e);
-    if (f) { pinned = true; pop.setLngLat(e.lngLat).setHTML(f.html).addTo(map); }
+    clearNetwork();
+    if (f) { pinned = true; pop.setLngLat(e.lngLat).setHTML(f.html).addTo(map); if (f.hosp) showNetwork(f.hosp); }
     else { pinned = false; pop.remove(); }
   });
-  pop.on("close", () => { pinned = false; });
+  pop.on("close", () => { pinned = false; clearNetwork(); });
 }
 
 window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", applyTheme);

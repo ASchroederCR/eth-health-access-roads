@@ -1,5 +1,5 @@
 version,pop_median_min,pop_p90_min,pop_share_over_30min,pop_share_over_60min,pop_share_over_120min,pop_over_30min,pop_over_60min,pop_over_120min
 MAP 2020 (no rain),15.6,94.4,0.334,0.186,0.065,2473484,1380238,481778
 "Ours, normal speeds",19.7,65.9,0.315,0.114,0.035,2335732,848032,256841
-"Ours, forecast speeds",20.2,66.9,0.325,0.117,0.037,2410612,866557,270512
-MAP + our forecast slowdown,16.0,95.5,0.338,0.188,0.067,2503956,1393708,497381
+"Ours, forecast speeds",20.9,67.2,0.337,0.118,0.036,2497460,877354,267904
+MAP + our forecast slowdown,16.4,96.2,0.342,0.19,0.068,2531638,1409851,503205

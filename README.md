@@ -21,17 +21,23 @@ The current outputs are for the **19 Nov 2026 00Z** WeatherNext 3 run, covering 
 | | |
 |---|---|
 | Vehicle road network scored | ~447,000 km |
-| Severe / Elevated / Minor slowdown | 65,517 / 89,576 / 63,478 km |
-| Road stretches exposed to slips / rock fall | ~5,050 km |
-| Health centres taking 30+ min longer to reach their nearest hospital | 872 of ~3,600 (459 take an hour or more); 142 on the MAP friction surface |
-| Health posts taking 30+ min longer to reach their nearest health centre | 697 (177 on the MAP friction surface) |
+| Severe / Elevated / Minor slowdown, worst window | 76,061 / 82,056 / 68,730 km |
+| Road stretches exposed to slips / rock fall, any window | ~1,180 km |
+| Health centres taking 30+ min longer to reach their nearest hospital | 924 of ~3,600 (489 take an hour or more); 129 on the MAP friction surface |
+| Health posts taking 30+ min longer to reach their nearest health centre | 813 (217 on the MAP friction surface) |
 
 The hardest-hit areas are the south-west highlands (Ilu Aba Bora, Kefa, Sheka, Bench Sheko, Jimma) and the Amhara highlands (North Gondar, West and East Gojam, South Gondar).
 
 ## Method
 
+### Rain: accumulation and intensity, by forecast window
+Rain is judged two ways, each for days 1–3, 4–7 and 8–15 (`charts/ETH_roads_rain_risk_windows.png`):
+- **Accumulation** drives the slowdown tier. It is the wettest 10-day running total in the window, counting rain PARDIG observed before the forecast plus the bias-corrected forecast. Low ≥ 25 mm, moderate ≥ 50 mm, high ≥ 100 mm.
+- **Intense rain** marks where a downpour is possible. It is the wettest hour of WeatherNext 3's hourly 90th percentile (`27_wn3_hourly.py`), with thresholds set so it flags as often as PARDIG observed ≥ 10 mm, or ≥ 20 mm, in an hour (1–18 Nov 2026; `28_pardig_hourly.py`, `29_calibrate_intensity.py`). Exact cell-days are hard to hit: about 15% hit rate, 86% false alarms, though still 8–10× better than random. At the scale the map uses it (per window, ~20 km tolerance), flags are rarely false: 6–14% false alarms. It catches 23% (days 1–3), 53% (4–7) and 67% (8–15) of observed downpour areas.
+- The **overall** tier is the worst window, and drives routing. Slip / rock-fall exposure needs intense rain or high accumulation on steep, landslide-prone ground.
+
 ### Road slowdown tier
-Each road segment's tier is **rain (0–3) + surface (0–2) + steepness (0–2) − 1**, kept between 0 and 3. A road can be at most one tier above its rain score, and a road with no forecast rain is always Normal.
+Each road segment's tier, per window, is **accumulation (0–3) + surface (0–2) + steepness (0–2) − 1**, kept between 0 and 3. A road can be at most one tier above its rain score, and a road with no forecast rain is always Normal.
 
 | Factor | Levels |
 |---|---|
@@ -72,6 +78,9 @@ scripts/
   22_calibrate_wn3_hazard.py   wet-end thresholds matched to the WeatherNext 2 member rule (fallback)
   23_verify_wn3_pardig.py      WeatherNext 3 vs PARDIG, early November 2026
   24_bias_correct_wn3.py       quantile-mapping bias correction; short-rains mapping used for hazard classes
+  27_wn3_hourly.py             hourly WeatherNext 3 mean / p90 for intense-rain hazard
+  28_pardig_hourly.py          observed wettest hour per day from PARDIG 15-min frames
+  29_calibrate_intensity.py    intense-rain thresholds and their skill
   25_test_biascorr_seasons.py  test across Belg / Kiremt seasons, incl. the dry 2026 Kiremt
   26_monthly_biascorr_wn3.py   year-round monthly mapping (leave-one-year-out test) used for rain amounts
   14_roads_rain_risk.py        score road segments; static maps and charts
@@ -94,6 +103,7 @@ set EE_PROJECT=your-ee-project
 python scripts/21_weathernext3_forecast.py        # latest 00Z WeatherNext 3 run
 python scripts/24_bias_correct_wn3.py              # one-off; needs WN3 runs for the training dates and PARDIG (10_)
 python scripts/15_fetch_gem15_dem.py               # one-off, ~1,600 tiles
+python scripts/27_wn3_hourly.py --init YYYY-MM-DD    # hourly fields for the run being scored
 python scripts/14_roads_rain_risk.py
 python scripts/17_health_access.py
 python scripts/20_friction_access.py               # optional: MAP friction model for the web map switch

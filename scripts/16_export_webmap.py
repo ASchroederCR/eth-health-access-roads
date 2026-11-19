@@ -78,11 +78,16 @@ if __name__ == "__main__":
     g["slide_km"] = g.slide_km.astype(float).round(2)
     g["landslide_susc_max"] = g.landslide_susc_max.astype(int)
     g["tw"] = g.tier_without_terrain.map({t: i for i, t in enumerate(TIERS)})
+    for w_ in (1, 2, 3):                                   # per forecast window: tier, accumulation, intensity, slip km
+        g[f"t{w_}"] = g[f"tier_w{w_}"].map({t: i for i, t in enumerate(TIERS)})
+        g[f"slide_km_w{w_}"] = g[f"slide_km_w{w_}"].astype(float).round(2)
     props = {"t": "t", "tw": "tw", "hw": "highway", "nm": "nm", "sf": "sf", "sk": "sk", "cond": "bad", "km": "km",
              "tc": "terrain_class", "gr": "road_grade_pct", "sm": "terrain_slope_mean_deg", "sx": "terrain_slope_max_deg",
              "el": "elev_mean_m", "r15": "rain_15d_mm", "r3": "wettest_3d_mm", "p20": "p90_wettest_day_mm", "pk": "pk",
              "sl": "sl", "slk": "slide_km", "su": "landslide_susc_max", "rg": "region", "R": "rain_hazard",
-             "S": "surface_score", "T": "steep_score"}
+             "S": "surface_score", "T": "steep_score",
+             "t1": "t1", "t2": "t2", "t3": "t3", "a1": "acc_w1", "a2": "acc_w2", "a3": "acc_w3",
+             "i1": "int_w1", "i2": "int_w2", "i3": "int_w3", "s1": "slide_km_w1", "s2": "slide_km_w2", "s3": "slide_km_w3"}
     for c_, nd in [("km", 2), ("road_grade_pct", 1), ("terrain_slope_mean_deg", 1), ("terrain_slope_max_deg", 1),
                    ("rain_15d_mm", 1), ("wettest_3d_mm", 1), ("p90_wettest_day_mm", 1)]:
         g[c_] = g[c_].astype(float).round(nd)
@@ -105,11 +110,12 @@ if __name__ == "__main__":
 
     # --- slip / rock-fall exposed stretches (14_) ---------------------------------------------
     pcs = gpd.read_parquet(os.path.join(ROOT, "data", "processed", "roads", f"eth_slip_pieces_{tag}.parquet"))
-    pcs = pcs.dissolve(by="seg", aggfunc={"km": "sum"}).reset_index()           # join pieces of one segment
+    for w_ in ("w1", "w2", "w3"): pcs[w_] = pcs[w_].astype(int)
+    pcs = pcs.dissolve(by=["seg", "w1", "w2", "w3"], aggfunc={"km": "sum"}).reset_index()   # join pieces of one segment
     pcs["geometry"] = shapely.line_merge(pcs.geometry.values)
     pcs = pcs.explode(index_parts=False).reset_index(drop=True)
     pcs["km"] = pcs.km.round(2)
-    n, mb = dump(os.path.join(OUT, "slip.json"), pcs, {"km": "km"})
+    n, mb = dump(os.path.join(OUT, "slip.json"), pcs, {"km": "km", "w1": "w1", "w2": "w2", "w3": "w3"})
     print(f"slip stretches: {n}, {mb:.1f} MB")
 
     # --- outside-Ethiopia mask -------------------------------------------------------------------
@@ -122,6 +128,12 @@ if __name__ == "__main__":
     mask = z["mask"]
     H, fld = rr.hazard(z)
     wn = rr.wn
+    WH = rr.window_hazards(z, init, fld["daily_h"])
+    import json as _json
+    _th = _json.load(open(rr.INTJ))["thresholds"] if os.path.exists(rr.INTJ) else None
+    _P, _ = wn.load_pardig(); _have = set(pd.to_datetime(_P.time.values))
+    OBS10 = np.stack([np.nan_to_num(_P.sel(time=init - pd.Timedelta(days=k)).values) if (init - pd.Timedelta(days=k)) in _have
+                      else np.full(mask.shape if hasattr(mask, "shape") else z["mask"].shape, np.nan) for k in range(10, 0, -1)])
     gx0, gy0, gres = float(z["x0"]), float(z["y0"]), float(z["res"])
     feats = []
     for i in range(int(z["ny"])):
@@ -131,7 +143,9 @@ if __name__ == "__main__":
             x1, y0 = round(x0 + gres, 4), round(y1 - gres, 4)
             feats.append({"type": "Feature", "properties": {
                 "m": round(float(fld["mean15"][i, j]), 1), "r3": round(float(fld["r3"][i, j]), 1),
-                "p20": round(float(fld["p90max"][i, j]), 1), "h": int(H[i, j])},
+                "p20": round(float(fld["p90max"][i, j]), 1), "h": int(H[i, j]),
+                "a1": int(WH["A"][0][i, j]), "a2": int(WH["A"][1][i, j]), "a3": int(WH["A"][2][i, j]),
+                "i1": int(WH["I"][0][i, j]), "i2": int(WH["I"][1][i, j]), "i3": int(WH["I"][2][i, j])},
                 "geometry": {"type": "Polygon", "coordinates": [[[x0, y0], [x1, y0], [x1, y1], [x0, y1], [x0, y0]]]}})
     json.dump({"type": "FeatureCollection", "features": feats}, open(os.path.join(OUT, "rain.geojson"), "w"),
               separators=(",", ":"))
@@ -169,7 +183,7 @@ if __name__ == "__main__":
     if HAS_FR:
         fr = pd.read_csv(FRF)
         fcols = ["fr_to_hosp_min", "fr_to_hosp_fc_min", "fr_to_hosp_added_min", "fr_to_hc_min", "fr_to_hc_fc_min",
-                 "fr_to_hc_added_min", "fr_nearest_hospital"]
+                 "fr_to_hc_added_min", "fr_nearest_hospital"] + (["fr_nearest_hospital_id"] if "fr_nearest_hospital_id" in fr.columns else [])
         hfa = hfa.merge(fr[["Id"] + fcols], on="Id", how="left")
         hfa["fr_nearest_hospital"] = hfa.fr_nearest_hospital.str.strip()
         lk = hfa[hfa.Type.isin(["Health Center", "Health Post"]) & ~hfa.off_network]
@@ -191,10 +205,28 @@ if __name__ == "__main__":
              "hc": r.nearest_health_centre if (r.Type == "Health Post" and isinstance(r.nearest_health_centre, str)) else "",
              "nt": r.nearest_road_tier, "s5": num(r.share_elev_severe_5km, 2), "sl": int(bool(r.slip_within_5km)),
              "gap": num(r.road_gap_km, 1), "off": int(bool(r.off_network))}
+        p["id"] = int(r.Id)
+        if isinstance(getattr(r, "nearest_hospital_id", None), (int, float)) and not pd.isna(r.nearest_hospital_id):
+            p["hid"] = int(r.nearest_hospital_id)
         if r.Type == "Hospital":
             p |= {"cf": num(r.linked_facilities), "c30": num(r.linked_30min_plus), "cm": num(r.linked_median_added_min)}
+            # local rain series at the hospital's 0.1 deg cell: 10 observed days, 15 forecast days
+            ci = int(np.clip((float(z["y0"]) - r.Latitude) / float(z["res"]), 0, int(z["ny"]) - 1))
+            cj = int(np.clip((r.Longitude - float(z["x0"])) / float(z["res"]), 0, int(z["nx"]) - 1))
+            fxd = WH["fxmax"][:, ci, cj]
+            ints = [0] * 15
+            if _th:
+                for d_ in range(15):
+                    key = next(f"days_{a}_{b}" for a, b in rr.WINDOWS if a <= d_ + 1 <= b)
+                    ints[d_] = 2 if fxd[d_] >= _th[key]["very_intense"] else 1 if fxd[d_] >= _th[key]["intense"] else 0
+            p["rs"] = {"o": [None if np.isnan(v) else round(float(v), 1) for v in OBS10[:, ci, cj]],
+                       "f": [round(float(v), 1) for v in fld["daily"][:, ci, cj]],
+                       "w": [round(float(v), 1) for v in np.nan_to_num(z["p90"])[:, ci, cj]],
+                       "i": ints, "t0": f"{init:%Y-%m-%d}"}
         if HAS_FR:
             fadd = r.fr_to_hc_added_min if r.Type == "Health Post" else r.fr_to_hosp_added_min
+            if "fr_nearest_hospital_id" in hfa.columns and not pd.isna(r.fr_nearest_hospital_id):
+                p["fhid"] = int(r.fr_nearest_hospital_id)
             p |= {"fh0": num(r.fr_to_hosp_min), "fh1": num(r.fr_to_hosp_fc_min), "fc0": num(r.fr_to_hc_min),
                   "fc1": num(r.fr_to_hc_fc_min), "fd": num(fadd),
                   "fch": r.fr_nearest_hospital if isinstance(r.fr_nearest_hospital, str) else ""}
@@ -253,6 +285,13 @@ if __name__ == "__main__":
     tab = pd.read_csv(os.path.join(ROOT, "data", "processed", "tables", f"eth_roads_rain_risk_adm1_{tag}.csv"), index_col=0)
     tab = tab[tab.index != "Unassigned"]
     reg_bbox = {n: [round(v, 3) for v in gm.bounds] for n, gm in zip(wn.NAMES, wn.GEOMS)}
+    win = []
+    for w_, (a_, b_) in enumerate(rr.WINDOWS, start=1):
+        kmw = g.groupby(f"tier_w{w_}").km.sum()
+        win.append({"label": f"Days {a_}–{b_}", "dates": f"{days[a_ - 1]:%d %b} – {days[b_ - 1]:%d %b}",
+                    **{t: round(float(kmw.get(t, 0))) for t in TIERS[1:]},
+                    "slip": round(float(tab[f"slide_km_w{w_}"].sum())) if f"slide_km_w{w_}" in tab.columns else None,
+                    "intense_share": round(float(np.mean(WH["I"][w_ - 1][z["mask"]] >= 1)), 3)})
     summ = {"init": f"{init:%d %b %Y}", "start": f"{days[0]:%d %b}", "end": f"{days[-1]:%d %b %Y}",
             "total_km": round(float(tab[TIERS].sum().sum())),
             "tiers": {t: round(float(tab[t].sum())) for t in TIERS},
@@ -261,6 +300,6 @@ if __name__ == "__main__":
             "regions": [{"name": n, **{t: round(float(tab.loc[n, t])) for t in TIERS},
                          "share": float(tab.loc[n, "share_slowed_%"]), "slide": round(float(tab.loc[n, "slide_exposure_km"])),
                          "bbox": reg_bbox.get(n)} for n in tab.sort_values("share_slowed_%", ascending=False).index],
-            "hillshade_bounds": [bounds.left, bounds.bottom, bounds.right, bounds.top], "health": health}
+            "hillshade_bounds": [bounds.left, bounds.bottom, bounds.right, bounds.top], "health": health, "windows": win}
     json.dump(summ, open(os.path.join(OUT, "summary.json"), "w"), indent=1)
     print(json.dumps({k: summ[k] for k in ["init", "tiers", "slide_km", "raised_km"]}))

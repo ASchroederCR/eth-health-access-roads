@@ -122,6 +122,7 @@ if __name__ == "__main__":
         res[f"fr_to_{label}_min"], res[f"fr_to_{label}_fc_min"], res[f"fr_{label}_idx"] = t0.round(1), t1.round(1), tid
         print(f"{tgt}: done")
     res["fr_nearest_hospital"] = res.Name.reindex(res.fr_hosp_idx.values).str.strip().values
+    res["fr_nearest_hospital_id"] = res.Id.reindex(res.fr_hosp_idx.values).values
     for l in ["hosp", "hc"]:
         res[f"fr_to_{l}_added_min"] = (res[f"fr_to_{l}_fc_min"] - res[f"fr_to_{l}_min"]).round(1)
     res.loc[res.Type != "Health Post", ["fr_to_hc_min", "fr_to_hc_fc_min", "fr_to_hc_added_min"]] = np.nan

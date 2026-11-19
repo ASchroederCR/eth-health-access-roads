@@ -14,7 +14,16 @@ Inputs
 
 Method (illustrative thresholds, not calibrated against observed travel times)
   Three factors per road segment, each sampled every ~110 m along the line:
-  R  rain hazard 0-3 at the segment's 0.1 deg cell. Two bias corrections of WeatherNext 3 daily rain against PARDIG
+  Rain is split into two hazards, each judged for three forecast windows (days 1-3, 4-7, 8-15):
+  A  accumulation 0-3 (drives the slowdown tier): the wettest 10-day running total in the window, counting PARDIG's
+     observed rain for the days before the run plus forecast rain (short-rains-corrected, below):
+       1 low >= 25 mm, 2 moderate >= 50 mm, 3 high >= 100 mm in 10 days
+  I  intense rain 0-2: the wettest hour of WeatherNext 3's hourly 90th percentile (27_) on any day in the window,
+     against thresholds frequency-matched to PARDIG's observed wettest hour >= 10 mm (1) / >= 20 mm (2) (29_).
+  Window tier = A + S + T - 1 (as below, A in place of R); the overall tier is the worst window and drives routing.
+  Slip / rock-fall exposure per window: intense rain (I >= 1) or high accumulation (A = 3) on the steep, susceptible
+  ground described below.
+  R  (previous single 15-day rain hazard, still computed for comparison and verification scripts.) Two bias corrections of WeatherNext 3 daily rain against PARDIG
      (quantile mapping per lead band and region), each used where it tested best (24_, 25_, 26_):
        hazard classes  short-rains mapping (data/processed/wn3_qm.npz): caught the most observed hazard in every season
        rain amounts    year-round monthly mapping (wn3_qm_monthly.npz): closest to observed totals across seasons
@@ -49,6 +58,7 @@ Outputs (<init> = run date)
   charts/ETH_roads_rain_risk_adm1.png     km of road per tier by region
   charts/ETH_roads_rain_risk_daily.png    km of road under >= 10 mm of rain per forecast day (mean, and p90 wet end)
   charts/ETH_roads_rain_risk_factors.png  how surface and steepness change the tier, km by factor combination
+  charts/ETH_roads_rain_risk_windows.png  tiers, intense rain and slip exposure for days 1-3, 4-7 and 8-15
   data/processed/roads/eth_roads_rain_risk_<init>.gpkg   scored segments (tier Minor+), for GIS
   data/processed/roads/eth_roads_scored_<init>.parquet   every vehicle segment with tier + speed factor (routing)
   data/processed/roads/eth_slip_pieces_<init>.parquet    exposed ~110 m pieces (slip / rock fall), as lines
@@ -139,7 +149,7 @@ def hazard(run):
         ma = bc.correct(run, "monthly") if os.path.exists(bc.QMM) else mh      # amounts: monthly mapping
         mean15, dmax = ma.sum(0), ma.max(0)
         r3 = np.stack([ma[i:i + 3].sum(0) for i in range(ma.shape[0] - 2)]).max(0)
-        return bc.rule(mh), dict(mean15=mean15, dmax=dmax, r3=r3, p90max=p90max, daily=ma,
+        return bc.rule(mh), dict(mean15=mean15, dmax=dmax, r3=r3, p90max=p90max, daily=ma, daily_h=mh,
                                  method="hazard: short-rains mapping; amounts: monthly mapping")
     import json
     t = json.load(open(THRESH)); M, Hh = t["moderate_p90_day_mm"], t["high_p90_day_mm"]
@@ -150,7 +160,7 @@ def hazard(run):
     h[mean15 >= 10] = 1
     h[(p90max >= M) | (r3 >= 20)] = 2
     h[(p90max >= Hh) | (r3 >= 40)] = 3
-    return h, dict(mean15=mean15, dmax=dmax, r3=r3, p90max=p90max, daily=m, method="wet-end rule")
+    return h, dict(mean15=mean15, dmax=dmax, r3=r3, p90max=p90max, daily=m, daily_h=m, method="wet-end rule")
 
 
 DEM = os.path.join(ROOT, "data", "raw", "dem", "gem15_eth_0p001.tif")
@@ -197,27 +207,70 @@ def susceptibility(x, y):
     return np.where((v >= 1) & (v <= 5), v, 0)
 
 
-def slip_pieces(smp, H, length_m):
+def slip_pieces(smp, triggers, length_m):
     """Slip / rock-fall exposure judged on each ~110 m piece of road, not the whole segment.
     A sample point is exposed when the forecast rain at its own 0.25 deg cell is moderate or high (R >= 2) and
       (ground slope >= 26.6 deg and NASA susceptibility >= 3 moderate)  or  (susceptibility 5 very high and slope >= 14 deg).
     A piece between two consecutive samples counts half its length per exposed end, so exposed km follows the
     exposed stretch only. Returns per-segment exposed km and max susceptibility, plus exposed pieces as lines."""
     seg, x, y, s = smp["seg"], smp["x"], smp["y"], smp["slope"]
-    r, c = to_cell(x, y); R = H[r, c]
+    r, c = to_cell(x, y)
     su = susceptibility(x, y)
-    e = (R >= 2) & (((s >= 26.6) & (su >= 3)) | ((su == 5) & (s >= 14)))
+    ground = ((s >= 26.6) & (su >= 3)) | ((su == 5) & (s >= 14))
+    ew = [ground & tg[r, c] for tg in triggers]                       # exposed sample, per window
+    e = np.any(ew, axis=0)
     nseg = len(smp["n"])
     piece_km = np.where(smp["n"] > 1, length_m / 1000 / (smp["n"] - 1), 0)
     same = seg[1:] == seg[:-1]
-    wt = 0.5 * (e[1:].astype(float) + e[:-1].astype(float)) * same
-    slide_km = np.bincount(seg[1:], wt * piece_km[seg[1:]], minlength=nseg)
+    def km_of(ex):
+        wt = 0.5 * (ex[1:].astype(float) + ex[:-1].astype(float)) * same
+        return np.bincount(seg[1:], wt * piece_km[seg[1:]], minlength=nseg)
+    slide_km = km_of(e); slide_w = [km_of(ex) for ex in ew]
     sumax = np.zeros(nseg, int); np.maximum.at(sumax, seg, su)
     k = np.flatnonzero(same & (e[1:] | e[:-1]))
     lines = shapely.linestrings(np.stack([np.c_[x[k], y[k]], np.c_[x[k + 1], y[k + 1]]], axis=1))
-    pieces = gpd.GeoDataFrame({"seg": seg[k], "km": piece_km[seg[k]] * 0.5 * (e[k].astype(float) + e[k + 1])},
+    pieces = gpd.GeoDataFrame({"seg": seg[k], "km": piece_km[seg[k]] * 0.5 * (e[k].astype(float) + e[k + 1]),
+                               **{f"w{i + 1}": (ex[k] | ex[k + 1]) for i, ex in enumerate(ew)}},
                               geometry=lines, crs="EPSG:4326")
-    return slide_km, sumax, pieces
+    return slide_km, sumax, pieces, slide_w
+
+
+WINDOWS = [(1, 3), (4, 7), (8, 15)]
+WLAB = ["days 1–3", "days 4–7", "days 8–15"]
+ACC_T = (25, 50, 100)                                       # mm in a 10-day running total -> A 1 / 2 / 3
+INTJ = os.path.join(ROOT, "data", "processed", "wn3_intensity_thresholds.json")
+
+
+def window_hazards(run, init, daily_h):
+    """-> dict(A=[3 grids 0-3], I=[3 grids 0-2], trail=[15, y, x] 10-day running totals, fxmax=[15, y, x], antecedent_days)"""
+    import json
+    P, _ = wn.load_pardig()
+    have = set(pd.to_datetime(P.time.values))
+    obs, n_ok = [], 0
+    for k in range(10, 0, -1):
+        d = pd.Timestamp(init) - pd.Timedelta(days=k)
+        if d in have: obs.append(np.nan_to_num(P.sel(time=d).values).astype("float32")); n_ok += 1
+        else: obs.append(np.zeros(daily_h.shape[1:], "float32"))
+    S_ = np.concatenate([np.stack(obs), daily_h])                     # 10 observed + 15 forecast days
+    cs = np.concatenate([np.zeros((1,) + S_.shape[1:], "float32"), np.cumsum(S_, 0)])
+    trail = np.stack([cs[11 + d] - cs[1 + d] for d in range(15)])     # 10 days ending on forecast day d
+    acc = np.zeros(trail.shape, "int8")
+    for i, t in enumerate(ACC_T): acc[trail >= t] = i + 1
+    A = [acc[a - 1:b].max(0) for a, b in WINDOWS]
+    hp = os.path.join(ROOT, "data", "raw", "weathernext3", "hourly", f"wn3h_eth_{pd.Timestamp(init):%Y%m%d%H}.npz")
+    if os.path.exists(hp) and os.path.exists(INTJ):
+        th = json.load(open(INTJ))["thresholds"]
+        fx = (np.load(hp)["p90"].astype("float32") / 10)[:360].reshape(15, 24, *daily_h.shape[1:]).max(1)
+        inten = np.zeros(fx.shape, "int8")
+        for d in range(15):
+            key = next(f"days_{a}_{b}" for a, b in WINDOWS if a <= d + 1 <= b)
+            inten[d][fx[d] >= th[key]["intense"]] = 1; inten[d][fx[d] >= th[key]["very_intense"]] = 2
+        I = [inten[a - 1:b].max(0) for a, b in WINDOWS]
+    else:
+        print("WARNING: no hourly WeatherNext 3 file or intensity thresholds - intense-rain hazard set to 0")
+        fx = np.zeros_like(daily_h); I = [np.zeros(daily_h.shape[1:], "int8") for _ in WINDOWS]
+    print(f"antecedent: {n_ok} of 10 observed days available before {pd.Timestamp(init):%Y-%m-%d}")
+    return dict(A=A, I=I, trail=trail, fxmax=fx, antecedent_days=n_ok)
 
 
 GRID = {}                                                   # rain grid, set from the WeatherNext 3 run in main
@@ -263,15 +316,25 @@ if __name__ == "__main__":
     mid = shapely.line_interpolate_point(g.geometry.values, 0.5, normalized=True)
     mx, my = shapely.get_x(mid), shapely.get_y(mid)
     r, c = to_cell(mx, my)
-    hz = H[r, c]
+    WH = window_hazards(RUN, init, fld["daily_h"])
+    hzw = [Aw[r, c] for Aw in WH["A"]]; izw = [Iw[r, c] for Iw in WH["I"]]
+    hz = np.max(hzw, axis=0)                                # worst accumulation over the windows
     unp = (g.surface_class == "unpaved").values
     S = unp.astype(int) + g.smoothness.isin(BAD).values.astype(int)
     grade, smean, smax, elev_mean, (DEMA, DEMT), SMP = terrain(g.geometry.values, g.osm_length.values)
-    slide_km, sumax, PIECES = slip_pieces(SMP, H, g.osm_length.values)
+    TRIG = [(WH["I"][w] >= 1) | (WH["A"][w] >= 3) for w in range(3)]
+    slide_km, sumax, PIECES, slide_w = slip_pieces(SMP, TRIG, g.osm_length.values)
     T = np.where((smean >= 26.6) | (grade >= 10), 2, np.where((smean >= 14) | (grade >= 5), 1, 0))
-    tier = np.clip(hz + S + T - 1, 0, 3)
-    tier = np.where(hz == 0, 0, np.minimum(tier, hz + 1))
-    tier_flat = np.where(hz == 0, 0, np.minimum(np.clip(hz + S - 1, 0, 3), hz + 1))   # same, ignoring terrain
+    def tier_of(h_, with_terrain=True):
+        t_ = np.clip(h_ + S + (T if with_terrain else 0) - 1, 0, 3)
+        return np.where(h_ == 0, 0, np.minimum(t_, h_ + 1))
+    tier_w = [tier_of(h_) for h_ in hzw]
+    tier = np.max(tier_w, axis=0)
+    tier_flat = np.max([tier_of(h_, False) for h_ in hzw], axis=0)                   # same, ignoring terrain
+    for w in range(3):
+        g[f"tier_w{w + 1}"] = np.array(TIERS)[tier_w[w]]
+        g[f"acc_w{w + 1}"], g[f"int_w{w + 1}"] = hzw[w], izw[w]
+        g[f"slide_km_w{w + 1}"] = slide_w[w].round(3)
     g["rain_hazard"], g["surface_score"], g["steep_score"] = hz, S, T
     g["terrain_class"] = np.array(TERRAIN)[T]
     g["road_grade_pct"], g["terrain_slope_mean_deg"] = grade.round(1), smean.round(1)
@@ -298,12 +361,16 @@ if __name__ == "__main__":
     tab["share_slowed_%"] = (100 * tab[TIERS[1:]].sum(1) / tab.sum(1)).round(1)
     tab["slide_exposure_km"] = g.slide_km.groupby(g.region).sum().reindex(tab.index).fillna(0).round(0)
     tab["raised_by_terrain_km"] = km[tier > tier_flat].groupby(g.region[tier > tier_flat]).sum().reindex(tab.index).fillna(0).round(0)
+    for w in range(3):
+        sl_ = tier_w[w] > 0
+        tab[f"slowed_km_{WLAB[w].replace(' ', '_').replace('–', '_')}"] = km[sl_].groupby(g.region[sl_]).sum().reindex(tab.index).fillna(0).round(0)
+        tab[f"slide_km_w{w + 1}"] = pd.Series(slide_w[w]).groupby(g.region.values).sum().reindex(tab.index).fillna(0).round(1)
     tab = tab.sort_values("share_slowed_%", ascending=False)
     tab.to_csv(os.path.join(wn.TB, f"eth_roads_rain_risk_adm1_{tag}.csv"))
     flag = g[g.tier != "Normal"].copy(); flag["tier"] = flag.tier.astype(str)
     flag.drop(columns=["surf_known"]).to_file(os.path.join(PROC, f"eth_roads_rain_risk_{tag}.gpkg"),
                                               layer="roads_rain_risk", driver="GPKG", engine="pyogrio")
-    full = g[["highway", "surface_class", "osm_length", "tier", "tier_without_terrain", "speed_factor", "slide_exposure", "slide_km",
+    full = g[["highway", "surface_class", "osm_length", "tier", "tier_without_terrain", "speed_factor", "slide_exposure", "slide_km", "tier_w1", "tier_w2", "tier_w3",
               "region", "geometry"]].copy()
     full["tier"] = full.tier.astype(str)
     full.to_parquet(os.path.join(PROC, f"eth_roads_scored_{tag}.parquet"))       # every segment, for routing (17_)
@@ -403,6 +470,41 @@ if __name__ == "__main__":
                  f"Vehicle roads only, {km.sum():,.0f} km; {seis_km:,.0f} km of seismic survey lines in the Ogaden removed.",
              fontsize=8, color=MUTED, ha="left", va="top")
     wn.save(fig, os.path.join(wn.OUT, "ETH_roads_rain_risk_map.png"))
+
+    # --- by time window: tiers, intense rain, slip exposure ------------------------------
+    fig, axs3 = plt.subplots(1, 3, figsize=(18, 6.0), gridspec_kw={"wspace": 0.06})
+    from matplotlib.colors import ListedColormap as _LC
+    for w, ax in enumerate(axs3):
+        Iw = np.where(MASK & (WH["I"][w] >= 1), WH["I"][w], np.nan)
+        ax.imshow(Iw, extent=GRID["ext"], cmap=_LC(["#d9c6ec", "#9b6cc9"]), vmin=0.5, vmax=2.5, interpolation="nearest", zorder=0)
+        for t in TIERS:
+            sub = g[g[f"tier_w{w + 1}"] == t]
+            if len(sub): lines(ax, sub, TCOL[t], TLW[t], TIERS.index(t) + 1)
+        pw = PIECES[PIECES[f"w{w + 1}"]]
+        if len(pw): lines(ax, pw, INK, 0.9, 6)
+        wn.draw_outline(ax); wn.mapax(ax)
+        a_, b_ = WINDOWS[w]
+        kmw = km.groupby(g[f"tier_w{w + 1}"]).sum()
+        ax.set_title(f"{WLAB[w].capitalize()} · {days[a_ - 1]:%d %b}–{days[b_ - 1]:%d %b}", loc="left", fontsize=11.5, color=INK, pad=30)
+        ax.text(0, 1.01, f"Severe {kmw.get('Severe', 0):,.0f} km · Elevated {kmw.get('Elevated', 0):,.0f} km\n"
+                f"slip-exposed {slide_w[w].sum():,.0f} km · intense rain possible over {np.nanmean(np.where(MASK, WH['I'][w] >= 1, np.nan)):.1%} of the country",
+                transform=ax.transAxes, fontsize=8.5, color=INK2)
+    hd = [Line2D([], [], color=TCOL[t], lw=3, label=t) for t in TIERS[:0:-1]]
+    hd += [Line2D([], [], color=INK, lw=2, label="slip / rock-fall exposed"),
+           Line2D([], [], marker="s", ls="", color="#d9c6ec", markersize=10, label="intense rain possible (≥ 10 mm in an hour)"),
+           Line2D([], [], marker="s", ls="", color="#9b6cc9", markersize=10, label="very intense rain possible (≥ 20 mm in an hour)")]
+    fig.legend(handles=hd, loc="lower center", ncol=6, frameon=False, fontsize=9, bbox_to_anchor=(0.5, -0.02))
+    fig.suptitle("When the risk falls: slowdown tiers and intense rain by forecast window", x=0.01, ha="left", fontsize=13.5,
+                 fontweight="bold", color=INK, y=1.02)
+    fig.text(0.01, 0.965, f"WeatherNext 3 run {init:%d %b %Y} 00Z · tiers from 10-day running rain (PARDIG observed before the run + bias-corrected forecast), "
+             f"surface and terrain · intense rain from the hourly 90th percentile, calibrated to PARDIG hourly rates", fontsize=9.5, color=INK2)
+    fig.text(0.01, -0.07, "Accumulation: wettest 10-day running total in the window ≥ 25 / 50 / 100 mm = low / moderate / high. Intense rain: wettest hour of the "
+             "hourly 90th percentile above thresholds that flag as often as PARDIG observed ≥ 10 / 20 mm in an hour (1–18 Nov 2026).\n"
+             "Slip / rock-fall exposure: intense rain or high accumulation on ground ≥ 26.6° with moderate+ NASA landslide susceptibility, or very high "
+             "susceptibility on ≥ 14°. Lead-time skill falls after about day 7, so treat days 8–15 as lower confidence.", fontsize=8, color=MUTED, va="top")
+    wn.save(fig, os.path.join(wn.OUT, "ETH_roads_rain_risk_windows.png"))
+    print("windows:", {WLAB[w]: {t: round(float(km[g[f'tier_w{w + 1}'] == t].sum())) for t in TIERS[1:]} | {"slip_km": round(float(slide_w[w].sum()))}
+                       for w in range(3)})
 
     # --- km by region -----------------------------------------------------------------
     t2 = tab[tab.index != "Unassigned"].sort_values("share_slowed_%")

@@ -1,0 +1,7 @@
+lead,event,cell_days,observed_rate,forecast_threshold_p90_mm_per_h,hit_rate,false_alarm_ratio,csi,csi_random
+days 1-3,wettest hour >= 10 mm,335160,0.0168,4.6,0.145,0.858,0.077,0.008
+days 1-3,wettest hour >= 20 mm,335160,0.0017,6.8,0.029,0.972,0.014,0.001
+days 4-7,wettest hour >= 10 mm,383040,0.0297,4.2,0.153,0.854,0.081,0.015
+days 4-7,wettest hour >= 20 mm,383040,0.0034,6.4,0.019,0.981,0.01,0.002
+days 8-15,wettest hour >= 10 mm,564984,0.0195,3.1,0.143,0.869,0.073,0.01
+days 8-15,wettest hour >= 20 mm,564984,0.0023,5.1,0.018,0.983,0.009,0.001

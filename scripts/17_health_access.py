@@ -157,6 +157,7 @@ if __name__ == "__main__":
         print(f"{tgt}: forecast times to each facility's own {tgt.lower()} done")
     hf["nearest_hospital"] = hf.Name.reindex(hf.hosp_idx.values).str.strip().values
     hf["nearest_health_centre"] = hf.Name.reindex(hf.hc_idx.values).str.strip().values
+    hf["nearest_hospital_id"] = hf.Id.reindex(hf.hosp_idx.values).values          # exact link (names repeat)
     for c in ["to_hosp", "to_hc"]:
         hf[f"{c}_added_min"] = (hf[f"{c}_fc_min"] - hf[f"{c}_min"]).round(1)
         hf.loc[~np.isfinite(hf[f"{c}_min"]), [f"{c}_min", f"{c}_fc_min", f"{c}_added_min"]] = np.nan
@@ -185,7 +186,7 @@ if __name__ == "__main__":
 
     cols = ["Id", "Name", "Type", "Ownership", "admin1Name", "admin2Name", "admin3Name", "Latitude", "Longitude",
             "road_gap_km", "off_network", "to_hosp_min", "to_hosp_fc_min", "to_hosp_added_min", "to_hc_min", "to_hc_fc_min",
-            "to_hc_added_min", "nearest_hospital", "nearest_health_centre", "hosp_idx", "nearest_road_tier", "share_elev_severe_5km", "slip_within_5km", "slip_km_within_5km", "roads_5km_km"]
+            "to_hc_added_min", "nearest_hospital", "nearest_hospital_id", "nearest_health_centre", "hosp_idx", "nearest_road_tier", "share_elev_severe_5km", "slip_within_5km", "slip_km_within_5km", "roads_5km_km"]
     hf["road_gap_km"] = hf.road_gap_km.round(2)
     res = hf[cols].copy()
     res.to_csv(os.path.join(wn.TB, f"eth_health_access_{tag}.csv"), index=False)
