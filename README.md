@@ -39,7 +39,9 @@ Each road segment's tier is **rain (0–3) + surface (0–2) + steepness (0–2)
 | Surface | paved 0, unpaved 1, plus 1 if OSM tags the condition as bad / very bad / horrible / impassable. Surface is mapped for about 25% of road length; the rest is inferred from road class. |
 | Steepness | Based on the Ethiopian Roads Authority terrain classes:<br>**mountainous:** ground slope ≥ 14° or road grade ≥ 5%<br>**escarpment:** ground slope ≥ 26.6° or road grade ≥ 10% |
 
-- **Rain bias correction:** checked against PARDIG for 12 runs from 1–17 Nov 2026 (`23_verify_wn3_pardig.py`), WeatherNext 3's ensemble-mean daily rain was 40–60% too low and almost never reached 10 mm. `24_bias_correct_wn3.py` corrects it by quantile mapping: per forecast range (days 1–3, 4–7, 8–15) and region, forecast daily totals are remapped to the observed distribution. Trained on Oct–Dec 2025 and tested on the November 2026 runs it never saw, the forecast/observed ratio went from 0.4–0.76 to 0.75–1.55. The share of the observed moderate-or-higher area caught went from 42% to 62%, with false alarms up from 11% to 15% (`charts/ETH_wn3_biascorrection.png`). The final mapping is trained on both periods. If it's missing, `14_` falls back to the earlier wet-end rule (`22_calibrate_wn3_hazard.py`).
+- **Rain bias correction:** checked against PARDIG (`23_verify_wn3_pardig.py`), WeatherNext 3's ensemble-mean daily rain is too low in every season (0.6–0.9 of observed) and rarely reaches 10 mm. Daily rain is corrected by quantile mapping per forecast range (days 1–3, 4–7, 8–15) and region, using two mappings, each where it tested best across Bega, Belg, Kiremt and the short rains of 2024–2026 (`25_test_biascorr_seasons.py`, `26_monthly_biascorr_wn3.py`):
+  - **Hazard classes** use a mapping trained on the short rains (`24_bias_correct_wn3.py`). It caught the most observed hazard in every season: 73–83% of the moderate-or-higher area in Belg and Kiremt, with 8–15% false alarms, including the dry Kiremt of 2026. It overstates rain amounts outside the short rains (1.5–2.5×).
+  - **Rain amounts** (map layer, totals, road details, daily chart) use a year-round monthly mapping pooled across 2024–2026. Tested leave-one-year-out, it is closer to observed totals in most seasons. WeatherNext 3's bias still varies from year to year, so amounts can be off by tens of per cent in a given year (Kiremt 2025: 1.9×, Kiremt 2026: 0.56×).
 - **Tiers and assumed speeds:** Normal, Minor (~10% slower), Elevated (~25% slower), Severe (~50% slower).
 - **Slip / rock-fall exposure:** judged on each ~110 m piece of road, not the whole segment. A piece is exposed when the forecast rain over it is moderate or high, and either the ground is ≥ 26.6° where NASA's global landslide susceptibility map rates it moderate or higher, or susceptibility is very high on ground ≥ 14°. Only the exposed stretches are counted (km) and drawn on the maps. The flag is reported separately and doesn't change the slowdown tier.
 - **Removed:** about 5,200 km of seismic survey cut-lines in the Ogaden that OSM maps as tracks.
@@ -56,7 +58,7 @@ Each road segment's tier is **rain (0–3) + surface (0–2) + steepness (0–2)
 ### Caveats
 - Thresholds and speed factors are illustrative and haven't been checked against observed travel times or closures.
 - Road grades come from a ~110 m elevation grid, so they run high where roads cut across hillsides.
-- The bias correction is trained on one short-rains season plus one wet spell, and slightly over-corrects at 1–5 days (1.1–1.5× observed in the test). PARDIG itself ran about 11% wetter than CHIRPS over the past year.
+- The bias corrections rest on 2–3 years of WeatherNext 3 runs; Bega (dry-season) hazard is caught poorly by any version (about a third, with 40–55% false alarms). PARDIG itself ran about 11% wetter than CHIRPS over the past year.
 - Absolute delays depend on the travel surface. Rerun on the Malaria Atlas Project motorized friction surface (`20_friction_access.py`), the same health centres come out most affected (rank correlation 0.9) with similar percentage slowdowns. But MAP's baseline trips are about 3.8 times shorter, so far fewer cross a fixed 30-minute threshold (`charts/ETH_friction_vs_road_*.png`).
 - The landslide susceptibility map is ~1 km, so it describes the hillside setting, not the road cut itself.
 - Routing is by road only. Seasonal river crossings, ferries and closures aren't modelled.
@@ -69,7 +71,9 @@ scripts/
   21_weathernext3_forecast.py  WeatherNext 3 15-day run for Ethiopia as daily mean / p50 / p90 (Earth Engine)
   22_calibrate_wn3_hazard.py   wet-end thresholds matched to the WeatherNext 2 member rule (fallback)
   23_verify_wn3_pardig.py      WeatherNext 3 vs PARDIG, early November 2026
-  24_bias_correct_wn3.py       quantile-mapping bias correction (trained and tested against PARDIG)
+  24_bias_correct_wn3.py       quantile-mapping bias correction; short-rains mapping used for hazard classes
+  25_test_biascorr_seasons.py  test across Belg / Kiremt seasons, incl. the dry 2026 Kiremt
+  26_monthly_biascorr_wn3.py   year-round monthly mapping (leave-one-year-out test) used for rain amounts
   14_roads_rain_risk.py        score road segments; static maps and charts
   15_fetch_gem15_dem.py        GEM-15 elevation + 15 m slope on a ~110 m grid (Earth Engine)
   16_export_webmap.py          compact web-map data files

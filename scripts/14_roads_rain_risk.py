@@ -14,8 +14,12 @@ Inputs
 
 Method (illustrative thresholds, not calibrated against observed travel times)
   Three factors per road segment, each sampled every ~110 m along the line:
-  R  rain hazard 0-3 at the segment's 0.1 deg cell, from WeatherNext 3 daily rain bias-corrected against PARDIG by
-     quantile mapping (24_bias_correct_wn3.py; per lead band and region; data/processed/wn3_qm.npz), with the plain rule:
+  R  rain hazard 0-3 at the segment's 0.1 deg cell. Two bias corrections of WeatherNext 3 daily rain against PARDIG
+     (quantile mapping per lead band and region), each used where it tested best (24_, 25_, 26_):
+       hazard classes  short-rains mapping (data/processed/wn3_qm.npz): caught the most observed hazard in every season
+       rain amounts    year-round monthly mapping (wn3_qm_monthly.npz): closest to observed totals across seasons
+                       (rain_15d_mm, wettest_3d_mm, wettest_day_mm, peak day, the map's rain layer and daily chart)
+     Hazard rule on the short-rains-corrected rain:
       3 high      a day >= 20 mm, or the wettest 3 days >= 40 mm
       2 moderate  a day >= 10 mm, or the wettest 3 days >= 20 mm
       1 low       15-day total >= 10 mm
@@ -131,10 +135,12 @@ def hazard(run):
     if os.path.exists(QMF):
         spec_ = importlib.util.spec_from_file_location("bc", os.path.join(ROOT, "scripts", "24_bias_correct_wn3.py"))
         bc = importlib.util.module_from_spec(spec_); spec_.loader.exec_module(bc)
-        m = bc.correct(run)
-        mean15, dmax = m.sum(0), m.max(0)
-        r3 = np.stack([m[i:i + 3].sum(0) for i in range(m.shape[0] - 2)]).max(0)
-        return bc.rule(m), dict(mean15=mean15, dmax=dmax, r3=r3, p90max=p90max, daily=m, method="bias-corrected")
+        mh = bc.correct(run)                                                   # hazard: short-rains mapping
+        ma = bc.correct(run, "monthly") if os.path.exists(bc.QMM) else mh      # amounts: monthly mapping
+        mean15, dmax = ma.sum(0), ma.max(0)
+        r3 = np.stack([ma[i:i + 3].sum(0) for i in range(ma.shape[0] - 2)]).max(0)
+        return bc.rule(mh), dict(mean15=mean15, dmax=dmax, r3=r3, p90max=p90max, daily=ma,
+                                 method="hazard: short-rains mapping; amounts: monthly mapping")
     import json
     t = json.load(open(THRESH)); M, Hh = t["moderate_p90_day_mm"], t["high_p90_day_mm"]
     m = np.nan_to_num(run["mean"])
@@ -386,8 +392,8 @@ if __name__ == "__main__":
     yb = min([ax_.get_position().y0 for ax_ in axs] + [cax.get_position().y0 - 0.03] +
              [l_.get_window_extent().transformed(fig.transFigure.inverted()).y0 for l_ in (leg, axs[1].get_legend())])
     fig.text(0.01, yb - 0.02, "Tier = rain hazard (0–3) + surface (paved 0, unpaved 1, +1 if tagged bad/horrible) + steepness (0–2) − 1, "
-                 "capped at one tier above the rain hazard; no rain = Normal.\nRain: WeatherNext 3 (0.1°) daily rain bias-corrected to PARDIG by quantile mapping; "
-                 "high = a day ≥ 20 mm or 3 days ≥ 40 mm; moderate = a day ≥ 10 mm or 3 days ≥ 20 mm; low = 15 days ≥ 10 mm. "
+                 "capped at one tier above the rain hazard; no rain = Normal.\nRain: WeatherNext 3 (0.1°) bias-corrected to PARDIG. Hazard (detection-tuned mapping): "
+                 "high = a day ≥ 20 mm or 3 days ≥ 40 mm; moderate = a day ≥ 10 mm or 3 days ≥ 20 mm; low = 15 days ≥ 10 mm. Rain shown: year-round monthly mapping. "
                  "Steepness: mountainous = terrain ≥ 14° or road grade ≥ 5 %; escarpment = ≥ 26.6° or ≥ 10 %.\n"
                  "Slip / rock-fall exposure, per ~110 m piece: moderate+ rain and either ground ≥ 26.6° with NASA landslide susceptibility moderate+, "
                  "or very high susceptibility on ground ≥ 14°. Speed factors are illustrative, not calibrated. "
@@ -436,7 +442,7 @@ if __name__ == "__main__":
     ax.set_ylabel("road km under ≥ 10 mm that day"); ax.grid(axis="x", visible=False)
     ax.legend(loc="upper left", frameon=False, fontsize=9)
     wn.title(ax, "When the wet days fall on the road network",
-             "Road length where the bias-corrected forecast for that UTC day is ≥ 10 mm (bars); raw wet end (p90) dashed")
+             "Road length where the forecast for that UTC day is ≥ 10 mm (bars, monthly-corrected amounts); raw wet end (p90) dashed")
     wn.foot(fig, f"WeatherNext 3, run {init:%d %b %Y} 00Z, 0.1°; each segment takes the cell at its midpoint. Wet end = hourly 90th percentiles "
                  "summed over the day, an upper envelope rather than a true daily percentile.")
     wn.save(fig, os.path.join(wn.OUT, "ETH_roads_rain_risk_daily.png"))

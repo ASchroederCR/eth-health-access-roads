@@ -1,0 +1,49 @@
+season,method,class,fc_share,obs_share,hit_rate,false_alarm_ratio
+Bega 2024,current (short rains),high,0.055,0.078,0.144,0.807
+Bega 2024,current (short rains),moderate+,0.14,0.202,0.353,0.422
+Bega 2024,"monthly, other years",high,0.023,0.078,0.064,0.784
+Bega 2024,"monthly, other years",moderate+,0.079,0.202,0.216,0.395
+Bega 2024,raw,high,0.0,0.078,0.0,0.14
+Bega 2024,raw,moderate+,0.017,0.202,0.045,0.285
+Bega 2026,current (short rains),high,0.071,0.043,0.201,0.541
+Bega 2026,current (short rains),moderate+,0.123,0.117,0.302,0.543
+Bega 2026,"monthly, other years",high,0.049,0.043,0.177,0.488
+Bega 2026,"monthly, other years",moderate+,0.089,0.117,0.264,0.541
+Bega 2026,raw,high,0.005,0.043,0.023,0.064
+Bega 2026,raw,moderate+,0.039,0.117,0.103,0.275
+Belg 2024,current (short rains),high,0.399,0.389,0.626,0.354
+Belg 2024,current (short rains),moderate+,0.552,0.62,0.728,0.154
+Belg 2024,"monthly, other years",high,0.309,0.389,0.496,0.329
+Belg 2024,"monthly, other years",moderate+,0.462,0.62,0.614,0.136
+Belg 2024,raw,high,0.028,0.389,0.049,0.253
+Belg 2024,raw,moderate+,0.286,0.62,0.393,0.083
+Belg 2026,current (short rains),high,0.449,0.424,0.665,0.328
+Belg 2026,current (short rains),moderate+,0.641,0.678,0.789,0.143
+Belg 2026,"monthly, other years",high,0.269,0.424,0.438,0.271
+Belg 2026,"monthly, other years",moderate+,0.483,0.678,0.626,0.093
+Belg 2026,raw,high,0.02,0.424,0.04,0.184
+Belg 2026,raw,moderate+,0.294,0.678,0.388,0.057
+Kiremt 2025,current (short rains),high,0.463,0.399,0.824,0.266
+Kiremt 2025,current (short rains),moderate+,0.543,0.589,0.833,0.08
+Kiremt 2025,"monthly, other years",high,0.398,0.399,0.717,0.24
+Kiremt 2025,"monthly, other years",moderate+,0.502,0.589,0.778,0.067
+Kiremt 2025,raw,high,0.061,0.399,0.116,0.23
+Kiremt 2025,raw,moderate+,0.368,0.589,0.583,0.034
+Kiremt 2026,current (short rains),high,0.315,0.348,0.661,0.256
+Kiremt 2026,current (short rains),moderate+,0.443,0.533,0.739,0.097
+Kiremt 2026,"monthly, other years",high,0.116,0.348,0.249,0.201
+Kiremt 2026,"monthly, other years",moderate+,0.251,0.533,0.425,0.076
+Kiremt 2026,raw,high,0.011,0.348,0.024,0.309
+Kiremt 2026,raw,moderate+,0.208,0.533,0.373,0.042
+Short rains 2025,current (short rains),high,0.031,0.04,0.12,0.799
+Short rains 2025,current (short rains),moderate+,0.086,0.139,0.243,0.492
+Short rains 2025,"monthly, other years",high,0.036,0.04,0.124,0.811
+Short rains 2025,"monthly, other years",moderate+,0.087,0.139,0.238,0.464
+Short rains 2025,raw,high,0.0,0.04,0.0,0.082
+Short rains 2025,raw,moderate+,0.013,0.139,0.033,0.346
+Short rains 2026,current (short rains),high,0.326,0.357,0.516,0.386
+Short rains 2026,current (short rains),moderate+,0.541,0.638,0.69,0.172
+Short rains 2026,"monthly, other years",high,0.189,0.357,0.272,0.357
+Short rains 2026,"monthly, other years",moderate+,0.375,0.638,0.486,0.138
+Short rains 2026,raw,high,0.014,0.357,0.023,0.293
+Short rains 2026,raw,moderate+,0.188,0.638,0.256,0.073

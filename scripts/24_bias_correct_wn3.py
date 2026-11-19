@@ -84,16 +84,28 @@ def apply_map(x, fq, oq):
     return np.where(x > top, x * (ys[-1] / max(top, 1e-6)), np.maximum(y, 0))
 
 
+QMM = os.path.join(ROOT, "data", "processed", "wn3_qm_monthly.npz")
+
+
 def correct(run, qm=None):
-    """WN3 run dict -> bias-corrected daily mean [day, y, x] mm (uses data/processed/wn3_qm.npz)."""
-    qm = qm if qm is not None else dict(np.load(QMF))
+    """WN3 run dict -> bias-corrected daily mean [day, y, x] mm.
+    qm: None / "short-rains" -> data/processed/wn3_qm.npz (default); "monthly" -> wn3_qm_monthly.npz (26_), choosing each
+    forecast day's mapping by the calendar month it falls in; or a mapping dict."""
+    if qm is None or qm == "short-rains":
+        qm = dict(np.load(QMF))
+    elif qm == "monthly":
+        qm = dict(np.load(QMM))
+    monthly = qm["fq"].ndim == 4
     m = np.nan_to_num(run["mean"]); out = np.zeros_like(m)
     reg = qm["regions"]
+    init = pd.Timestamp(str(run["init"]))
     for d in range(m.shape[0]):
         b = band_of(d + 1)
+        fq = qm["fq"][(init + pd.Timedelta(days=d)).month - 1] if monthly else qm["fq"]
+        oq = qm["oq"][(init + pd.Timedelta(days=d)).month - 1] if monthly else qm["oq"]
         for r in np.unique(reg):
             k = reg == r
-            out[d][k] = apply_map(m[d][k], qm["fq"][b, r], qm["oq"][b, r])
+            out[d][k] = apply_map(m[d][k], fq[b, r], oq[b, r])
     return out
 
 
