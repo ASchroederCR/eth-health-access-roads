@@ -131,6 +131,11 @@ if __name__ == "__main__":
     WH = rr.window_hazards(z, init, fld["daily_h"])
     import json as _json
     _th = _json.load(open(rr.INTJ))["thresholds"] if os.path.exists(rr.INTJ) else None
+    _hp = os.path.join(ROOT, "data", "raw", "weathernext3", "hourly", f"wn3h_eth_{init:%Y%m%d%H}.npz")
+    HOURLY = None
+    if os.path.exists(_hp):
+        _z = np.load(_hp); HOURLY = {"mean": _z["mean"].astype("float32") / 10, "p90": _z["p90"].astype("float32") / 10}
+        _band_key = [next(f"days_{a}_{b}" for a, b in rr.WINDOWS if a <= h // 24 + 1 <= b) for h in range(360)]
     _P, _ = wn.load_pardig(); _have = set(pd.to_datetime(_P.time.values))
     OBS10 = np.stack([np.nan_to_num(_P.sel(time=init - pd.Timedelta(days=k)).values) if (init - pd.Timedelta(days=k)) in _have
                       else np.full(mask.shape if hasattr(mask, "shape") else z["mask"].shape, np.nan) for k in range(10, 0, -1)])
@@ -219,6 +224,14 @@ if __name__ == "__main__":
                 for d_ in range(15):
                     key = next(f"days_{a}_{b}" for a, b in rr.WINDOWS if a <= d_ + 1 <= b)
                     ints[d_] = 2 if fxd[d_] >= _th[key]["very_intense"] else 1 if fxd[d_] >= _th[key]["intense"] else 0
+            if HOURLY is not None:
+                hm, hw = HOURLY["mean"][:360, ci, cj], HOURLY["p90"][:360, ci, cj]
+                i1 = [h for h in range(360) if _th and hw[h] >= _th[_band_key[h]]["intense"]]
+                i2 = [h for h in range(360) if _th and hw[h] >= _th[_band_key[h]]["very_intense"]]
+                pk = int(np.argmax(hw))
+                p["hs"] = {"t0": f"{init:%Y-%m-%dT%H}", "m": [round(float(v), 1) for v in hm.reshape(120, 3).sum(1)],
+                           "w": [round(float(v), 1) for v in hw.reshape(120, 3).sum(1)], "i1": i1, "i2": i2,
+                           "pk": pk, "pkv": round(float(hw[pk]), 1), "obs10": round(float(np.nansum(OBS10[:, ci, cj])), 1)}
             p["rs"] = {"o": [None if np.isnan(v) else round(float(v), 1) for v in OBS10[:, ci, cj]],
                        "f": [round(float(v), 1) for v in fld["daily"][:, ci, cj]],
                        "w": [round(float(v), 1) for v in np.nan_to_num(z["p90"])[:, ci, cj]],

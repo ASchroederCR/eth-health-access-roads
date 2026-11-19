@@ -455,10 +455,7 @@ function init() {
       const hfd = await getJSON("data/facilities.geojson");
       HF_ALL = hfd.features;
       map.addSource("hf", { type: "geojson", data: hfd });
-      map.addSource("links", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
-      map.addLayer({ id: "links", type: "line", source: "links", layout: { "line-cap": "round" },
-        paint: { "line-width": ["interpolate", ["linear"], ["zoom"], 6, 0.8, 11, 2], "line-opacity": 0.85,
-                 "line-color": ["step", ["get", "d"], css("--d0"), 5, css("--d1"), 15, css("--d2"), 30, css("--d3"), 60, css("--d4")] } });
+
       map.addLayer({ id: "hf-hp", type: "circle", source: "hf", minzoom: 7, filter: ["==", ["get", "ty"], 0],
         paint: { "circle-radius": ["interpolate", ["linear"], ["zoom"], 7, 2, 12, 4.5], "circle-stroke-width": 0.6 } });
       map.addLayer({ id: "hf-main", type: "circle", source: "hf", filter: [">=", ["get", "ty"], 1],
@@ -466,8 +463,9 @@ function init() {
         paint: { "circle-radius": ["interpolate", ["linear"], ["zoom"], 5, ["match", ["get", "ty"], 2, 2.6, 1.7], 8, ["match", ["get", "ty"], 2, 5, 3.2], 11, ["match", ["get", "ty"], 2, 9, 6]],
                  "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 5, ["match", ["get", "ty"], 2, 1, 0.3], 9, ["match", ["get", "ty"], 2, 2, 0.8]] } });
       map.addLayer({ id: "hf-linked", type: "circle", source: "hf", filter: ["==", ["get", "id"], -1],
-        paint: { "circle-radius": ["interpolate", ["linear"], ["zoom"], 5, 3, 11, 7], "circle-color": hfColor(),
-                 "circle-stroke-width": 1.6, "circle-stroke-color": css("--ink") } });
+        layout: { "circle-sort-key": ["get", "ty"] },
+        paint: { "circle-radius": ["interpolate", ["linear"], ["zoom"], 5, ["match", ["get", "ty"], 2, 6, 3.6], 11, ["match", ["get", "ty"], 2, 12, 7.5]],
+                 "circle-color": hfColor(), "circle-stroke-width": ["match", ["get", "ty"], 2, 3, 1.8], "circle-stroke-color": css("--ink") } });
     } catch (e) { console.warn("facilities did not load", e); }
     status.hidden = true;
     sync(); applyFilter(); applyTheme();
@@ -538,8 +536,8 @@ function facilityHTML(p0) {
   return `<div class="pp-h">${esc(p.n)}</div><div class="pp-sub">${TYN[p.ty]} · ${esc(p.a3)}, ${esc(p.a2)} · ${fr ? "MAP friction surface" : "road + slope model"}</div>
     ${p.ty !== 2 ? `<span class="pill"><i style="background:var(${tok})"></i>+${p.d ?? "–"} min to reach ${esc(target)}</span>` : ""}
     <div class="pp-grid">${rows}</div>
-    ${p.ty === 2 ? rainChart(p0.rs) : ""}
-    ${p.ty === 2 ? `<div class="netnote">Linked health centres and posts are highlighted on the map, with lines coloured by their added travel time. Close this popup to clear.</div>` : ""}
+    ${p.ty === 2 ? (p0.hs ? forecastChart(p0.hs) : rainChart(p0.rs)) : ""}
+    ${p.ty === 2 ? `<div class="netnote">Its linked health centres and posts are highlighted on the map, coloured by added travel time; other facilities are faded. Close this popup to clear.</div>` : ""}
     <div class="pp-foot">${p.off ? `${p.gap} km from the nearest mapped road · ` : ""}${p.sl ? "<b>slip / rock-fall exposed road</b> within 5 km" : "no slip-exposed road within 5 km"}</div>`;
 }
 function rainChart(rs) {
@@ -565,16 +563,13 @@ function rainChart(rs) {
     <div class="cap"><span><i style="background:var(--muted);opacity:.55"></i>observed (PARDIG)</span><span><i style="background:var(--r5)"></i>forecast, mm/day</span><span>⋯ wet end</span><span><i style="background:var(--int1);border-radius:50%"></i>intense rain possible</span></div></div>`;
 }
 function showNetwork(hp) {
-  if (!map || !map.getSource("links")) return 0;
-  const key = state.model === "fric" ? "fhid" : "hid", dk = state.model === "fric" ? "fd" : "d";
+  if (!map || !map.getLayer("hf-linked")) return 0;
+  const key = state.model === "fric" ? "fhid" : "hid";
   const hpt = HF_ALL.find(f => f.properties.id === hp.id); if (!hpt) return 0;
   const linked = HF_ALL.filter(f => f.properties[key] === hp.id && f.properties.ty !== 2);
-  map.getSource("links").setData({ type: "FeatureCollection", features: linked.map(f => ({ type: "Feature",
-    properties: { d: f.properties[dk] ?? 0 }, geometry: { type: "LineString", coordinates: [f.geometry.coordinates, hpt.geometry.coordinates] } })) });
   map.setFilter("hf-linked", ["any", ["==", ["get", key], hp.id], ["==", ["get", "id"], hp.id]]);
   map.setPaintProperty("hf-linked", "circle-color", hfColor());
-  ["hf-main", "hf-hp"].forEach(id => map.getLayer(id) && map.setPaintProperty(id, "circle-opacity", 0.18) && 0);
-  ["hf-main", "hf-hp"].forEach(id => map.getLayer(id) && map.setPaintProperty(id, "circle-stroke-opacity", 0.18));
+  ["hf-main", "hf-hp"].forEach(id => { if (map.getLayer(id)) { map.setPaintProperty(id, "circle-opacity", 0.15); map.setPaintProperty(id, "circle-stroke-opacity", 0.15); } });
   if (linked.length) {
     const xs = linked.map(f => f.geometry.coordinates[0]).concat(hpt.geometry.coordinates[0]);
     const ys = linked.map(f => f.geometry.coordinates[1]).concat(hpt.geometry.coordinates[1]);
@@ -583,10 +578,48 @@ function showNetwork(hp) {
   return linked.length;
 }
 function clearNetwork() {
-  if (!map || !map.getSource("links")) return;
-  map.getSource("links").setData({ type: "FeatureCollection", features: [] });
+  if (!map || !map.getLayer("hf-linked")) return;
   map.setFilter("hf-linked", ["==", ["get", "id"], -1]);
   ["hf-main", "hf-hp"].forEach(id => { if (map.getLayer(id)) { map.setPaintProperty(id, "circle-opacity", 1); map.setPaintProperty(id, "circle-stroke-opacity", 1); } });
+}
+function forecastChart(hs) {
+  if (typeof hs === "string") { try { hs = JSON.parse(hs); } catch (e) { return ""; } }
+  if (!hs || !hs.m) return "";
+  const n = hs.m.length, W = 310, Ht = 118, pL = 24, pR = 4, pT = 14, pB = 18, step = (W - pL - pR) / n;
+  const vmax = Math.max(2, ...hs.m, ...hs.w);
+  const x = i => pL + i * step, y = v => pT + (Ht - pT - pB) * (1 - Math.min(v, vmax) / vmax);
+  const t0 = new Date(hs.t0 + ":00:00Z");
+  const at = h => new Date(t0.getTime() + h * 36e5);
+  const dl = d => d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
+  const tl = d => `${dl(d)} ${String(d.getUTCHours()).padStart(2, "0")}:00`;
+  const spans = hrs => { const out = []; hrs.slice().sort((a, b) => a - b).forEach(h => { const L = out[out.length - 1]; if (L && h <= L[1] + 1) L[1] = h; else out.push([h, h]); }); return out; };
+  const s1 = spans(hs.i1 || []), s2 = spans(hs.i2 || []);
+  let g = "";
+  [6, 3].forEach(k => { const v = k === 6 ? 0 : 0; });
+  // window boundaries (day 4, day 8) and day ticks
+  for (let d = 1; d < 15; d++) { const xx = x(d * 8); g += `<line x1="${xx}" x2="${xx}" y1="${pT}" y2="${Ht - pB}" stroke="var(--rule)" stroke-width="${d === 3 || d === 7 ? 1.2 : 0.5}"${d === 3 || d === 7 ? "" : ' stroke-dasharray="1 2"'}/>`; }
+  // intense-rain shading
+  const band = ([a, b], tok, op, what) => { const x0 = x(Math.floor(a / 3)), w = Math.max(step, (Math.floor(b / 3) - Math.floor(a / 3) + 1) * step);
+    return `<rect x="${x0}" y="${pT}" width="${w}" height="${Ht - pT - pB}" fill="var(${tok})" opacity="${op}"><title>${what} ${tl(at(a))}–${tl(at(b + 1))} UTC</title></rect>`
+      + `<path d="M${x0 + w / 2 - 4},${pT - 9} L${x0 + w / 2 + 4},${pT - 9} L${x0 + w / 2},${pT - 2} Z" fill="var(--int2)"><title>${what}</title></path>`; };
+  s1.forEach(sp => g += band(sp, "--int1", ".8", "intense rain possible"));
+  s2.forEach(sp => g += band(sp, "--int2", ".85", "very intense rain possible"));
+  // ensemble mean (area) and wet end (line), mm per 3 h
+  g += `<path d="M${x(0)},${y(0)} ${hs.m.map((v, i) => `L${x(i + 0.5)},${y(v)}`).join(" ")} L${x(n)},${y(0)} Z" fill="var(--r4)" opacity=".75"/>`;
+  g += `<polyline fill="none" stroke="var(--ink2)" stroke-width="1" stroke-dasharray="3 2" points="${hs.w.map((v, i) => `${x(i + 0.5)},${y(v)}`).join(" ")}"/>`;
+  if (hs.pkv > 0) g += `<circle cx="${x(hs.pk / 3)}" cy="${y(hs.w[Math.floor(hs.pk / 3)])}" r="3" fill="var(--int2)" stroke="var(--panel)" stroke-width="1"/>`;
+  g += `<line x1="${pL}" x2="${W - pR}" y1="${Ht - pB}" y2="${Ht - pB}" stroke="var(--ink2)" stroke-width=".6"/>`;
+  g += `<text x="${pL - 3}" y="${pT + 6}" text-anchor="end" font-size="9" fill="var(--muted)">${vmax.toFixed(vmax < 10 ? 1 : 0)}</text><text x="${pL - 3}" y="${Ht - pB}" text-anchor="end" font-size="9" fill="var(--muted)">0</text>`;
+  [[0, "start"], [24, "middle"], [56, "middle"], [n, "end"]].forEach(([i, an]) => {
+    const h = i * 3; g += `<text x="${x(i)}" y="${Ht - 5}" text-anchor="${an}" font-size="9" fill="var(--muted)">${dl(at(h))}</text>`; });
+  const fmtSpan = ([a, b]) => `${tl(at(a))}${b > a ? "–" + String(at(b + 1).getUTCHours()).padStart(2, "0") + ":00" : ""}`;
+  const head = s1.length
+    ? `<b>Intense rain possible</b> at ${s1.slice(0, 3).map(fmtSpan).join("; ")}${s1.length > 3 ? ` and ${s1.length - 3} more` : ""} (UTC)${s2.length ? "; very intense at " + s2.slice(0, 2).map(fmtSpan).join("; ") : ""}.`
+    : "No intense rain forecast here in the next 15 days.";
+  return `<div class="rchart"><div class="netnote" style="margin:0 0 4px">${head} Wettest hour (wet end): ${hs.pkv} mm on ${tl(at(hs.pk))} UTC.</div>
+    <svg viewBox="0 0 ${W} ${Ht}" role="img" aria-label="Forecast rain at this hospital, mm per 3 hours, with intense-rain periods shaded">${g}</svg>
+    <div class="cap"><span><i style="background:var(--r4)"></i>forecast, mm per 3 h</span><span>- - wet end (90th pct)</span><span><i style="background:var(--int1)"></i>intense rain possible</span><span><i style="background:var(--int2)"></i>very intense</span></div>
+    <div class="cap">Days 1–3 · 4–7 · 8–15 split by solid lines. Raw WeatherNext 3 ensemble, which runs low on amounts. Last 10 days observed (PARDIG): ${hs.obs10} mm.</div></div>`;
 }
 let openFacility = () => {};
 function wirePopup() {
