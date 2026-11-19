@@ -154,6 +154,7 @@ section { display: flex; flex-direction: column; gap: 6px; }
 
     <section aria-labelledby="h-tier">
       <h2 id="h-tier">Slowdown tier</h2>
+      <label class="sw-row" for="opt-roads"><span>Show slowdown tiers on the map<small>Off hides all coloured roads</small></span><input type="checkbox" class="toggle" id="opt-roads" checked></label>
       <div class="tiers" id="tiers"></div>
       <p class="note" id="totline"></p>
     </section>
@@ -176,7 +177,6 @@ section { display: flex; flex-direction: column; gap: 6px; }
       <h2 id="h-layers">Map layers</h2>
       <div class="switches">
         <div class="subh">Roads</div>
-        <label class="sw-row" for="opt-roads"><span>Roads by slowdown tier<small>Off hides all coloured roads</small></span><input type="checkbox" class="toggle" id="opt-roads" checked></label>
         <label class="sw-row" for="opt-terrain"><span>Include terrain in the score<small>Off shows rain and surface only</small></span><input type="checkbox" class="toggle" id="opt-terrain" checked></label>
         <label class="sw-row" for="opt-slip"><span>Slip / rock-fall exposure<small>Exposed stretches: moderate+ rain on steep, landslide-prone ground</small></span><input type="checkbox" class="toggle" id="opt-slip" checked></label>
         <label class="sw-row" for="opt-ctx"><span>Main road network</span><input type="checkbox" class="toggle" id="opt-ctx" checked></label>
