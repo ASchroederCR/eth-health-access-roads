@@ -99,6 +99,7 @@ Each road segment's tier, per window, is **accumulation (0–3) + surface (0–2
 - **Added minutes:** the forecast time minus the normal time for that same trip.
 - **Linked facilities:** a hospital's linked facilities are the health centres and posts for which it is the nearest hospital, each counted on its own trip to that hospital. This is a road-network grouping, not a population catchment or the official referral pathway.
 - **Check against a standard router** (`34_ors_check.py --router osrm`, `charts/ETH_osrm_check.png`): 200 health centre / post → hospital trips, stratified by region and trip length, routed on the public OSRM car profile with our walking legs removed. Routes come out the same length (median ratio 1.00) and rank the same way (rank correlation 0.93). Our normal times run about 1.3× OSRM's (middle half 1.19–1.42), as expected: we slow unpaved roads to 70%, and about three-quarters of route length is unpaved, while OSRM drives untagged roads at full speed. The same script runs against openrouteservice with `--router ors` and an API key in `ORS_API_KEY` or `~/.ors_key`.
+- **Every facility against OSRM** (`35_osrm_facility_check.py`, `charts/ETH_osrm_facility_check.png`, `tables/eth_osrm_facility_check_20261119.csv`): all 18,706 hospital trips and 15,232 health post → health centre trips, timed with OSRM's table service (~530 batched requests). About 81% of trips fall within 25% of the typical ratio (1.30 hospital, 1.28 post → centre), rank correlation 0.95–0.97. Flagged for review: 83 + 28 trips where ours is far slower (ratio > 2.5× typical and 30+ min more; likely a gap or detour in the road data, e.g. 30 facilities going to Karamara General Hospital, Jijiga) and 83 + 149 where OSRM is far slower (e.g. posts going to Macha Health Center, Konta, and facilities going to Tegede Primary Hospital, Western Tigray, where our graph uses a road OSRM does not).
 
 ### Caveats
 - Thresholds and speed factors are illustrative and haven't been checked against observed travel times or closures.
@@ -135,6 +136,7 @@ scripts/
   19_travel_surface_compare.py compare with MAP 2020 motorized travel time (north-west clip)
   20_friction_access.py        rerun facility routing on the MAP motorized friction surface
   34_ors_check.py              normal-speed trip times vs a standard router (OSRM demo server or openrouteservice)
+  35_osrm_facility_check.py    every facility's trips vs OSRM, with outlier flags
 webmap/index.src.html  web map source (MapLibre GL)
 charts/               PNG outputs
 tables/               CSV outputs (per region, per facility, top lists, woredas)

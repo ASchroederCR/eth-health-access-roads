@@ -1,0 +1,71 @@
+{
+ "centre": {
+  "trips": 15232,
+  "median_ratio": 1.28,
+  "iqr": [
+   1.176,
+   1.433
+  ],
+  "within_25pct_of_typical": 0.809,
+  "spearman": 0.954,
+  "flags": {
+   "ok": 13314,
+   "same_road_point": 1741,
+   "fast_outlier": 149,
+   "slow_outlier": 28
+  },
+  "by_type": {
+   "Health Post": 1.28
+  },
+  "by_region": {
+   "Addis Ababa": 1.387,
+   "Afar": 1.196,
+   "Amhara": 1.286,
+   "Benishangul Gumz": 1.288,
+   "Dire Dawa": 1.146,
+   "Gambela": 1.4,
+   "Harari": 1.15,
+   "Oromia": 1.288,
+   "SNNP": 1.271,
+   "Sidama": 1.35,
+   "Somali": 1.288,
+   "South West Ethiopia": 1.239,
+   "Tigray": 1.212
+  }
+ },
+ "hospital": {
+  "trips": 18706,
+  "median_ratio": 1.304,
+  "iqr": [
+   1.176,
+   1.433
+  ],
+  "within_25pct_of_typical": 0.817,
+  "spearman": 0.965,
+  "flags": {
+   "ok": 18468,
+   "fast_outlier": 83,
+   "slow_outlier": 83,
+   "same_road_point": 72
+  },
+  "by_type": {
+   "Health Center": 1.303,
+   "Health Post": 1.305
+  },
+  "by_region": {
+   "Addis Ababa": 1.05,
+   "Afar": 1.211,
+   "Amhara": 1.291,
+   "Benishangul Gumz": 1.28,
+   "Dire Dawa": 1.194,
+   "Gambela": 1.248,
+   "Harari": 1.076,
+   "Oromia": 1.309,
+   "SNNP": 1.338,
+   "Sidama": 1.361,
+   "Somali": 1.42,
+   "South West Ethiopia": 1.261,
+   "Tigray": 1.206
+  }
+ }
+}
