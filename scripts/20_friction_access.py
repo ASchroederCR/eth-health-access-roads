@@ -98,6 +98,11 @@ if __name__ == "__main__":
     SF = np.ones(F.shape, "float32")
     SF[r[order], c[order]] = g.speed_factor.values[idx][order]
     F1 = F / SF
+    FW = []                                                       # per forecast window, from each window's own tier
+    for w in ha.WINS:
+        SFw = np.ones(F.shape, "float32")
+        SFw[r[order], c[order]] = g[f"tier_w{w}"].map(ha.SPEED_F).fillna(1.0).values[idx][order]
+        FW.append(F / SFw)
     print(f"cells with a scored road: {(np.isfinite(F) & (SF < 1)).sum():,} slowed by the forecast")
 
     nid, A, B, W0 = cell_graph(F, ok, tr)
@@ -105,6 +110,7 @@ if __name__ == "__main__":
     N = int(ok.sum())
     G0 = sparse.coo_matrix((W0 + 1e-6, (A, B)), shape=(N, N)).tocsr()
     G1 = sparse.coo_matrix((W1 + 1e-6, (A, B)), shape=(N, N)).tocsr()
+    GW = [sparse.coo_matrix((cell_graph(Fw, ok, tr)[3] + 1e-6, (A, B)), shape=(N, N)).tocsr() for Fw in FW]
     print(f"graph {N:,} nodes, {len(A):,} edges")
 
     # --- facilities ------------------------------------------------------------------------------
@@ -118,14 +124,15 @@ if __name__ == "__main__":
     res = hf[["Id", "Name", "Type", "admin1Name", "admin2Name", "admin3Name", "Latitude", "Longitude"]].copy()
     for tgt, label in [("Hospital", "hosp"), ("Health Center", "hc")]:
         s = (hf.Type == tgt).values
-        t0, t1, tid = ha.own_target(G0, G1, node, zero, node[s], zero[s], hf.index.values[s])
-        res[f"fr_to_{label}_min"], res[f"fr_to_{label}_fc_min"], res[f"fr_{label}_idx"] = t0.round(1), t1.round(1), tid
+        t0, t1s, tid = ha.own_target(G0, [G1] + GW, node, zero, node[s], zero[s], hf.index.values[s])
+        res[f"fr_to_{label}_min"], res[f"fr_to_{label}_fc_min"], res[f"fr_{label}_idx"] = t0.round(1), t1s[0].round(1), tid
+        for w, t1w in zip(ha.WINS, t1s[1:]): res[f"fr_to_{label}_added_w{w}_min"] = (t1w - t0).round(1)
         print(f"{tgt}: done")
     res["fr_nearest_hospital"] = res.Name.reindex(res.fr_hosp_idx.values).str.strip().values
     res["fr_nearest_hospital_id"] = res.Id.reindex(res.fr_hosp_idx.values).values
     for l in ["hosp", "hc"]:
         res[f"fr_to_{l}_added_min"] = (res[f"fr_to_{l}_fc_min"] - res[f"fr_to_{l}_min"]).round(1)
-    res.loc[res.Type != "Health Post", ["fr_to_hc_min", "fr_to_hc_fc_min", "fr_to_hc_added_min"]] = np.nan
+    res.loc[res.Type != "Health Post", ["fr_to_hc_min", "fr_to_hc_fc_min", "fr_to_hc_added_min"] + [f"fr_to_hc_added_w{w}_min" for w in ha.WINS]] = np.nan
 
     road = pd.read_csv(os.path.join(wn.TB, f"eth_health_access_{tag}.csv"))
     road = road[["Id", "off_network", "to_hosp_min", "to_hosp_fc_min", "to_hosp_added_min", "to_hc_min", "to_hc_fc_min",

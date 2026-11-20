@@ -200,17 +200,21 @@ if __name__ == "__main__":
     hfa["Name"] = hfa.Name.str.strip()
     FRF = os.path.join(ROOT, "data", "processed", "tables", f"eth_health_access_friction_{tag}.csv")
     HAS_FR = os.path.exists(FRF)
+    WINS = (1, 2, 3)                                     # forecast windows: days 1-3, 4-7, 8-15
     if HAS_FR:
         fr = pd.read_csv(FRF)
         fcols = ["fr_to_hosp_min", "fr_to_hosp_fc_min", "fr_to_hosp_added_min", "fr_to_hc_min", "fr_to_hc_fc_min",
-                 "fr_to_hc_added_min", "fr_nearest_hospital"] + (["fr_nearest_hospital_id"] if "fr_nearest_hospital_id" in fr.columns else [])
+                 "fr_to_hc_added_min", "fr_nearest_hospital"] + [f"fr_to_{t}_added_w{w}_min" for t in ("hosp", "hc") for w in WINS
+                 if f"fr_to_{t}_added_w{w}_min" in fr.columns] + (["fr_nearest_hospital_id"] if "fr_nearest_hospital_id" in fr.columns else [])
         hfa = hfa.merge(fr[["Id"] + fcols], on="Id", how="left")
         hfa["fr_nearest_hospital"] = hfa.fr_nearest_hospital.str.strip()
         lk = hfa[hfa.Type.isin(["Health Center", "Health Post"]) & ~hfa.off_network]
         frl = lk.groupby("fr_nearest_hospital").agg(fcf=("Id", "size"), fc30=("fr_to_hosp_added_min", lambda s_: int((s_ >= 30).sum())),
-                                                    fcm=("fr_to_hosp_added_min", "median"))
+                                                    fcm=("fr_to_hosp_added_min", "median"),
+                                                    **{f"fc30_{w}": (f"fr_to_hosp_added_w{w}_min", lambda s_: int((s_ >= 30).sum()))
+                                                       for w in WINS if f"fr_to_hosp_added_w{w}_min" in lk.columns})
         hfa = hfa.merge(frl, left_on="Name", right_index=True, how="left")
-        hfa.loc[hfa.Type != "Hospital", ["fcf", "fc30", "fcm"]] = np.nan
+        hfa.loc[hfa.Type != "Hospital", [c for c in hfa.columns if c in ("fcf", "fc30", "fcm") or c.startswith("fc30_")]] = np.nan
         print(f"friction results merged for {hfa.fr_to_hosp_min.notna().sum():,} facilities")
     else:
         print("no friction results for this run (20_friction_access.py) - web map will offer the road model only")
@@ -225,6 +229,17 @@ if __name__ == "__main__":
              "nt": r.nearest_road_tier, "s5": num(r.share_elev_severe_5km, 2), "sl": int(bool(r.slip_within_5km)),
              "gap": num(r.road_gap_km, 1), "off": int(bool(r.off_network))}
         p["id"] = int(r.Id)
+        # added minutes per forecast window (days 1-3, 4-7, 8-15); d / dc = all 15 days (worst window)
+        rd = r._asdict()
+        for w in WINS:
+            p[f"d{w}"] = num(rd.get(f"to_hosp_added_w{w}_min"))
+            if r.Type == "Health Post": p[f"dc{w}"] = num(rd.get(f"to_hc_added_w{w}_min"))
+            if r.Type == "Hospital":
+                p[f"c30_{w}"] = num(rd.get(f"linked_30min_plus_w{w}")) or 0; p[f"cm_{w}"] = num(rd.get(f"linked_median_added_w{w}_min"))
+            if HAS_FR:
+                p[f"fd{w}"] = num(rd.get(f"fr_to_hosp_added_w{w}_min"))
+                if r.Type == "Health Post": p[f"fdc{w}"] = num(rd.get(f"fr_to_hc_added_w{w}_min"))
+                if r.Type == "Hospital": p[f"fc30_{w}"] = num(rd.get(f"fc30_{w}")) or 0
         if isinstance(getattr(r, "nearest_hospital_id", None), (int, float)) and not pd.isna(r.nearest_hospital_id):
             p["hid"] = int(r.nearest_hospital_id)
         if r.Type == "Hospital":
@@ -275,6 +290,17 @@ if __name__ == "__main__":
                           "x": r.Longitude, "y": r.Latitude} for r in top_hc.itertuples()],
               "top_h": [{"n": r.Name, "a2": r.admin2Name, "cf": int(r.linked_facilities),
                          "c30": int(r.linked_30min_plus), "x": r.Longitude, "y": r.Latitude} for r in top_h.itertuples()]}
+    for w in WINS:                                       # the same block per forecast window (road model)
+        k, kc = f"to_hosp_added_w{w}_min", f"to_hc_added_w{w}_min"
+        tw = hfa[on & (hfa.Type == "Health Center")].nlargest(10, k)
+        thw = hfa[hfa.Type == "Hospital"].sort_values([f"linked_30min_plus_w{w}", f"linked_median_added_w{w}_min"], ascending=False).head(10)
+        health.setdefault("win", []).append({
+            "hc_30": int((hc_[k] >= 30).sum()), "hc_60": int((hc_[k] >= 60).sum()),
+            "hp_30": int((hp_[kc] >= 30).sum()), "hp_h30": int((hp_[k] >= 30).sum()),
+            "top_hc": [{"n": r.Name, "a2": r.admin2Name, "h0": round(r.to_hosp_min), "h1": round(r.to_hosp_min + getattr(r, k)),
+                        "x": r.Longitude, "y": r.Latitude} for r in tw.itertuples()],
+            "top_h": [{"n": r.Name, "a2": r.admin2Name, "cf": int(r.linked_facilities), "c30": int(getattr(r, f"linked_30min_plus_w{w}")),
+                       "x": r.Longitude, "y": r.Latitude} for r in thw.itertuples()]})
     if HAS_FR:
         hcf = hfa[on & (hfa.Type == "Health Center")].dropna(subset=["fr_to_hosp_added_min"])
         hpf = hfa[on & (hfa.Type == "Health Post")].dropna(subset=["fr_to_hc_added_min"])
@@ -289,6 +315,18 @@ if __name__ == "__main__":
                                    "x": r.Longitude, "y": r.Latitude} for r in th.itertuples()],
                         "hc_median_normal": round(float(hcf.fr_to_hosp_min.median()), 1),
                         "road_hc_median_normal": round(float(hc_.to_hosp_min.median()), 1)}
+        for w in WINS:
+            k = f"fr_to_hosp_added_w{w}_min"
+            if k not in hfa.columns: break
+            hcw = hcf.dropna(subset=[k]); kc = f"fr_to_hc_added_w{w}_min"
+            tfw = hcw.nlargest(10, k); thw = hfa[hfa.Type == "Hospital"].sort_values([f"fc30_{w}", "fcm"], ascending=False).head(10)
+            health["fr"].setdefault("win", []).append({
+                "hc_30": int((hcw[k] >= 30).sum()), "hc_60": int((hcw[k] >= 60).sum()),
+                "hp_30": int((hpf[kc] >= 30).sum()), "hp_h30": int((hpf[f"fr_to_hosp_added_w{w}_min"] >= 30).sum()),
+                "top_hc": [{"n": r.Name, "a2": r.admin2Name, "h0": round(r.fr_to_hosp_min), "h1": round(r.fr_to_hosp_min + getattr(r, k)),
+                            "x": r.Longitude, "y": r.Latitude} for r in tfw.itertuples()],
+                "top_h": [{"n": r.Name, "a2": r.admin2Name, "cf": int(r.fcf or 0), "c30": int(getattr(r, f"fc30_{w}") or 0),
+                           "x": r.Longitude, "y": r.Latitude} for r in thw.itertuples()]})
         # friction speed image (km/h classes), transparent outside Ethiopia
         FRT = os.path.join(ROOT, "data", "raw", "friction", "map_friction_motorized_2019_v5_1_eth.tif")
         with rasterio.open(FRT) as d_:

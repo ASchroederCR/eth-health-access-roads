@@ -257,7 +257,7 @@ section { display: flex; flex-direction: column; gap: 6px; }
     <section aria-labelledby="h-how">
       <h2 id="h-how">How the score works</h2>
       <p class="note">Tier = rain (0–3) + surface (paved 0, unpaved 1, +1 if mapped in bad condition) + steepness (0–2) − 1, kept to 0–3 and at most one tier above the rain score. No forecast rain means Normal. Speed losses (Minor ~10%, Elevated ~25%, Severe ~50%) are illustrative assumptions, not measured.</p>
-      <p class="note">Rain is judged two ways, each for days 1–3, 4–7 and 8–15. Accumulation drives the slowdown tiers: the wettest 10-day running total in the window, counting rain PARDIG observed before the forecast plus WeatherNext 3's bias-corrected forecast (low ≥ 25 mm, moderate ≥ 50 mm, high ≥ 100 mm). Intense rain marks where a downpour is possible: the wettest hour of WeatherNext 3's hourly 90th percentile, with thresholds set so it flags as often as PARDIG observed ≥ 10 mm (or ≥ 20 mm) in an hour in early November 2026. "All 15 days" shows the worst window; travel times and health-facility results use it. Forecast skill falls after about day 7, so days 8–15 are lower confidence.</p>
+      <p class="note">Rain is judged two ways, each for days 1–3, 4–7 and 8–15. Accumulation drives the slowdown tiers: the wettest 10-day running total in the window, counting rain PARDIG observed before the forecast plus WeatherNext 3's bias-corrected forecast (low ≥ 25 mm, moderate ≥ 50 mm, high ≥ 100 mm). Intense rain marks where a downpour is possible: the wettest hour of WeatherNext 3's hourly 90th percentile, with thresholds set so it flags as often as PARDIG observed ≥ 10 mm (or ≥ 20 mm) in an hour in early November 2026. "All 15 days" shows the worst window. Health-facility travel times follow the selected window: each window is routed with its own road tiers, and "All 15 days" uses each road's worst tier. Forecast skill falls after about day 7, so days 8–15 are lower confidence.</p>
       <p class="note">Slip / rock-fall exposure needs intense rain or high accumulation on ground ≥ 26.6° that NASA rates moderately or more landslide-prone, or very high susceptibility on ground ≥ 14°. Rain amounts shown use a year-round monthly bias correction; hazard classes use a stronger correction that caught the most observed hazard in tests.</p>
       <p class="note">Health access: two trips are timed separately. Every health centre and health post is timed to its nearest hospital; health posts are also timed to their nearest health centre. The map colours one trip at a time (choose under Health facility access). Each trip is the shortest road travel time at normal speeds by road class (trunk 70 … track 15 km/h, unpaved × 0.7, track grade 5 or sand / mud a further × 0.6), then to that same facility with each road slowed by its tier. A hospital's linked facilities are the health centres and posts for which it is the nearest hospital by road; this is a road-network grouping, not a population catchment or the official referral pathway. Facilities are approved hospitals, health centres and health posts from the Ethiopian health facility register.</p>
       <p class="note">Travel model: the road + slope model routes over the mapped road network with class speeds and walking to the road. The MAP friction surface (Malaria Atlas Project 2019 motorized, ~1 km) routes cell to cell using MAP's road, land-cover and off-road speeds, with cells crossed by a scored road slowed by the same tier factors. Both use the same facilities and the same nearest-hospital rule. MAP's journeys come out about 3–4 times shorter, so the two models usually agree on which facilities are worst hit but not on how many minutes are added.</p>
@@ -653,6 +653,518 @@ const SUMMARY = {
     "y": 11.246865
    }
   ],
+  "win": [
+   {
+    "hc_30": 485,
+    "hc_60": 165,
+    "hp_30": 322,
+    "hp_h30": 2380,
+    "top_hc": [
+     {
+      "n": "Kumba Health Center",
+      "a2": "Kefa",
+      "h0": 231,
+      "h1": 442,
+      "x": 36.2284998,
+      "y": 6.769212
+     },
+     {
+      "n": "Bareda Health Center",
+      "a2": "Mirab Omo",
+      "h0": 197,
+      "h1": 393,
+      "x": 35.50259541,
+      "y": 6.62399161
+     },
+     {
+      "n": "Wodo Health Center",
+      "a2": "Kefa",
+      "h0": 175,
+      "h1": 347,
+      "x": 35.7617209,
+      "y": 7.5937373
+     },
+     {
+      "n": "Jeba Health center",
+      "a2": "Mirab Omo",
+      "h0": 170,
+      "h1": 339,
+      "x": 35.2273425,
+      "y": 6.2522733
+     },
+     {
+      "n": "Liwarie Health Center",
+      "a2": "North Gondar",
+      "h0": 236,
+      "h1": 402,
+      "x": 38.5091099,
+      "y": 13.2328929
+     },
+     {
+      "n": "Shash Health Center",
+      "a2": "Kefa",
+      "h0": 186,
+      "h1": 351,
+      "x": 36.2110018,
+      "y": 6.8982827
+     },
+     {
+      "n": "Kuju Health Center",
+      "a2": "Mirab Omo",
+      "h0": 166,
+      "h1": 332,
+      "x": 35.50866508,
+      "y": 6.54904496
+     },
+     {
+      "n": "Dliybza Health Center",
+      "a2": "North Gondar",
+      "h0": 177,
+      "h1": 325,
+      "x": 38.4403121,
+      "y": 13.1181669
+     },
+     {
+      "n": "Oba Health Center",
+      "a2": "Jimma",
+      "h0": 165,
+      "h1": 309,
+      "x": 36.1461507,
+      "y": 7.5704749
+     },
+     {
+      "n": "Jembelew Health Center",
+      "a2": "North Gondar",
+      "h0": 155,
+      "h1": 296,
+      "x": 38.3639714,
+      "y": 13.0991121
+     }
+    ],
+    "top_h": [
+     {
+      "n": "Chora Primary Hospital",
+      "a2": "Buno Bedele",
+      "cf": 257,
+      "c30": 162,
+      "x": 36.11040667,
+      "y": 8.376255
+     },
+     {
+      "n": "Odda Primary Hospital",
+      "a2": "Kefa",
+      "cf": 129,
+      "c30": 115,
+      "x": 36.4718748,
+      "y": 7.1198403
+     },
+     {
+      "n": "Setema Primary Hospital",
+      "a2": "Jimma",
+      "cf": 110,
+      "c30": 94,
+      "x": 36.2035673,
+      "y": 7.9820519
+     },
+     {
+      "n": "Teppi General Hospital",
+      "a2": "Sheka",
+      "cf": 123,
+      "c30": 73,
+      "x": 35.426415,
+      "y": 7.1966211
+     },
+     {
+      "n": "Jinka General Hospital",
+      "a2": "South Omo",
+      "cf": 112,
+      "c30": 66,
+      "x": 36.5619494,
+      "y": 5.7821353
+     },
+     {
+      "n": "Sawla General Hospital",
+      "a2": "Gofa",
+      "cf": 142,
+      "c30": 66,
+      "x": 36.8938202,
+      "y": 6.3027797
+     },
+     {
+      "n": "Mizan Teppi university Teaching Hospital",
+      "a2": "Bench Sheko",
+      "cf": 118,
+      "c30": 65,
+      "x": 35.5486578,
+      "y": 6.9519356
+     },
+     {
+      "n": "Bedele General hospital",
+      "a2": "Buno Bedele",
+      "cf": 131,
+      "c30": 64,
+      "x": 36.3402758,
+      "y": 8.4507563
+     },
+     {
+      "n": "Gedo General Hospital",
+      "a2": "West Shewa",
+      "cf": 92,
+      "c30": 55,
+      "x": 37.450564,
+      "y": 9.0222992
+     },
+     {
+      "n": "Adet Primary Hospital",
+      "a2": "West Gojam",
+      "cf": 124,
+      "c30": 54,
+      "x": 37.4818119,
+      "y": 11.246865
+     }
+    ]
+   },
+   {
+    "hc_30": 129,
+    "hc_60": 44,
+    "hp_30": 70,
+    "hp_h30": 583,
+    "top_hc": [
+     {
+      "n": "Liwarie Health Center",
+      "a2": "North Gondar",
+      "h0": 236,
+      "h1": 400,
+      "x": 38.5091099,
+      "y": 13.2328929
+     },
+     {
+      "n": "Kumba Health Center",
+      "a2": "Kefa",
+      "h0": 231,
+      "h1": 391,
+      "x": 36.2284998,
+      "y": 6.769212
+     },
+     {
+      "n": "Bareda Health Center",
+      "a2": "Mirab Omo",
+      "h0": 197,
+      "h1": 345,
+      "x": 35.50259541,
+      "y": 6.62399161
+     },
+     {
+      "n": "Shash Health Center",
+      "a2": "Kefa",
+      "h0": 186,
+      "h1": 331,
+      "x": 36.2110018,
+      "y": 6.8982827
+     },
+     {
+      "n": "Goba Chara Health Center",
+      "a2": "Kefa",
+      "h0": 159,
+      "h1": 294,
+      "x": 36.1979633,
+      "y": 6.960262
+     },
+     {
+      "n": "Sira Hiwot Health Center",
+      "a2": "Kefa",
+      "h0": 156,
+      "h1": 291,
+      "x": 36.1928683,
+      "y": 6.9621883
+     },
+     {
+      "n": "Wodo Health Center",
+      "a2": "Kefa",
+      "h0": 175,
+      "h1": 304,
+      "x": 35.7617209,
+      "y": 7.5937373
+     },
+     {
+      "n": "Chero Harot Health Center",
+      "a2": "Mirab Omo",
+      "h0": 136,
+      "h1": 264,
+      "x": 35.88983499,
+      "y": 6.48407877
+     },
+     {
+      "n": "Shekibedo health center",
+      "a2": "Sheka",
+      "h0": 126,
+      "h1": 249,
+      "x": 35.2689202,
+      "y": 7.6808947
+     },
+     {
+      "n": "Endotie Health Center",
+      "a2": "South Wello",
+      "h0": 136,
+      "h1": 258,
+      "x": 38.9722391,
+      "y": 11.0326504
+     }
+    ],
+    "top_h": [
+     {
+      "n": "Odda Primary Hospital",
+      "a2": "Kefa",
+      "cf": 129,
+      "c30": 98,
+      "x": 36.4718748,
+      "y": 7.1198403
+     },
+     {
+      "n": "Teppi General Hospital",
+      "a2": "Sheka",
+      "cf": 123,
+      "c30": 70,
+      "x": 35.426415,
+      "y": 7.1966211
+     },
+     {
+      "n": "Doctor Ambachew Metasebia Primary Hospital",
+      "a2": "South Gondar",
+      "cf": 69,
+      "c30": 45,
+      "x": 38.4726673,
+      "y": 11.7471834
+     },
+     {
+      "n": "Mizan Teppi university Teaching Hospital",
+      "a2": "Bench Sheko",
+      "cf": 118,
+      "c30": 44,
+      "x": 35.5486578,
+      "y": 6.9519356
+     },
+     {
+      "n": "Setema Primary Hospital",
+      "a2": "Jimma",
+      "cf": 110,
+      "c30": 43,
+      "x": 36.2035673,
+      "y": 7.9820519
+     },
+     {
+      "n": "Bachuma primary Hospital",
+      "a2": "Mirab Omo",
+      "cf": 64,
+      "c30": 42,
+      "x": 35.9026526,
+      "y": 6.8246609
+     },
+     {
+      "n": "Amhara Sayint Primary Hospital",
+      "a2": "South Wello",
+      "cf": 61,
+      "c30": 39,
+      "x": 38.775147,
+      "y": 11.0311312
+     },
+     {
+      "n": "Kamba Primary Hospital",
+      "a2": "Gamo",
+      "cf": 42,
+      "c30": 28,
+      "x": 37.1669708,
+      "y": 6.0479924
+     },
+     {
+      "n": "Janamora Primary Hospital",
+      "a2": "North Gondar",
+      "cf": 57,
+      "c30": 25,
+      "x": 38.1128117,
+      "y": 13.0101177
+     },
+     {
+      "n": "Adet Primary Hospital",
+      "a2": "West Gojam",
+      "cf": 124,
+      "c30": 21,
+      "x": 37.4818119,
+      "y": 11.246865
+     }
+    ]
+   },
+   {
+    "hc_30": 265,
+    "hc_60": 103,
+    "hp_30": 165,
+    "hp_h30": 1289,
+    "top_hc": [
+     {
+      "n": "Liwarie Health Center",
+      "a2": "North Gondar",
+      "h0": 236,
+      "h1": 464,
+      "x": 38.5091099,
+      "y": 13.2328929
+     },
+     {
+      "n": "Dliybza Health Center",
+      "a2": "North Gondar",
+      "h0": 177,
+      "h1": 349,
+      "x": 38.4403121,
+      "y": 13.1181669
+     },
+     {
+      "n": "Wodo Health Center",
+      "a2": "Kefa",
+      "h0": 175,
+      "h1": 337,
+      "x": 35.7617209,
+      "y": 7.5937373
+     },
+     {
+      "n": "Kumba Health Center",
+      "a2": "Kefa",
+      "h0": 231,
+      "h1": 393,
+      "x": 36.2284998,
+      "y": 6.769212
+     },
+     {
+      "n": "Akile Health Center",
+      "a2": "West Gojam",
+      "h0": 157,
+      "h1": 311,
+      "x": 37.6319071,
+      "y": 11.0922925
+     },
+     {
+      "n": "Neti Health Center",
+      "a2": "South Wello",
+      "h0": 158,
+      "h1": 312,
+      "x": 39.5528072,
+      "y": 10.76075
+     },
+     {
+      "n": "Degele health center",
+      "a2": "Sheka",
+      "h0": 155,
+      "h1": 307,
+      "x": 35.3919973,
+      "y": 7.8068033
+     },
+     {
+      "n": "Jembelew Health Center",
+      "a2": "North Gondar",
+      "h0": 155,
+      "h1": 305,
+      "x": 38.3639714,
+      "y": 13.0991121
+     },
+     {
+      "n": "Shash Health Center",
+      "a2": "Kefa",
+      "h0": 186,
+      "h1": 332,
+      "x": 36.2110018,
+      "y": 6.8982827
+     },
+     {
+      "n": "Waro Health Center",
+      "a2": "South Wello",
+      "h0": 141,
+      "h1": 280,
+      "x": 38.8550187,
+      "y": 11.1153758
+     }
+    ],
+    "top_h": [
+     {
+      "n": "Odda Primary Hospital",
+      "a2": "Kefa",
+      "cf": 129,
+      "c30": 103,
+      "x": 36.4718748,
+      "y": 7.1198403
+     },
+     {
+      "n": "Chora Primary Hospital",
+      "a2": "Buno Bedele",
+      "cf": 257,
+      "c30": 96,
+      "x": 36.11040667,
+      "y": 8.376255
+     },
+     {
+      "n": "Teppi General Hospital",
+      "a2": "Sheka",
+      "cf": 123,
+      "c30": 71,
+      "x": 35.426415,
+      "y": 7.1966211
+     },
+     {
+      "n": "Setema Primary Hospital",
+      "a2": "Jimma",
+      "cf": 110,
+      "c30": 67,
+      "x": 36.2035673,
+      "y": 7.9820519
+     },
+     {
+      "n": "Selam General Hospital",
+      "a2": "South Wello",
+      "cf": 89,
+      "c30": 52,
+      "x": 39.6341505,
+      "y": 11.1277854
+     },
+     {
+      "n": "Amhara Sayint Primary Hospital",
+      "a2": "South Wello",
+      "cf": 61,
+      "c30": 50,
+      "x": 38.775147,
+      "y": 11.0311312
+     },
+     {
+      "n": "Adet Primary Hospital",
+      "a2": "West Gojam",
+      "cf": 124,
+      "c30": 50,
+      "x": 37.4818119,
+      "y": 11.246865
+     },
+     {
+      "n": "Woldia Comperhensive Specialized Hospital",
+      "a2": "North Wello",
+      "cf": 89,
+      "c30": 47,
+      "x": 39.5990159,
+      "y": 11.8325277
+     },
+     {
+      "n": "Doctor Ambachew Metasebia Primary Hospital",
+      "a2": "South Gondar",
+      "cf": 69,
+      "c30": 46,
+      "x": 38.4726673,
+      "y": 11.7471834
+     },
+     {
+      "n": "Debre Birhan Comprehensive Specialized Hospital",
+      "a2": "North Shewa (AM)",
+      "cf": 63,
+      "c30": 43,
+      "x": 39.5351612,
+      "y": 9.6790154
+     }
+    ]
+   }
+  ],
   "fr": {
    "hc_n": 3639,
    "hc_30": 139,
@@ -826,6 +1338,518 @@ const SUMMARY = {
    ],
    "hc_median_normal": 17.3,
    "road_hc_median_normal": 39.5,
+   "win": [
+    {
+     "hc_30": 108,
+     "hc_60": 17,
+     "hp_30": 209,
+     "hp_h30": 766,
+     "top_hc": [
+      {
+       "n": "Shekibedo health center",
+       "a2": "Sheka",
+       "h0": 846,
+       "h1": 1099,
+       "x": 35.2689202,
+       "y": 7.6808947
+      },
+      {
+       "n": "Achagna Health Center",
+       "a2": "Agnewak",
+       "h0": 146,
+       "h1": 240,
+       "x": 34.7713421,
+       "y": 6.755766
+      },
+      {
+       "n": "Qeja health center",
+       "a2": "Sheka",
+       "h0": 90,
+       "h1": 167,
+       "x": 35.4584893,
+       "y": 7.8079981
+      },
+      {
+       "n": "Dimma Health Center",
+       "a2": "Mirab Omo",
+       "h0": 79,
+       "h1": 156,
+       "x": 35.18616,
+       "y": 6.50273
+      },
+      {
+       "n": "Kumba Health Center",
+       "a2": "Kefa",
+       "h0": 87,
+       "h1": 163,
+       "x": 36.2284998,
+       "y": 6.769212
+      },
+      {
+       "n": "Degele health center",
+       "a2": "Sheka",
+       "h0": 93,
+       "h1": 167,
+       "x": 35.3919973,
+       "y": 7.8068033
+      },
+      {
+       "n": "Kuraze Three Health Center",
+       "a2": "Mirab Omo",
+       "h0": 110,
+       "h1": 184,
+       "x": 35.9118389,
+       "y": 6.069715
+      },
+      {
+       "n": "Gebissa Health center",
+       "a2": "Mirab Omo",
+       "h0": 81,
+       "h1": 152,
+       "x": 35.179186,
+       "y": 6.3576514
+      },
+      {
+       "n": "Masha Health Center",
+       "a2": "Sheka",
+       "h0": 81,
+       "h1": 152,
+       "x": 35.4781858,
+       "y": 7.7431169
+      },
+      {
+       "n": "Bareda Health Center",
+       "a2": "Mirab Omo",
+       "h0": 67,
+       "h1": 133,
+       "x": 35.50259541,
+       "y": 6.62399161
+      }
+     ],
+     "top_h": [
+      {
+       "n": "Odda Primary Hospital",
+       "a2": "Kefa",
+       "cf": 178,
+       "c30": 77,
+       "x": 36.4718748,
+       "y": 7.1198403
+      },
+      {
+       "n": "Setema Primary Hospital",
+       "a2": "Jimma",
+       "cf": 105,
+       "c30": 54,
+       "x": 36.2035673,
+       "y": 7.9820519
+      },
+      {
+       "n": "Teppi General Hospital",
+       "a2": "Sheka",
+       "cf": 112,
+       "c30": 54,
+       "x": 35.426415,
+       "y": 7.1966211
+      },
+      {
+       "n": "Janamora Primary Hospital",
+       "a2": "North Gondar",
+       "cf": 63,
+       "c30": 46,
+       "x": 38.1128117,
+       "y": 13.0101177
+      },
+      {
+       "n": "Maji Primary Hospital",
+       "a2": "Mirab Omo",
+       "cf": 60,
+       "c30": 37,
+       "x": 35.5888443,
+       "y": 6.1748015
+      },
+      {
+       "n": "Darimu Primary Hospital",
+       "a2": "Ilu Aba Bora",
+       "cf": 247,
+       "c30": 31,
+       "x": 35.5074709,
+       "y": 8.585586
+      },
+      {
+       "n": "Laha Primary Hospital",
+       "a2": "Gofa",
+       "cf": 58,
+       "c30": 24,
+       "x": 36.5909728,
+       "y": 6.4665405
+      },
+      {
+       "n": "Jinka General Hospital",
+       "a2": "South Omo",
+       "cf": 95,
+       "c30": 24,
+       "x": 36.5619494,
+       "y": 5.7821353
+      },
+      {
+       "n": "Bachuma primary Hospital",
+       "a2": "Mirab Omo",
+       "cf": 66,
+       "c30": 21,
+       "x": 35.9026526,
+       "y": 6.8246609
+      },
+      {
+       "n": "Limu Seka Primary hospital",
+       "a2": "Jimma",
+       "cf": 64,
+       "c30": 20,
+       "x": 36.9508394,
+       "y": 8.2967491
+      }
+     ]
+    },
+    {
+     "hc_30": 24,
+     "hc_60": 1,
+     "hp_30": 55,
+     "hp_h30": 193,
+     "top_hc": [
+      {
+       "n": "Shekibedo health center",
+       "a2": "Sheka",
+       "h0": 846,
+       "h1": 1016,
+       "x": 35.2689202,
+       "y": 7.6808947
+      },
+      {
+       "n": "Kumba Health Center",
+       "a2": "Kefa",
+       "h0": 87,
+       "h1": 146,
+       "x": 36.2284998,
+       "y": 6.769212
+      },
+      {
+       "n": "Degele health center",
+       "a2": "Sheka",
+       "h0": 93,
+       "h1": 150,
+       "x": 35.3919973,
+       "y": 7.8068033
+      },
+      {
+       "n": "Qeja health center",
+       "a2": "Sheka",
+       "h0": 90,
+       "h1": 145,
+       "x": 35.4584893,
+       "y": 7.8079981
+      },
+      {
+       "n": "Shash Health Center",
+       "a2": "Kefa",
+       "h0": 71,
+       "h1": 125,
+       "x": 36.2110018,
+       "y": 6.8982827
+      },
+      {
+       "n": "Masha Health Center",
+       "a2": "Sheka",
+       "h0": 81,
+       "h1": 134,
+       "x": 35.4781858,
+       "y": 7.7431169
+      },
+      {
+       "n": "Shmie Health center",
+       "a2": "East Gojam",
+       "h0": 155,
+       "h1": 206,
+       "x": 37.8552681,
+       "y": 10.8157064
+      },
+      {
+       "n": "Goba Chara Health Center",
+       "a2": "Kefa",
+       "h0": 61,
+       "h1": 111,
+       "x": 36.1979633,
+       "y": 6.960262
+      },
+      {
+       "n": "Sira Hiwot Health Center",
+       "a2": "Kefa",
+       "h0": 61,
+       "h1": 111,
+       "x": 36.1928683,
+       "y": 6.9621883
+      },
+      {
+       "n": "Bareda Health Center",
+       "a2": "Mirab Omo",
+       "h0": 67,
+       "h1": 116,
+       "x": 35.50259541,
+       "y": 6.62399161
+      }
+     ],
+     "top_h": [
+      {
+       "n": "Teppi General Hospital",
+       "a2": "Sheka",
+       "cf": 112,
+       "c30": 53,
+       "x": 35.426415,
+       "y": 7.1966211
+      },
+      {
+       "n": "Odda Primary Hospital",
+       "a2": "Kefa",
+       "cf": 178,
+       "c30": 50,
+       "x": 36.4718748,
+       "y": 7.1198403
+      },
+      {
+       "n": "Maji Primary Hospital",
+       "a2": "Mirab Omo",
+       "cf": 60,
+       "c30": 25,
+       "x": 35.5888443,
+       "y": 6.1748015
+      },
+      {
+       "n": "Bachuma primary Hospital",
+       "a2": "Mirab Omo",
+       "cf": 66,
+       "c30": 19,
+       "x": 35.9026526,
+       "y": 6.8246609
+      },
+      {
+       "n": "Janamora Primary Hospital",
+       "a2": "North Gondar",
+       "cf": 63,
+       "c30": 13,
+       "x": 38.1128117,
+       "y": 13.0101177
+      },
+      {
+       "n": "Bibugn Primary Hospital",
+       "a2": "East Gojam",
+       "cf": 44,
+       "c30": 10,
+       "x": 37.7418758,
+       "y": 10.8594019
+      },
+      {
+       "n": "Setema Primary Hospital",
+       "a2": "Jimma",
+       "cf": 105,
+       "c30": 8,
+       "x": 36.2035673,
+       "y": 7.9820519
+      },
+      {
+       "n": "Mizan Teppi university Teaching Hospital",
+       "a2": "Bench Sheko",
+       "cf": 98,
+       "c30": 5,
+       "x": 35.5486578,
+       "y": 6.9519356
+      },
+      {
+       "n": "Debre tabor Comperhensive Specialized  Hospital",
+       "a2": "South Gondar",
+       "cf": 75,
+       "c30": 5,
+       "x": 38.0229,
+       "y": 11.8565826
+      },
+      {
+       "n": "Laska Primary HospItal",
+       "a2": "Basketo",
+       "cf": 50,
+       "c30": 3,
+       "x": 36.6307925,
+       "y": 6.2989174
+      }
+     ]
+    },
+    {
+     "hc_30": 67,
+     "hc_60": 5,
+     "hp_30": 110,
+     "hp_h30": 439,
+     "top_hc": [
+      {
+       "n": "Shekibedo health center",
+       "a2": "Sheka",
+       "h0": 846,
+       "h1": 1092,
+       "x": 35.2689202,
+       "y": 7.6808947
+      },
+      {
+       "n": "Degele health center",
+       "a2": "Sheka",
+       "h0": 93,
+       "h1": 168,
+       "x": 35.3919973,
+       "y": 7.8068033
+      },
+      {
+       "n": "Qeja health center",
+       "a2": "Sheka",
+       "h0": 90,
+       "h1": 161,
+       "x": 35.4584893,
+       "y": 7.8079981
+      },
+      {
+       "n": "Deldiye Health Center",
+       "a2": "North Wello",
+       "h0": 70,
+       "h1": 134,
+       "x": 39.3478882,
+       "y": 12.197674
+      },
+      {
+       "n": "Masha Health Center",
+       "a2": "Sheka",
+       "h0": 81,
+       "h1": 144,
+       "x": 35.4781858,
+       "y": 7.7431169
+      },
+      {
+       "n": "Kumba Health Center",
+       "a2": "Kefa",
+       "h0": 87,
+       "h1": 146,
+       "x": 36.2284998,
+       "y": 6.769212
+      },
+      {
+       "n": "Enjafat Health Center",
+       "a2": "North Wello",
+       "h0": 63,
+       "h1": 120,
+       "x": 39.235533,
+       "y": 12.1558473
+      },
+      {
+       "n": "Yina Health Center",
+       "a2": "Sheka",
+       "h0": 66,
+       "h1": 120,
+       "x": 35.5040003,
+       "y": 7.6308363
+      },
+      {
+       "n": "Shash Health Center",
+       "a2": "Kefa",
+       "h0": 71,
+       "h1": 125,
+       "x": 36.2110018,
+       "y": 6.8982827
+      },
+      {
+       "n": "Dliybza Health Center",
+       "a2": "North Gondar",
+       "h0": 73,
+       "h1": 125,
+       "x": 38.4403121,
+       "y": 13.1181669
+      }
+     ],
+     "top_h": [
+      {
+       "n": "Darimu Primary Hospital",
+       "a2": "Ilu Aba Bora",
+       "cf": 247,
+       "c30": 63,
+       "x": 35.5074709,
+       "y": 8.585586
+      },
+      {
+       "n": "Teppi General Hospital",
+       "a2": "Sheka",
+       "cf": 112,
+       "c30": 55,
+       "x": 35.426415,
+       "y": 7.1966211
+      },
+      {
+       "n": "Odda Primary Hospital",
+       "a2": "Kefa",
+       "cf": 178,
+       "c30": 49,
+       "x": 36.4718748,
+       "y": 7.1198403
+      },
+      {
+       "n": "Janamora Primary Hospital",
+       "a2": "North Gondar",
+       "cf": 63,
+       "c30": 45,
+       "x": 38.1128117,
+       "y": 13.0101177
+      },
+      {
+       "n": "Setema Primary Hospital",
+       "a2": "Jimma",
+       "cf": 105,
+       "c30": 40,
+       "x": 36.2035673,
+       "y": 7.9820519
+      },
+      {
+       "n": "Amhara Sayint Primary Hospital",
+       "a2": "South Wello",
+       "cf": 61,
+       "c30": 28,
+       "x": 38.775147,
+       "y": 11.0311312
+      },
+      {
+       "n": "Adet Primary Hospital",
+       "a2": "West Gojam",
+       "cf": 129,
+       "c30": 19,
+       "x": 37.4818119,
+       "y": 11.246865
+      },
+      {
+       "n": "Kobo Primary Hospital",
+       "a2": "North Wello",
+       "cf": 72,
+       "c30": 19,
+       "x": 39.6492704,
+       "y": 12.162397
+      },
+      {
+       "n": "Tocha Primary Hospital",
+       "a2": "Dawuro",
+       "cf": 70,
+       "c30": 15,
+       "x": 37.0395398,
+       "y": 7.0920382
+      },
+      {
+       "n": "Tenta Primary Hospital",
+       "a2": "South Wello",
+       "cf": 64,
+       "c30": 15,
+       "x": 39.2564283,
+       "y": 11.2659248
+      }
+     ]
+    }
+   ],
    "bounds": [
     33.0,
     3.3000000000000007,
@@ -914,7 +1938,7 @@ function renderTiers() {
 function setWindow(w) {
   state.win = w;
   document.querySelectorAll("#winseg button").forEach(b => b.setAttribute("aria-checked", String(+b.dataset.w === w)));
-  renderTiers(); applyFilter(); rainPaint(); rainLegend();
+  renderTiers(); applyFilter(); rainPaint(); rainLegend(); refreshAccess();
 }
 document.querySelectorAll("#winseg button").forEach(b => b.addEventListener("click", () => setWindow(+b.dataset.w)));
 renderTiers();
@@ -932,13 +1956,24 @@ SUMMARY.regions.forEach(r => {
 });
 const H = SUMMARY.health;
 state.model = "road";
-const HM = () => (state.model === "fric" && H.fr) ? H.fr : H;
+// access summary for the current model and forecast window (window 0 = all 15 days = worst window)
+const HM = () => { const B = (state.model === "fric" && H.fr) ? H.fr : H;
+  return state.win && B.win && B.win[state.win - 1] ? Object.assign({}, B, B.win[state.win - 1]) : B; };
+const WIN_TXT = () => ["all 15 days", "days 1–3", "days 4–7", "days 8–15"][state.win || 0];
+// recolour facilities, the hfline and the lists, and the open card, when the window, model or trip changes
+function refreshAccess() {
+  if (typeof renderHealth === "function") renderHealth();
+  if (typeof TRIP_LEG !== "undefined") document.getElementById("leg-hf").textContent = `${TRIP_LEG[state.trip]} · ${WIN_TXT()}`;
+  if (!map) return;
+  ["hf-hp", "hf-main", "hf-linked"].forEach(id => map.getLayer(id) && map.setPaintProperty(id, "circle-color", hfColor(id)));
+  if (cardHosp) { const h = cardHosp; clearNetwork(); showCard(h); showNetwork(h); }
+}
 const goTo = (x, y, name) => { if (!map) return; map.flyTo({ center: [x, y], zoom: 10.5, essential: true }); map.once("moveend", () => openFacility(name, x, y)); };
 const hrow = (el, h, right) => { const b = document.createElement("button"); b.className = "hrow";
   b.innerHTML = `<span>${esc(h.n)}<small>${esc(h.a2)}</small></span><span class="num">${right}</span>`; b.addEventListener("click", () => goTo(h.x, h.y, h.n)); el.appendChild(b); };
 function renderHealth() {
   const M = HM();
-  document.getElementById("hfline").innerHTML = `<b>To the nearest hospital:</b> <span class="num">${fmt(M.hc_30)}</span> of <span class="num">${fmt(M.hc_n)}</span> health centres take 30+ minutes longer (<span class="num">${fmt(M.hc_60)}</span> an hour or more)${M.hp_h30 != null ? `, and <span class="num">${fmt(M.hp_h30)}</span> of <span class="num">${fmt(M.hp_n)}</span> health posts` : ""}.<br><b>Health post → its health centre:</b> <span class="num">${fmt(M.hp_30)}</span> of <span class="num">${fmt(M.hp_n)}</span> health posts take 30+ minutes longer.<br>The lists below are hospital trips. Tap a name to go there.`;
+  document.getElementById("hfline").innerHTML = `<span class="num">${WIN_TXT()[0].toUpperCase() + WIN_TXT().slice(1)}${state.win ? "" : " (worst window)"}</span><br><b>To the nearest hospital:</b> <span class="num">${fmt(M.hc_30)}</span> of <span class="num">${fmt(M.hc_n)}</span> health centres take 30+ minutes longer (<span class="num">${fmt(M.hc_60)}</span> an hour or more)${M.hp_h30 != null ? `, and <span class="num">${fmt(M.hp_h30)}</span> of <span class="num">${fmt(M.hp_n)}</span> health posts` : ""}.<br><b>Health post → its health centre:</b> <span class="num">${fmt(M.hp_30)}</span> of <span class="num">${fmt(M.hp_n)}</span> health posts take 30+ minutes longer.<br>The lists below are hospital trips. Tap a name to go there.`;
   document.getElementById("modelnote").textContent = state.model === "fric"
     ? `MAP friction surface: median normal trip from a health centre to its hospital ${H.fr.hc_median_normal} min (road model ${H.fr.road_hc_median_normal} min).`
     : "Road + slope model: mapped road network with class speeds, walking to the road at 5 km/h.";
@@ -953,7 +1988,7 @@ function setTrip(t) {
   state.trip = t;
   document.querySelectorAll("#tripseg button").forEach(b => b.setAttribute("aria-checked", b.dataset.t === t));
   document.getElementById("hfsub").textContent = t === "hc" ? "Health posts coloured by added minutes to their health centre; centres are the destinations" : "Added minutes to the nearest hospital; health posts from zoom 7";
-  document.getElementById("leg-hf").textContent = TRIP_LEG[t];
+  document.getElementById("leg-hf").textContent = `${TRIP_LEG[t]} · ${WIN_TXT()}`;
   document.getElementById("leg-hcdest").hidden = t !== "hc";
   if (!map) return;
   ["hf-hp", "hf-main"].forEach(id => map.getLayer(id) && map.setPaintProperty(id, "circle-color", hfColor(id)));
@@ -1027,7 +2062,7 @@ function decode(d) {
   return feats;
 }
 // data files keep fixed names, so tag each request with this build's version: browsers then never mix a new page with old data
-const DATA_VERSION = "202611192101-2d969e";
+const DATA_VERSION = "202611192203-2f2075";
 const dv = u => `${u}?v=${DATA_VERSION}`;
 const getJSON = u => fetch(dv(u), { cache: "no-cache" }).then(r => { if (!r.ok) throw new Error(u + " " + r.status); return r.json(); });
 
@@ -1060,7 +2095,7 @@ function hfStroke() {
 function hfColor(layer) {
   const trip = layer === "hf-linked" ? "hosp" : state.trip;
   if (trip === "hc" && layer === "hf-main") return css("--panel");
-  const k = (state.model === "fric" ? "fd" : "d") + (trip === "hc" ? "c" : "");
+  const k = (state.model === "fric" ? "fd" : "d") + (trip === "hc" ? "c" : "") + (state.win || "");
   return ["case", ["==", ["typeof", ["get", k]], "number"],
     ["step", ["get", k], css("--d0"), 5, css("--d1"), 15, css("--d2"), 30, css("--d3"), 60, css("--d4")], css("--d0")];
 }
@@ -1230,8 +2265,14 @@ const TYN = ["Health post", "Health centre", "Hospital"];
 const hrs = m => m == null ? "–" : m >= 90 ? `${(m / 60).toFixed(1)} h` : `${m} min`;
 function facilityHTML(p0) {
   const fr = state.model === "fric" && p0.fh0 !== undefined;
-  const p = fr ? Object.assign({}, p0, { h0: p0.fh0, h1: p0.fh1, c0: p0.fc0, c1: p0.fc1, d: p0.fd, dc: p0.fdc, ch: p0.fch || p0.ch,
-                                          cf: p0.fcf, c30: p0.fc30, cm: p0.fcm }) : p0;
+  let p = fr ? Object.assign({}, p0, { h0: p0.fh0, h1: p0.fh1, c0: p0.fc0, c1: p0.fc1, d: p0.fd, dc: p0.fdc, ch: p0.fch || p0.ch,
+                                        cf: p0.fcf, c30: p0.fc30, cm: p0.fcm }) : Object.assign({}, p0);
+  const w = state.win;
+  if (w) {                                                   // one forecast window: its own added minutes
+    const f = fr ? "f" : "";
+    p.d = p0[`${f}d${w}`]; p.dc = p0[`${f}dc${w}`]; p.c30 = p0[fr ? `fc30_${w}` : `c30_${w}`]; p.cm = fr ? null : p0[`cm_${w}`];
+    p.h1 = p.h0 != null && p.d != null ? p.h0 + p.d : null; p.c1 = p.c0 != null && p.dc != null ? p.c0 + p.dc : null;
+  }
   const two = (h0, h1, c0, c1) => `to hospital ${hrs(h0)} → ${hrs(h1)}` + (p0.ty === 0 ? `; to health centre ${hrs(c0)} → ${hrs(c1)}` : "");
   const other = fr ? `Road model: ${two(p0.h0, p0.h1, p0.c0, p0.c1)}`
                    : (p0.fh0 !== undefined && p0.fh0 !== null ? `MAP friction: ${two(p0.fh0, p0.fh1, p0.fc0, p0.fc1)}` : "");
@@ -1240,12 +2281,12 @@ function facilityHTML(p0) {
   const pd = toHc ? p.dc : p.d;
   const tok = pd == null ? "--d0" : pd >= 60 ? "--d4" : pd >= 30 ? "--d3" : pd >= 15 ? "--d2" : pd >= 5 ? "--d1" : "--d0";
   let rows = p.ty === 2
-    ? `<span class="k">Linked</span><span class="v">nearest hospital by road for ${p.cf ?? 0} health centres and posts; ${p.c30 ?? 0} take 30+ min longer to reach it under the forecast${p.cm != null ? ` (median +${p.cm} min)` : ""}</span><span class="s"></span>`
-    : `<span class="k">To hospital</span><span class="v">${hrs(p.h0)} normally, ${hrs(p.h1)} under the forecast${p.ch ? ` (${esc(p.ch)})` : ""}</span><span class="s">+${p.d ?? "–"}</span>`;
-  if (p.ty === 0) rows += `<span class="k">To health centre</span><span class="v">${hrs(p.c0)} normally, ${hrs(p.c1)} under the forecast${p.hc ? ` (${esc(p.hc)})` : ""}</span><span class="s">+${p.dc ?? "–"}</span>`;
+    ? `<span class="k">Linked</span><span class="v">nearest hospital by road for ${p.cf ?? 0} health centres and posts; ${p.c30 ?? 0} take 30+ min longer to reach it under the forecast (${WIN_TXT()})${p.cm != null ? ` (median +${p.cm} min)` : ""}</span><span class="s"></span>`
+    : `<span class="k">To hospital</span><span class="v">${hrs(p.h0)} normally, ${hrs(p.h1)} under the forecast (${WIN_TXT()})${p.ch ? ` (${esc(p.ch)})` : ""}</span><span class="s">+${p.d ?? "–"}</span>`;
+  if (p.ty === 0) rows += `<span class="k">To health centre</span><span class="v">${hrs(p.c0)} normally, ${hrs(p.c1)} under the forecast (${WIN_TXT()})${p.hc ? ` (${esc(p.hc)})` : ""}</span><span class="s">+${p.dc ?? "–"}</span>`;
   if (other && p.ty !== 2) rows += `<span class="k">Other model</span><span class="v">${other}</span><span class="s"></span>`;
   rows += `<span class="k">Roads nearby</span><span class="v">${p.s5 == null ? "no mapped roads within 5 km" : Math.round(p.s5 * 100) + "% Elevated / Severe within 5 km"}; nearest road ${esc(p.nt)}</span><span class="s"></span>`;
-  return `<div class="pp-h">${esc(p.n)}</div><div class="pp-sub">${TYN[p.ty]} · ${esc(p.a3)}, ${esc(p.a2)} · ${fr ? "MAP friction surface" : "road + slope model"}</div>
+  return `<div class="pp-h">${esc(p.n)}</div><div class="pp-sub">${TYN[p.ty]} · ${esc(p.a3)}, ${esc(p.a2)} · ${fr ? "MAP friction surface" : "road + slope model"} · ${WIN_TXT()}</div>
     ${p.ty !== 2 ? `<span class="pill"><i style="background:var(${tok})"></i>+${pd ?? "–"} min to reach ${esc(target)}</span>` : ""}
     ${p.ty === 2 ? (p0.hs ? forecastChart(p0.hs) : p0.rs ? rainChart(p0.rs) : `<div class="netnote">The forecast series hasn't loaded. Reload the page to fetch the latest data.</div>`) : ""}
     <div class="pp-grid">${rows}</div>
@@ -1368,7 +2409,7 @@ function legendItems() {
        { ramp: [1, 2, 3, 4, 5].map(i => css(`--pn${i}`)), ticks: PN_TICKS }, { l: "Blank: dry season, not compared", note: true }]
     : [{ h: "15-day forecast rain, mm (bias-corrected)" }, { ramp: [1, 2, 3, 4, 5, 6].map(i => css(`--r${i}`)), ticks: ["5", "10", "25", "50", "100", "150"] }]));
   if (on("opt-fric")) L.push({ h: "MAP travel speed, km/h" }, ...[["#a8320f", "< 3"], ["#e0701f", "3–10"], ["#f2b33d", "10–30"], ["#c9c8c2", "30+"]].map(([c, l]) => ({ box: c, l })));
-  if (on("opt-hf")) L.push({ h: `${TRIP_LEG[state.trip]} · ${state.model === "fric" ? "MAP friction" : "road + slope"} model` },
+  if (on("opt-hf")) L.push({ h: `${TRIP_LEG[state.trip]}, ${WIN_TXT()} · ${state.model === "fric" ? "MAP friction" : "road + slope"} model` },
     ...[["--d0", "< 5"], ["--d1", "5–15"], ["--d2", "15–30"], ["--d3", "30–60"], ["--d4", "60+"]].map(([t, l]) => ({ dot: css(t), l: l + " min" })),
     ...(state.trip === "hc" ? [{ dot: css("--panel"), ring: css("--ink"), l: "Health centre (destination)" }] : []),
     { sq: true, ring: css("--hosp"), l: "Hospital" });

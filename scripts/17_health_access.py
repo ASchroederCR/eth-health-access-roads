@@ -14,6 +14,8 @@ Method
   * Mapping gaps: dead-end vertices within 30 m of another road vertex are linked (at 5 km/h), so a way that stops
     just short of a junction does not force a long detour.
   * Facilities join the network at the nearest road vertex, covering the gap at 5 km/h (walking / carrying).
+  * Forecast speeds are computed for the worst window ("all 15 days", which drives the headline numbers) and for each
+    window separately (days 1-3, 4-7, 8-15, from that window's own tier): *_w1/_w2/_w3 columns.
   * Each facility is assigned the hospital it reaches fastest by road at normal speeds (health posts also: the
     nearest health centre). Its travel time to that same facility is then measured under normal and forecast speeds,
     so added minutes = forecast - normal for one fixed trip (no switching to another hospital when roads slow).
@@ -53,6 +55,8 @@ TCOL = {"Normal": "#c9c8c2", "Minor": "#f2b33d", "Elevated": "#e0701f", "Severe"
 SPEED = {"motorway": 80, "trunk": 70, "primary": 60, "secondary": 50, "tertiary": 40, "unclassified": 30, "road": 30,
          "residential": 20, "service": 15, "track": 15, "living_street": 10}
 WALK, KEEP = 5.0, ["Hospital", "Health Center", "Health Post"]
+WINS = (1, 2, 3)                                   # forecast windows: days 1-3, 4-7, 8-15 (tier_w1..3 from 14_)
+SPEED_F = {"Normal": 1.0, "Minor": 0.9, "Elevated": 0.75, "Severe": 0.5}
 COSLAT = np.cos(np.deg2rad(9.0))
 # added-minutes classes for maps (sequential, light -> dark)
 DLV = [0, 5, 15, 30, 60, 1e9]; DLAB = ["< 5 min", "5–15", "15–30", "30–60", "60+ min"]
@@ -100,7 +104,9 @@ def build_graph(g):
 def own_target(G0, G1, fac_nodes, fac_conn, tgt_nodes, tgt_conn, tgt_ids):
     """Assign each facility the target (hospital / health centre) it reaches first at normal speeds, then time the
     trip to that same target under normal (G0) and forecast (G1) speeds. Minutes include both walking links.
+    G1 may be a list of forecast graphs (e.g. one per forecast window); t1 is then a list in the same order.
     Forecast speeds are at least half of normal, so each forecast search can stop at twice the group's normal time."""
+    many = isinstance(G1, (list, tuple)); G1s = list(G1) if many else [G1]
     un = np.unique(tgt_nodes)
     tc = pd.Series(tgt_conn).groupby(tgt_nodes).min().reindex(un).values         # shortest link among targets on a node
     tid = pd.Series(tgt_ids).groupby(tgt_nodes).first().reindex(un).values
@@ -108,16 +114,17 @@ def own_target(G0, G1, fac_nodes, fac_conn, tgt_nodes, tgt_conn, tgt_ids):
     s = src[fac_nodes]
     pos = np.where(s >= 0, np.searchsorted(un, np.maximum(s, 0)), -1)
     t0 = np.where(pos >= 0, d0[fac_nodes] + fac_conn + tc[np.maximum(pos, 0)], np.nan)
-    t1 = np.full(len(fac_nodes), np.nan)
+    t1s = [np.full(len(fac_nodes), np.nan) for _ in G1s]
     order = np.argsort(pos, kind="stable"); ps = pos[order]
     starts = np.searchsorted(ps, np.arange(len(un))); ends = np.searchsorted(ps, np.arange(len(un)), side="right")
     for k in range(len(un)):
         grp = order[starts[k]:ends[k]]
         if not len(grp): continue
         lim = 2.0 * d0[fac_nodes[grp]].max() + 1.0
-        d = dijkstra(G1, directed=False, indices=un[k], limit=lim)
-        t1[grp] = d[fac_nodes[grp]] + fac_conn[grp] + tc[k]
-    return t0, t1, np.where(pos >= 0, tid[np.maximum(pos, 0)], -1)
+        for t1, G1_ in zip(t1s, G1s):
+            d = dijkstra(G1_, directed=False, indices=un[k], limit=lim)
+            t1[grp] = d[fac_nodes[grp]] + fac_conn[grp] + tc[k]
+    return t0, (t1s if many else t1s[0]), np.where(pos >= 0, tid[np.maximum(pos, 0)], -1)
 
 
 def snap(tree, lon, lat):
@@ -153,10 +160,17 @@ if __name__ == "__main__":
     N = len(nodes)
     G0 = sparse.coo_matrix((w0 + 1e-6, (a, b)), shape=(N, N)).tocsr(); G0.sum_duplicates()
     G1 = sparse.coo_matrix((w1 + 1e-6, (a, b)), shape=(N, N)).tocsr(); G1.sum_duplicates()
+    # one forecast graph per window (days 1-3, 4-7, 8-15), from each window's own tier; "all 15 days" uses the worst
+    GW = []
+    for w in WINS:
+        fw = g[f"tier_w{w}"].map(SPEED_F).fillna(1.0).values
+        fsw = np.where(seg >= 0, fw[np.maximum(seg, 0)], 1.0)
+        Gw = sparse.coo_matrix((km / (vs * fsw) * 60 + 1e-6, (a, b)), shape=(N, N)).tocsr(); Gw.sum_duplicates(); GW.append(Gw)
     for tgt, label in [("Hospital", "hosp"), ("Health Center", "hc")]:
         s = (hf.Type == tgt).values
-        t0, t1, tid = own_target(G0, G1, hf.node.values, conn, hf.node.values[s], conn[s], hf.index.values[s])
-        hf[f"to_{label}_min"], hf[f"to_{label}_fc_min"] = t0.round(1), t1.round(1)
+        t0, t1s, tid = own_target(G0, [G1] + GW, hf.node.values, conn, hf.node.values[s], conn[s], hf.index.values[s])
+        hf[f"to_{label}_min"], hf[f"to_{label}_fc_min"] = t0.round(1), t1s[0].round(1)
+        for w, t1w in zip(WINS, t1s[1:]): hf[f"to_{label}_fc_w{w}_min"] = t1w.round(1)
         hf[f"{label}_idx"] = tid
         print(f"{tgt}: forecast times to each facility's own {tgt.lower()} done")
     hf["nearest_hospital"] = hf.Name.reindex(hf.hosp_idx.values).str.strip().values
@@ -164,9 +178,12 @@ if __name__ == "__main__":
     hf["nearest_hospital_id"] = hf.Id.reindex(hf.hosp_idx.values).values          # exact link (names repeat)
     for c in ["to_hosp", "to_hc"]:
         hf[f"{c}_added_min"] = (hf[f"{c}_fc_min"] - hf[f"{c}_min"]).round(1)
-        hf.loc[~np.isfinite(hf[f"{c}_min"]), [f"{c}_min", f"{c}_fc_min", f"{c}_added_min"]] = np.nan
-    hf.loc[hf.Type != "Health Post", ["to_hc_min", "to_hc_fc_min", "to_hc_added_min"]] = np.nan
-    hf.loc[hf.Type == "Hospital", ["to_hosp_min", "to_hosp_fc_min", "to_hosp_added_min"]] = 0.0
+        for w in WINS: hf[f"{c}_added_w{w}_min"] = (hf[f"{c}_fc_w{w}_min"] - hf[f"{c}_min"]).round(1)
+        wc = [x for w in WINS for x in (f"{c}_fc_w{w}_min", f"{c}_added_w{w}_min")]
+        hf.loc[~np.isfinite(hf[f"{c}_min"]), [f"{c}_min", f"{c}_fc_min", f"{c}_added_min"] + wc] = np.nan
+    WC = lambda c: [x for w in WINS for x in (f"{c}_fc_w{w}_min", f"{c}_added_w{w}_min")]
+    hf.loc[hf.Type != "Health Post", ["to_hc_min", "to_hc_fc_min", "to_hc_added_min"] + WC("to_hc")] = np.nan
+    hf.loc[hf.Type == "Hospital", ["to_hosp_min", "to_hosp_fc_min", "to_hosp_added_min"] + WC("to_hosp")] = 0.0
     hf["off_network"] = hf.road_gap_km > 10
 
     # --- local exposure within 5 km ---------------------------------------------------------
@@ -190,7 +207,7 @@ if __name__ == "__main__":
 
     cols = ["Id", "Name", "Type", "Ownership", "admin1Name", "admin2Name", "admin3Name", "Latitude", "Longitude",
             "road_gap_km", "off_network", "to_hosp_min", "to_hosp_fc_min", "to_hosp_added_min", "to_hc_min", "to_hc_fc_min",
-            "to_hc_added_min", "nearest_hospital", "nearest_hospital_id", "nearest_health_centre", "hosp_idx", "nearest_road_tier", "share_elev_severe_5km", "slip_within_5km", "slip_km_within_5km", "roads_5km_km"]
+            "to_hc_added_min"] + WC("to_hosp") + WC("to_hc") + ["nearest_hospital", "nearest_hospital_id", "nearest_health_centre", "hosp_idx", "nearest_road_tier", "share_elev_severe_5km", "slip_within_5km", "slip_km_within_5km", "roads_5km_km"]
     hf["road_gap_km"] = hf.road_gap_km.round(2)
     res = hf[cols].copy()
     res.to_csv(os.path.join(wn.TB, f"eth_health_access_{tag}.csv"), index=False)
@@ -200,10 +217,13 @@ if __name__ == "__main__":
     top_hc = res[on & (res.Type == "Health Center")].nlargest(25, "to_hosp_added_min")
     top_hp = res[on & (res.Type == "Health Post")].nlargest(25, "to_hc_added_min")
     sub_ = res[on & res.Type.isin(["Health Center", "Health Post"])]
-    cat = (sub_[sub_.hosp_idx >= 0].assign(hit=sub_.to_hosp_added_min >= 30).groupby("hosp_idx")
-           .agg(linked_facilities=("Id", "size"), linked_30min_plus=("hit", "sum"),
-                linked_median_added_min=("to_hosp_added_min", "median")))
-    H_ = res[res.Type == "Hospital"].join(cat, how="left").fillna({"linked_facilities": 0, "linked_30min_plus": 0})
+    lk = sub_[sub_.hosp_idx >= 0].assign(hit=sub_.to_hosp_added_min >= 30,
+                                         **{f"hit{w}": sub_[f"to_hosp_added_w{w}_min"] >= 30 for w in WINS})
+    cat = lk.groupby("hosp_idx").agg(linked_facilities=("Id", "size"), linked_30min_plus=("hit", "sum"),
+                                     linked_median_added_min=("to_hosp_added_min", "median"),
+                                     **{f"linked_30min_plus_w{w}": (f"hit{w}", "sum") for w in WINS},
+                                     **{f"linked_median_added_w{w}_min": (f"to_hosp_added_w{w}_min", "median") for w in WINS})
+    H_ = res[res.Type == "Hospital"].join(cat, how="left").fillna({"linked_facilities": 0, "linked_30min_plus": 0} | {f"linked_30min_plus_w{w}": 0 for w in WINS})
     res = res.join(cat)                                                        # hospital rows carry linked-facility stats
     res.drop(columns=["hosp_idx"]).to_csv(os.path.join(wn.TB, f"eth_health_access_{tag}.csv"), index=False)
     top_h = H_.sort_values(["linked_30min_plus", "linked_median_added_min"], ascending=False).head(25)
@@ -223,6 +243,9 @@ if __name__ == "__main__":
     print("health centres -> hospital", summ(res[on & (res.Type == "Health Center")], "to_hosp_added_min"))
     print("health posts -> hospital", summ(res[on & (res.Type == "Health Post")], "to_hosp_added_min"))
     print("health posts -> health centre", summ(res[on & (res.Type == "Health Post")], "to_hc_added_min"))
+    for w in WINS:
+        print(f"  window {w}: centres -> hospital", summ(res[on & (res.Type == "Health Center")], f"to_hosp_added_w{w}_min"),
+              "| posts -> centre", summ(res[on & (res.Type == "Health Post")], f"to_hc_added_w{w}_min"))
     print("hospitals with >=50% Elevated/Severe roads within 5 km:", int((res[res.Type == "Hospital"].share_elev_severe_5km >= 0.5).sum()))
     print("off network (>10 km from a road):", res.off_network.groupby(res.Type).sum().to_dict())
     print(top_hc[["Name", "admin2Name", "to_hosp_min", "to_hosp_fc_min", "to_hosp_added_min"]].head(10).to_string())
