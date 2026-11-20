@@ -214,10 +214,15 @@ section { display: flex; flex-direction: column; gap: 6px; }
         <button type="button" role="radio" aria-checked="false" id="model-fric">MAP friction surface</button>
       </div>
       <p class="note" id="modelnote"></p>
+      <div class="subh">Map colours show added minutes on one trip</div>
+      <div class="seg" role="radiogroup" aria-label="Trip shown on the map" id="tripseg">
+        <button type="button" role="radio" aria-checked="true" data-t="hosp">To the nearest hospital</button>
+        <button type="button" role="radio" aria-checked="false" data-t="hc">Health post → health centre</button>
+      </div>
       <p class="note" id="hfline"></p>
-      <div class="subh">Hospitals that become hardest to reach</div>
+      <div class="subh">Hospitals that become hardest to reach (linked centres and posts 30+ min longer)</div>
       <div class="hlist" id="toph"></div>
-      <div class="subh">Health centres with the biggest added trip time</div>
+      <div class="subh">Health centres with the biggest added time to their hospital</div>
       <div class="hlist" id="tophc"></div>
     </section>
 
@@ -230,7 +235,7 @@ section { display: flex; flex-direction: column; gap: 6px; }
         <label class="sw-row" for="opt-ctx"><span>Main road network</span><input type="checkbox" class="toggle" id="opt-ctx" checked></label>
         <div class="subh">Other layers</div>
         <label class="sw-row" for="opt-int"><span>Intense rain possible<small>≥ 10 / 20 mm in an hour, follows the forecast window</small></span><input type="checkbox" class="toggle" id="opt-int" checked></label>
-        <label class="sw-row" for="opt-hf"><span>Health facilities<small>Coloured by added travel time; health posts from zoom 7</small></span><input type="checkbox" class="toggle" id="opt-hf" checked></label>
+        <label class="sw-row" for="opt-hf"><span>Health facilities<small id="hfsub">Added minutes to the nearest hospital; health posts from zoom 7</small></span><input type="checkbox" class="toggle" id="opt-hf" checked></label>
         <label class="sw-row" for="opt-rain"><span>Forecast rain<small id="rainsub">15-day total, mm</small></span><input type="checkbox" class="toggle" id="opt-rain" checked></label>
         <div class="seg" role="radiogroup" aria-label="Rain shown as" id="rainseg">
           <button type="button" role="radio" aria-checked="true" data-m="mm">mm</button>
@@ -254,7 +259,7 @@ section { display: flex; flex-direction: column; gap: 6px; }
       <p class="note">Tier = rain (0–3) + surface (paved 0, unpaved 1, +1 if mapped in bad condition) + steepness (0–2) − 1, kept to 0–3 and at most one tier above the rain score. No forecast rain means Normal. Speed losses (Minor ~10%, Elevated ~25%, Severe ~50%) are illustrative assumptions, not measured.</p>
       <p class="note">Rain is judged two ways, each for days 1–3, 4–7 and 8–15. Accumulation drives the slowdown tiers: the wettest 10-day running total in the window, counting rain PARDIG observed before the forecast plus WeatherNext 3's bias-corrected forecast (low ≥ 25 mm, moderate ≥ 50 mm, high ≥ 100 mm). Intense rain marks where a downpour is possible: the wettest hour of WeatherNext 3's hourly 90th percentile, with thresholds set so it flags as often as PARDIG observed ≥ 10 mm (or ≥ 20 mm) in an hour in early November 2026. "All 15 days" shows the worst window; travel times and health-facility results use it. Forecast skill falls after about day 7, so days 8–15 are lower confidence.</p>
       <p class="note">Slip / rock-fall exposure needs intense rain or high accumulation on ground ≥ 26.6° that NASA rates moderately or more landslide-prone, or very high susceptibility on ground ≥ 14°. Rain amounts shown use a year-round monthly bias correction; hazard classes use a stronger correction that caught the most observed hazard in tests.</p>
-      <p class="note">Health access: shortest road travel time from each facility to the nearest hospital (health posts: nearest health centre) at normal speeds by road class (trunk 70 … track 15 km/h, unpaved × 0.7), then to that same facility with each road slowed by its tier. A hospital's linked facilities are the health centres and posts for which it is the nearest hospital by road; this is a road-network grouping, not a population catchment or the official referral pathway. Facilities are approved hospitals, health centres and health posts from the Ethiopian health facility register.</p>
+      <p class="note">Health access: two trips are timed separately. Every health centre and health post is timed to its nearest hospital; health posts are also timed to their nearest health centre. The map colours one trip at a time (choose under Health facility access). Each trip is the shortest road travel time at normal speeds by road class (trunk 70 … track 15 km/h, unpaved × 0.7), then to that same facility with each road slowed by its tier. A hospital's linked facilities are the health centres and posts for which it is the nearest hospital by road; this is a road-network grouping, not a population catchment or the official referral pathway. Facilities are approved hospitals, health centres and health posts from the Ethiopian health facility register.</p>
       <p class="note">Travel model: the road + slope model routes over the mapped road network with class speeds and walking to the road. The MAP friction surface (Malaria Atlas Project 2019 motorized, ~1 km) routes cell to cell using MAP's road, land-cover and off-road speeds, with cells crossed by a scored road slowed by the same tier factors. Both use the same facilities and the same nearest-hospital rule. MAP's journeys come out about 3–4 times shorter, so the two models usually agree on which facilities are worst hit but not on how many minutes are added.</p>
       <p class="note">Slip / rock-fall exposure is judged on each ~110 m piece of road: moderate or high forecast rain over that piece, and either ground ≥ 26.6° where NASA's global landslide susceptibility map rates it moderate or higher, or very high susceptibility on ground ≥ 14°. Only the exposed stretches are drawn and counted.</p>
       <p class="note">Surface is mapped (OSM tag or Mapillary image model) for about a quarter of road length; the rest is inferred from road class. Road grades come from a ~110 m elevation grid and run high where roads cut across hillsides.</p>
@@ -283,8 +288,8 @@ section { display: flex; flex-direction: column; gap: 6px; }
       <div id="leg-fric3" hidden></div>
       <div id="leg-int">Intense rain possible</div>
       <div class="dots" id="leg-int2"><span><i style="background:var(--int1);border-radius:2px"></i>≥ 10 mm/h</span><span><i style="background:var(--int2);border-radius:2px"></i>≥ 20 mm/h</span></div>
-      <div id="leg-hf">Facilities: added minutes</div>
-      <div class="dots" id="leg-hf2"><span><i style="background:var(--d0)"></i>&lt;5</span><span><i style="background:var(--d1)"></i>5–15</span><span><i style="background:var(--d2)"></i>15–30</span><span><i style="background:var(--d3)"></i>30–60</span><span><i style="background:var(--d4)"></i>60+</span><span><i style="background:transparent;border-radius:0;box-shadow:inset 0 0 0 2px var(--hosp)"></i>hospital</span></div>
+      <div id="leg-hf">Added minutes to the nearest hospital</div>
+      <div class="dots" id="leg-hf2"><span><i style="background:var(--d0)"></i>&lt;5</span><span><i style="background:var(--d1)"></i>5–15</span><span><i style="background:var(--d2)"></i>15–30</span><span><i style="background:var(--d3)"></i>30–60</span><span><i style="background:var(--d4)"></i>60+</span><span id="leg-hcdest" hidden><i style="background:var(--panel);box-shadow:inset 0 0 0 1.5px var(--ink)"></i>health centre</span><span><i style="background:transparent;border-radius:0;box-shadow:inset 0 0 0 2px var(--hosp)"></i>hospital</span></div>
     </div>
   </div>
 </div>
@@ -483,6 +488,7 @@ const SUMMARY = {
   "hc_60": 238,
   "hp_n": 15539,
   "hp_30": 423,
+  "hp_h30": 2838,
   "top_hc": [
    {
     "n": "Kumba Health Center",
@@ -653,6 +659,7 @@ const SUMMARY = {
    "hc_60": 19,
    "hp_n": 15539,
    "hp_30": 220,
+   "hp_h30": 890,
    "top_hc": [
     {
      "n": "Shekibedo health center",
@@ -931,7 +938,7 @@ const hrow = (el, h, right) => { const b = document.createElement("button"); b.c
   b.innerHTML = `<span>${esc(h.n)}<small>${esc(h.a2)}</small></span><span class="num">${right}</span>`; b.addEventListener("click", () => goTo(h.x, h.y, h.n)); el.appendChild(b); };
 function renderHealth() {
   const M = HM();
-  document.getElementById("hfline").innerHTML = `<span class="num">${fmt(M.hc_30)}</span> of <span class="num">${fmt(M.hc_n)}</span> health centres take 30+ minutes longer to reach their hospital (<span class="num">${fmt(M.hc_60)}</span> an hour or more). <span class="num">${fmt(M.hp_30)}</span> health posts take 30+ minutes longer to reach their health centre. Tap a name to go there.`;
+  document.getElementById("hfline").innerHTML = `<b>To the nearest hospital:</b> <span class="num">${fmt(M.hc_30)}</span> of <span class="num">${fmt(M.hc_n)}</span> health centres take 30+ minutes longer (<span class="num">${fmt(M.hc_60)}</span> an hour or more)${M.hp_h30 != null ? `, and <span class="num">${fmt(M.hp_h30)}</span> of <span class="num">${fmt(M.hp_n)}</span> health posts` : ""}.<br><b>Health post → its health centre:</b> <span class="num">${fmt(M.hp_30)}</span> of <span class="num">${fmt(M.hp_n)}</span> health posts take 30+ minutes longer.<br>The lists below are hospital trips. Tap a name to go there.`;
   document.getElementById("modelnote").textContent = state.model === "fric"
     ? `MAP friction surface: median normal trip from a health centre to its hospital ${H.fr.hc_median_normal} min (road model ${H.fr.road_hc_median_normal} min).`
     : "Road + slope model: mapped road network with class speeds, walking to the road at 5 km/h.";
@@ -940,13 +947,28 @@ function renderHealth() {
   M.top_h.forEach(h => hrow(th, h, `${h.c30} of ${h.cf} linked +30 min`));
   M.top_hc.forEach(h => hrow(tc, h, `${(h.h0 / 60).toFixed(1)} → ${(h.h1 / 60).toFixed(1)} h`));
 }
+state.trip = "hosp";
+const TRIP_LEG = { hosp: "Added minutes to the nearest hospital", hc: "Health posts: added minutes to their health centre" };
+function setTrip(t) {
+  state.trip = t;
+  document.querySelectorAll("#tripseg button").forEach(b => b.setAttribute("aria-checked", b.dataset.t === t));
+  document.getElementById("hfsub").textContent = t === "hc" ? "Health posts coloured by added minutes to their health centre; centres are the destinations" : "Added minutes to the nearest hospital; health posts from zoom 7";
+  document.getElementById("leg-hf").textContent = TRIP_LEG[t];
+  document.getElementById("leg-hcdest").hidden = t !== "hc";
+  if (!map) return;
+  ["hf-hp", "hf-main"].forEach(id => map.getLayer(id) && map.setPaintProperty(id, "circle-color", hfColor(id)));
+  if (map.getLayer("hf-hp")) map.setLayerZoomRange("hf-hp", t === "hc" ? 5 : 7, 24);
+  if (map.getLayer("hf-main")) { map.setPaintProperty("hf-main", "circle-stroke-width", hfStroke()); map.setPaintProperty("hf-main", "circle-stroke-color", hfRing("hf-main")); }
+  if (cardHosp == null && document.querySelector(".maplibregl-popup")) document.querySelectorAll(".maplibregl-popup").forEach(e => e.remove());
+}
+document.querySelectorAll("#tripseg button").forEach(b => b.addEventListener("click", () => setTrip(b.dataset.t)));
 function setModel(m) {
   if (m === "fric" && !H.fr) return;
   state.model = m;
   document.getElementById("model-road").setAttribute("aria-checked", m === "road");
   document.getElementById("model-fric").setAttribute("aria-checked", m === "fric");
   renderHealth();
-  if (map) ["hf-hp", "hf-main", "hf-linked"].forEach(id => map.getLayer(id) && map.setPaintProperty(id, "circle-color", hfColor()));
+  if (map) ["hf-hp", "hf-main", "hf-linked"].forEach(id => map.getLayer(id) && map.setPaintProperty(id, "circle-color", hfColor(id)));
   if (map && map.getLayer("hf-hosp")) map.setLayoutProperty("hf-hosp", "icon-image", hospIcon());
   if (cardHosp) { const h = cardHosp; clearNetwork(); showCard(h); showNetwork(h); }
 }
@@ -1005,7 +1027,7 @@ function decode(d) {
   return feats;
 }
 // data files keep fixed names, so tag each request with this build's version: browsers then never mix a new page with old data
-const DATA_VERSION = "202611191851-c34b14";
+const DATA_VERSION = "202611191912-56bcce";
 const dv = u => `${u}?v=${DATA_VERSION}`;
 const getJSON = u => fetch(dv(u), { cache: "no-cache" }).then(r => { if (!r.ok) throw new Error(u + " " + r.status); return r.json(); });
 
@@ -1027,8 +1049,18 @@ function hospSize(sel) {
   const big = v => sel == null ? v : ["case", ["==", ["get", "id"], sel], v * 1.6, v];
   return ["interpolate", ["linear"], ["zoom"], 5, big(0.42), 8, big(0.75), 11, big(1.25)];
 }
-function hfColor() {
-  const k = state.model === "fric" ? "fd" : "d";
+const hfRing = id => (state.trip === "hc" && id === "hf-main") ? css("--ink") : css("--hfring");
+function hfStroke() {
+  const hc = state.trip === "hc";        // centres as destinations: outlined, no fill
+  return ["interpolate", ["linear"], ["zoom"], 5, ["match", ["get", "ty"], 2, 1, hc ? 0.9 : 0.3], 9, ["match", ["get", "ty"], 2, 2, hc ? 1.6 : 0.8]];
+}
+// one colour scale = one trip. "hosp": every centre and post by its trip to the nearest hospital.
+// "hc": health posts by their trip to the nearest health centre; centres are plain destinations.
+// The linked-network layer is always the hospital trip (that is what links a facility to a hospital).
+function hfColor(layer) {
+  const trip = layer === "hf-linked" ? "hosp" : state.trip;
+  if (trip === "hc" && layer === "hf-main") return css("--panel");
+  const k = (state.model === "fric" ? "fd" : "d") + (trip === "hc" ? "c" : "");
   return ["case", ["==", ["typeof", ["get", k]], "number"],
     ["step", ["get", k], css("--d0"), 5, css("--d1"), 15, css("--d2"), 30, css("--d3"), 60, css("--d4")], css("--d0")];
 }
@@ -1058,10 +1090,10 @@ function applyTheme() {
   if (has("mask")) map.setPaintProperty("mask", "fill-color", css("--outside"));
   if (has("slip")) map.setPaintProperty("slip", "line-color", css("--slip"));
   if (has("roads")) map.setPaintProperty("roads", "line-color", tierColor());
-  ["hf-hp", "hf-main"].forEach(id => { if (has(id)) { map.setPaintProperty(id, "circle-color", hfColor());
-    map.setPaintProperty(id, "circle-stroke-color", css("--hfring")); } });
+  ["hf-hp", "hf-main"].forEach(id => { if (has(id)) { map.setPaintProperty(id, "circle-color", hfColor(id));
+    map.setPaintProperty(id, "circle-stroke-color", hfRing(id)); } });
   if (has("hf-hosp")) hospImages();
-  if (has("hf-linked")) { map.setPaintProperty("hf-linked", "circle-color", hfColor()); map.setPaintProperty("hf-linked", "circle-stroke-color", css("--ink")); }
+  if (has("hf-linked")) { map.setPaintProperty("hf-linked", "circle-color", hfColor("hf-linked")); map.setPaintProperty("hf-linked", "circle-stroke-color", css("--ink")); }
   applyFilter();
 }
 
@@ -1131,16 +1163,16 @@ function init() {
       HF_ALL = hfd.features;
       map.addSource("hf", { type: "geojson", data: hfd });
 
-      map.addLayer({ id: "hf-hp", type: "circle", source: "hf", minzoom: 7, filter: ["==", ["get", "ty"], 0],
+      map.addLayer({ id: "hf-hp", type: "circle", source: "hf", minzoom: state.trip === "hc" ? 5 : 7, filter: ["==", ["get", "ty"], 0],
         paint: { "circle-radius": ["interpolate", ["linear"], ["zoom"], 7, 2, 12, 4.5], "circle-stroke-width": 0.6 } });
       map.addLayer({ id: "hf-main", type: "circle", source: "hf", filter: ["==", ["get", "ty"], 1],
         layout: { "circle-sort-key": ["get", "ty"] },
         paint: { "circle-radius": ["interpolate", ["linear"], ["zoom"], 5, ["match", ["get", "ty"], 2, 2.6, 1.7], 8, ["match", ["get", "ty"], 2, 5, 3.2], 11, ["match", ["get", "ty"], 2, 9, 6]],
-                 "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 5, ["match", ["get", "ty"], 2, 1, 0.3], 9, ["match", ["get", "ty"], 2, 2, 0.8]] } });
+                 "circle-stroke-width": hfStroke() } });
       map.addLayer({ id: "hf-linked", type: "circle", source: "hf", filter: ["==", ["get", "id"], -1],
         layout: { "circle-sort-key": ["get", "ty"] },
         paint: { "circle-radius": ["interpolate", ["linear"], ["zoom"], 5, ["match", ["get", "ty"], 2, 6, 3.6], 11, ["match", ["get", "ty"], 2, 12, 7.5]],
-                 "circle-color": hfColor(), "circle-stroke-width": ["match", ["get", "ty"], 2, 3, 1.8], "circle-stroke-color": css("--ink") } });
+                 "circle-color": hfColor("hf-linked"), "circle-stroke-width": ["match", ["get", "ty"], 2, 3, 1.8], "circle-stroke-color": css("--ink") } });
       hospImages();
       map.addLayer({ id: "hf-hosp", type: "symbol", source: "hf", filter: ["==", ["get", "ty"], 2],
         layout: { "icon-image": hospIcon(), "icon-size": hospSize(null), "icon-allow-overlap": true, "icon-ignore-placement": true,
@@ -1198,22 +1230,23 @@ const TYN = ["Health post", "Health centre", "Hospital"];
 const hrs = m => m == null ? "–" : m >= 90 ? `${(m / 60).toFixed(1)} h` : `${m} min`;
 function facilityHTML(p0) {
   const fr = state.model === "fric" && p0.fh0 !== undefined;
-  const p = fr ? Object.assign({}, p0, { h0: p0.fh0, h1: p0.fh1, c0: p0.fc0, c1: p0.fc1, d: p0.fd, ch: p0.fch || p0.ch,
+  const p = fr ? Object.assign({}, p0, { h0: p0.fh0, h1: p0.fh1, c0: p0.fc0, c1: p0.fc1, d: p0.fd, dc: p0.fdc, ch: p0.fch || p0.ch,
                                           cf: p0.fcf, c30: p0.fc30, cm: p0.fcm }) : p0;
-  const other = fr ? `Road model: ${p0.ty === 0 ? hrs(p0.c0) + " → " + hrs(p0.c1) : hrs(p0.h0) + " → " + hrs(p0.h1)}`
-                   : (p0.fh0 !== undefined && p0.fh0 !== null ? `MAP friction: ${p0.ty === 0 ? hrs(p0.fc0) + " → " + hrs(p0.fc1) : hrs(p0.fh0) + " → " + hrs(p0.fh1)}` : "");
-  const target = p.ty === 0 ? (p.hc ? p.hc : "health centre") : (p.ch ? p.ch : "hospital");
-  const t0 = p.ty === 0 ? p.c0 : p.h0, t1 = p.ty === 0 ? p.c1 : p.h1;
-  const tok = p.d == null ? "--d0" : p.d >= 60 ? "--d4" : p.d >= 30 ? "--d3" : p.d >= 15 ? "--d2" : p.d >= 5 ? "--d1" : "--d0";
+  const two = (h0, h1, c0, c1) => `to hospital ${hrs(h0)} → ${hrs(h1)}` + (p0.ty === 0 ? `; to health centre ${hrs(c0)} → ${hrs(c1)}` : "");
+  const other = fr ? `Road model: ${two(p0.h0, p0.h1, p0.c0, p0.c1)}`
+                   : (p0.fh0 !== undefined && p0.fh0 !== null ? `MAP friction: ${two(p0.fh0, p0.fh1, p0.fc0, p0.fc1)}` : "");
+  const toHc = p.ty === 0 && state.trip === "hc";                 // the pill follows the trip the map is showing
+  const target = toHc ? (p.hc ? p.hc : "health centre") : (p.ch ? p.ch : "hospital");
+  const pd = toHc ? p.dc : p.d;
+  const tok = pd == null ? "--d0" : pd >= 60 ? "--d4" : pd >= 30 ? "--d3" : pd >= 15 ? "--d2" : pd >= 5 ? "--d1" : "--d0";
   let rows = p.ty === 2
     ? `<span class="k">Linked</span><span class="v">nearest hospital by road for ${p.cf ?? 0} health centres and posts; ${p.c30 ?? 0} take 30+ min longer to reach it under the forecast${p.cm != null ? ` (median +${p.cm} min)` : ""}</span><span class="s"></span>`
-    : `<span class="k">To ${p.ty === 0 ? "health centre" : "hospital"}</span><span class="v">${hrs(t0)} normally, ${hrs(t1)} under the forecast</span><span class="s">+${p.d ?? "–"}</span>`;
-  if (p.ty === 0) rows += `<span class="k">To hospital</span><span class="v">${hrs(p.h0)} → ${hrs(p.h1)}${p.ch ? ` (${esc(p.ch)})` : ""}</span><span class="s"></span>`;
-  else if (p.ty === 1 && p.ch) rows += `<span class="k">Hospital</span><span class="v">${esc(p.ch)}</span><span class="s"></span>`;
+    : `<span class="k">To hospital</span><span class="v">${hrs(p.h0)} normally, ${hrs(p.h1)} under the forecast${p.ch ? ` (${esc(p.ch)})` : ""}</span><span class="s">+${p.d ?? "–"}</span>`;
+  if (p.ty === 0) rows += `<span class="k">To health centre</span><span class="v">${hrs(p.c0)} normally, ${hrs(p.c1)} under the forecast${p.hc ? ` (${esc(p.hc)})` : ""}</span><span class="s">+${p.dc ?? "–"}</span>`;
   if (other && p.ty !== 2) rows += `<span class="k">Other model</span><span class="v">${other}</span><span class="s"></span>`;
   rows += `<span class="k">Roads nearby</span><span class="v">${p.s5 == null ? "no mapped roads within 5 km" : Math.round(p.s5 * 100) + "% Elevated / Severe within 5 km"}; nearest road ${esc(p.nt)}</span><span class="s"></span>`;
   return `<div class="pp-h">${esc(p.n)}</div><div class="pp-sub">${TYN[p.ty]} · ${esc(p.a3)}, ${esc(p.a2)} · ${fr ? "MAP friction surface" : "road + slope model"}</div>
-    ${p.ty !== 2 ? `<span class="pill"><i style="background:var(${tok})"></i>+${p.d ?? "–"} min to reach ${esc(target)}</span>` : ""}
+    ${p.ty !== 2 ? `<span class="pill"><i style="background:var(${tok})"></i>+${pd ?? "–"} min to reach ${esc(target)}</span>` : ""}
     ${p.ty === 2 ? (p0.hs ? forecastChart(p0.hs) : p0.rs ? rainChart(p0.rs) : `<div class="netnote">The forecast series hasn't loaded. Reload the page to fetch the latest data.</div>`) : ""}
     <div class="pp-grid">${rows}</div>
     ${p.ty === 2 ? `<div class="netnote">Its linked health centres and posts are highlighted on the map, coloured by added travel time; other facilities are faded. Close this card to clear.</div>` : ""}
@@ -1249,7 +1282,7 @@ function showNetwork(hp) {
   const hpt = HF_ALL.find(f => f.properties.id === hp.id); if (!hpt) return 0;
   const linked = HF_ALL.filter(f => f.properties[key] === hp.id && f.properties.ty !== 2);
   map.setFilter("hf-linked", ["all", ["==", ["get", key], hp.id], ["!=", ["get", "ty"], 2]]);
-  map.setPaintProperty("hf-linked", "circle-color", hfColor());
+  map.setPaintProperty("hf-linked", "circle-color", hfColor("hf-linked"));
   ["hf-main", "hf-hp"].forEach(id => { if (map.getLayer(id)) { map.setPaintProperty(id, "circle-opacity", 0.15); map.setPaintProperty(id, "circle-stroke-opacity", 0.15); } });
   if (map.getLayer("hf-hosp")) { map.setPaintProperty("hf-hosp", "icon-opacity", ["case", ["==", ["get", "id"], hp.id], 1, 0.2]);
     map.setLayoutProperty("hf-hosp", "icon-size", hospSize(hp.id)); map.setLayoutProperty("hf-hosp", "symbol-sort-key", ["case", ["==", ["get", "id"], hp.id], 1e6, ["coalesce", ["get", "d"], 0]]); }
@@ -1335,8 +1368,9 @@ function legendItems() {
        { ramp: [1, 2, 3, 4, 5].map(i => css(`--pn${i}`)), ticks: PN_TICKS }, { l: "Blank: dry season, not compared", note: true }]
     : [{ h: "15-day forecast rain, mm (bias-corrected)" }, { ramp: [1, 2, 3, 4, 5, 6].map(i => css(`--r${i}`)), ticks: ["5", "10", "25", "50", "100", "150"] }]));
   if (on("opt-fric")) L.push({ h: "MAP travel speed, km/h" }, ...[["#a8320f", "< 3"], ["#e0701f", "3–10"], ["#f2b33d", "10–30"], ["#c9c8c2", "30+"]].map(([c, l]) => ({ box: c, l })));
-  if (on("opt-hf")) L.push({ h: `Facilities: added travel minutes · ${state.model === "fric" ? "MAP friction" : "road + slope"} model` },
+  if (on("opt-hf")) L.push({ h: `${TRIP_LEG[state.trip]} · ${state.model === "fric" ? "MAP friction" : "road + slope"} model` },
     ...[["--d0", "< 5"], ["--d1", "5–15"], ["--d2", "15–30"], ["--d3", "30–60"], ["--d4", "60+"]].map(([t, l]) => ({ dot: css(t), l: l + " min" })),
+    ...(state.trip === "hc" ? [{ dot: css("--panel"), ring: css("--ink"), l: "Health centre (destination)" }] : []),
     { sq: true, ring: css("--hosp"), l: "Hospital" });
   if (cardHosp) L.push({ h: "Selected network" }, { dot: css("--d2"), ring: css("--ink"), l: `Linked to ${cardHosp.n}` }, { dot: css("--d0"), fade: true, l: "Other facilities (faded)" });
   return L;

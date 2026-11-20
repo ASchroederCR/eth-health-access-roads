@@ -24,8 +24,11 @@ The current outputs are for the **19 Nov 2026 00Z** WeatherNext 3 run, covering 
 | Vehicle road network scored | ~320,000 km |
 | Severe / Elevated / Minor slowdown, worst window | 54,809 / 59,336 / 49,546 km |
 | Road stretches exposed to slips / rock fall, any window | ~830 km |
-| Health centres taking 30+ min longer to reach their nearest hospital | 600 of ~3,600 (238 take an hour or more); 129 on the MAP friction surface |
-| Health posts taking 30+ min longer to reach their nearest health centre | 423 (217 on the MAP friction surface) |
+| **Trip to the nearest hospital:** health centres taking 30+ min longer | 600 of ~3,600 (238 take an hour or more); 129 on the MAP friction surface |
+| **Trip to the nearest hospital:** health posts taking 30+ min longer | 2,838 of ~15,500 (890 on the MAP friction surface) |
+| **Trip from a health post to its nearest health centre:** posts taking 30+ min longer | 423 of ~15,500 (220 on the MAP friction surface) |
+
+The two trips are timed separately and their minutes aren't comparable: a health post's trip to its health centre is usually much shorter than a trip to a hospital. The web map colours one trip at a time (*Health facility access → Map colours show added minutes on one trip*).
 
 The hardest-hit areas are the south-west highlands (Buno Bedele, Kefa, Sheka, Bench Sheko, Jimma, South Omo) and the Amhara highlands (North Gondar, West and East Gojam, South Gondar).
 
@@ -92,8 +95,9 @@ Each road segment's tier, per window, is **accumulation (0–3) + surface (0–2
 - **Forecast speeds:** normal speed × the road's tier factor.
 - **Joining the network:** facilities connect to the nearest road vertex, covering the gap at 5 km/h. Those more than 10 km from a mapped road are flagged and left out of the rankings.
 - **Assignment:** each facility is assigned its nearest hospital by road at normal speeds. Health posts are also assigned their nearest health centre.
+- **Two trips:** every health centre and health post is timed to its nearest hospital. Health posts are also timed, separately, to their nearest health centre. Results are always reported per trip, never pooled.
 - **Added minutes:** the forecast time minus the normal time for that same trip.
-- **Linked facilities:** a hospital's linked facilities are the health centres and posts for which it is the nearest hospital. This is a road-network grouping, not a population catchment or the official referral pathway.
+- **Linked facilities:** a hospital's linked facilities are the health centres and posts for which it is the nearest hospital, each counted on its own trip to that hospital. This is a road-network grouping, not a population catchment or the official referral pathway.
 - **Check against a standard router** (`34_ors_check.py --router osrm`, `charts/ETH_osrm_check.png`): 200 health centre / post → hospital trips, stratified by region and trip length, routed on the public OSRM car profile with our walking legs removed. Routes come out the same length (median ratio 1.00) and rank the same way (rank correlation 0.93). Our normal times run about 1.3× OSRM's (middle half 1.19–1.42), as expected: we slow unpaved roads to 70%, and about three-quarters of route length is unpaved, while OSRM drives untagged roads at full speed. The same script runs against openrouteservice with `--router ors` and an API key in `ORS_API_KEY` or `~/.ors_key`.
 
 ### Caveats

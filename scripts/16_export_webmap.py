@@ -218,10 +218,9 @@ if __name__ == "__main__":
     hfeats = []
     for r in hfa.itertuples(index=False):
         num = lambda v, nd=0: None if pd.isna(v) else (round(float(v), nd) if nd else int(round(float(v))))
-        added = r.to_hc_added_min if r.Type == "Health Post" else r.to_hosp_added_min
         p = {"n": r.Name, "ty": TY[r.Type], "a1": r.admin1Name, "a2": r.admin2Name, "a3": r.admin3Name,
              "h0": num(r.to_hosp_min), "h1": num(r.to_hosp_fc_min), "c0": num(r.to_hc_min), "c1": num(r.to_hc_fc_min),
-             "d": num(added), "ch": r.nearest_hospital if isinstance(r.nearest_hospital, str) else "",
+             "d": num(r.to_hosp_added_min), "dc": num(r.to_hc_added_min) if r.Type == "Health Post" else None, "ch": r.nearest_hospital if isinstance(r.nearest_hospital, str) else "",
              "hc": r.nearest_health_centre if (r.Type == "Health Post" and isinstance(r.nearest_health_centre, str)) else "",
              "nt": r.nearest_road_tier, "s5": num(r.share_elev_severe_5km, 2), "sl": int(bool(r.slip_within_5km)),
              "gap": num(r.road_gap_km, 1), "off": int(bool(r.off_network))}
@@ -253,11 +252,10 @@ if __name__ == "__main__":
                        "w": [round(float(v), 1) for v in np.nan_to_num(z["p90"])[:, ci, cj]],
                        "i": ints, "t0": f"{init:%Y-%m-%d}"}
         if HAS_FR:
-            fadd = r.fr_to_hc_added_min if r.Type == "Health Post" else r.fr_to_hosp_added_min
             if "fr_nearest_hospital_id" in hfa.columns and not pd.isna(r.fr_nearest_hospital_id):
                 p["fhid"] = int(r.fr_nearest_hospital_id)
             p |= {"fh0": num(r.fr_to_hosp_min), "fh1": num(r.fr_to_hosp_fc_min), "fc0": num(r.fr_to_hc_min),
-                  "fc1": num(r.fr_to_hc_fc_min), "fd": num(fadd),
+                  "fc1": num(r.fr_to_hc_fc_min), "fd": num(r.fr_to_hosp_added_min), "fdc": num(r.fr_to_hc_added_min) if r.Type == "Health Post" else None,
                   "fch": r.fr_nearest_hospital if isinstance(r.fr_nearest_hospital, str) else ""}
             if r.Type == "Hospital":
                 p |= {"fcf": num(r.fcf) or 0, "fc30": num(r.fc30) or 0, "fcm": num(r.fcm)}
@@ -272,7 +270,7 @@ if __name__ == "__main__":
     top_h = hfa[hfa.Type == "Hospital"].sort_values(["linked_30min_plus", "linked_median_added_min"], ascending=False).head(10)
     hc_ = hfa[on & (hfa.Type == "Health Center")]; hp_ = hfa[on & (hfa.Type == "Health Post")]
     health = {"hc_n": len(hc_), "hc_30": int((hc_.to_hosp_added_min >= 30).sum()), "hc_60": int((hc_.to_hosp_added_min >= 60).sum()),
-              "hp_n": len(hp_), "hp_30": int((hp_.to_hc_added_min >= 30).sum()),
+              "hp_n": len(hp_), "hp_30": int((hp_.to_hc_added_min >= 30).sum()), "hp_h30": int((hp_.to_hosp_added_min >= 30).sum()),
               "top_hc": [{"n": r.Name, "a2": r.admin2Name, "h0": round(r.to_hosp_min), "h1": round(r.to_hosp_fc_min),
                           "x": r.Longitude, "y": r.Latitude} for r in top_hc.itertuples()],
               "top_h": [{"n": r.Name, "a2": r.admin2Name, "cf": int(r.linked_facilities),
@@ -284,7 +282,7 @@ if __name__ == "__main__":
         th = hfa[hfa.Type == "Hospital"].sort_values(["fc30", "fcm"], ascending=False).head(10)
         health["fr"] = {"hc_n": len(hcf), "hc_30": int((hcf.fr_to_hosp_added_min >= 30).sum()),
                         "hc_60": int((hcf.fr_to_hosp_added_min >= 60).sum()), "hp_n": len(hpf),
-                        "hp_30": int((hpf.fr_to_hc_added_min >= 30).sum()),
+                        "hp_30": int((hpf.fr_to_hc_added_min >= 30).sum()), "hp_h30": int((hpf.fr_to_hosp_added_min >= 30).sum()),
                         "top_hc": [{"n": r.Name, "a2": r.admin2Name, "h0": round(r.fr_to_hosp_min), "h1": round(r.fr_to_hosp_fc_min),
                                     "x": r.Longitude, "y": r.Latitude} for r in tf.itertuples()],
                         "top_h": [{"n": r.Name, "a2": r.admin2Name, "cf": int(r.fcf or 0), "c30": int(r.fc30 or 0),

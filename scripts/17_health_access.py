@@ -233,8 +233,8 @@ if __name__ == "__main__":
     sev = g[g.tier.isin(["Elevated", "Severe"])]
     coords, idx = shapely.get_coordinates(sev.geometry.values, return_index=True)
     segs = np.split(coords, np.flatnonzero(np.diff(idx)) + 1)
-    for k, (ax, (sub, ttl)) in enumerate(zip(axs, [(pts[pts.Type == "Health Center"], "Health centres: added minutes to the nearest hospital"),
-                                                   (pts[pts.Type == "Health Post"], "Health posts: added minutes to the nearest health centre")])):
+    for k, (ax, (sub, ttl)) in enumerate(zip(axs, [(pts[pts.Type == "Health Center"], "Trip 1 · health centre → its nearest hospital"),
+                                                   (pts[pts.Type == "Health Post"], "Trip 2 · health post → its nearest health centre")])):
         ax.add_collection(LineCollection(segs, colors="#e7c3ad", linewidths=0.25, zorder=1))
         wn.draw_outline(ax); wn.mapax(ax)
         ax.scatter(sub.Longitude, sub.Latitude, c=sub.added, cmap=cmap, norm=norm, s=5 if k else 9, linewidths=0, zorder=3)
@@ -243,16 +243,17 @@ if __name__ == "__main__":
                    edgecolors=SURF, linewidths=0.4, zorder=4)
         ax.set_title(ttl, loc="left", fontsize=11, color=INK, pad=4)
         n30 = int((sub.added >= 30).sum())
-        ax.text(0.02, 0.02, f"{n30:,} of {len(sub):,} at 30+ added minutes", transform=ax.transAxes, fontsize=9, color=INK2)
+        ax.text(0.02, 0.02, f"{n30:,} of {len(sub):,} {'health posts' if k else 'health centres'} take 30+ min longer on this trip", transform=ax.transAxes, fontsize=9, color=INK2)
     hosp = res[res.Type == "Hospital"]
     axs[0].scatter(hosp.Longitude, hosp.Latitude, marker="s", s=18, facecolors="none", edgecolors="#000000", linewidths=0.8, zorder=5)
-    hd = [Line2D([], [], marker="o", ls="", color=c, markersize=7, label=l) for c, l in zip(DCOL, DLAB)]
+    hd = [Line2D([], [], ls="", label="Added minutes on each panel's trip:")]
+    hd += [Line2D([], [], marker="o", ls="", color=c, markersize=7, label=l) for c, l in zip(DCOL, DLAB)]
     hd += [Line2D([], [], marker="s", ls="", markerfacecolor="none", markeredgecolor="#000000", markeredgewidth=1.2, markersize=6, label="hospital"),
            Line2D([], [], color="#e7c3ad", lw=2, label="Elevated / Severe road")]
-    fig.legend(handles=hd, loc="lower center", ncol=7, frameon=False, fontsize=9, bbox_to_anchor=(0.5, 0.0))
+    fig.legend(handles=hd, loc="lower center", ncol=8, frameon=False, fontsize=9, handletextpad=0.3, bbox_to_anchor=(0.5, 0.0))
     fig.suptitle("Which health facilities lose the most referral access under the forecast rain", x=0.01, ha="left",
                  fontsize=13, fontweight="bold", color=INK, y=1.0)
-    fig.text(0.01, 0.935, f"Extra travel time when roads slow to their forecast tier speeds · WeatherNext 3 run {pd.Timestamp(tag):%d %b %Y}, 15 days",
+    fig.text(0.01, 0.935, f"Extra travel time when roads slow to their forecast tier speeds, on two separate trips · WeatherNext 3 run {pd.Timestamp(tag):%d %b %Y}, 15 days",
              fontsize=9.5, color=INK2)
     fig.text(0.01, -0.03, "Shortest road travel time, normal vs forecast speeds. Normal speed by road class (trunk 70 … track 15 km/h, unpaved x 0.7); "
                           "forecast = normal x tier factor (Minor 0.9, Elevated 0.75, Severe 0.5).\nFacilities join the road network at the nearest road "

@@ -203,14 +203,15 @@ if __name__ == "__main__":
     c2.set_xlabel("road model, added minutes"); c2.set_ylabel("MAP friction model, added minutes")
     wn.title(c2, "Added by the forecast", f"rank r = {extra['rank correlation, health centre added minutes']} · "
              f"{extra['top-25 health centres in common']} of the top 25 in common")
-    labs = ["Health centres\n30+ min", "Health centres\n60+ min", "Health posts\n30+ min to centre"]
+    labs = ["Centre → hospital\n30+ min longer", "Centre → hospital\n60+ min longer", "Post → centre\n30+ min longer"]
     rv = [S.iloc[3, 1], S.iloc[4, 1], S.iloc[5, 1]]; fv = [S.iloc[3, 2], S.iloc[4, 2], S.iloc[5, 2]]
     xs = np.arange(3)
     c3.bar(xs - 0.2, rv, 0.38, color=C_ROAD, label="road + slope model"); c3.bar(xs + 0.2, fv, 0.38, color=C_FRIC, label="MAP friction model")
     for x_, v_ in zip(np.r_[xs - 0.2, xs + 0.2], rv + fv):
         c3.text(x_, v_, f"{int(v_):,}", ha="center", va="bottom", fontsize=8.5, color=INK2)
-    c3.set_xticks(xs, labs, fontsize=9); c3.grid(axis="x", visible=False); c3.legend(frameon=False, fontsize=9, loc="upper right")
-    wn.title(c3, "Facilities losing access under the forecast", "count, longer trip to their own hospital / centre")
+    c3.axvline(1.5, color=MUTED, lw=0.8, ls=":")                    # different trip either side
+    c3.set_xticks(xs, labs, fontsize=8.5); c3.grid(axis="x", visible=False); c3.legend(frameon=False, fontsize=9, loc="upper right")
+    wn.title(c3, "Facilities losing access under the forecast", "count, on two separate trips")
     wn.foot(fig, "Road model: HeiGIT/OSM roads with class speeds, 5 km/h walking to the road. MAP friction model: Malaria Atlas Project 2019 motorized "
                  "friction (~1 km; roads, land cover, off-road speeds), cells crossed by a scored road slowed by its forecast tier.\n"
                  "Both: approved facilities from the Ethiopian register, each trip to the facility's own nearest hospital (health posts: health centre) "
@@ -234,7 +235,7 @@ if __name__ == "__main__":
     fig.legend(handles=hd, loc="lower center", ncol=5, frameon=False, fontsize=9, bbox_to_anchor=(0.5, 0.0))
     fig.suptitle("Health centres: added minutes to their hospital under the forecast, two travel models", x=0.01, ha="left",
                  fontsize=13, fontweight="bold", color=INK, y=1.0)
-    fig.text(0.01, 0.955, "Same facilities, same hospital assignment rule and same road slowdowns; only the base travel surface differs",
+    fig.text(0.01, 0.935, "Same facilities, same hospital assignment rule and same road slowdowns; only the base travel surface differs",
              fontsize=9.5, color=INK2)
     wn.save(fig, os.path.join(wn.OUT, "ETH_friction_vs_road_map.png"))
 
