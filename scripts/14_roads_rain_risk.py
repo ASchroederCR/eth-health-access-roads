@@ -415,7 +415,7 @@ if __name__ == "__main__":
     flag = g[g.tier != "Normal"].copy(); flag["tier"] = flag.tier.astype(str)
     flag.drop(columns=["surf_known"]).to_file(os.path.join(PROC, f"eth_roads_rain_risk_{tag}.gpkg"),
                                               layer="roads_rain_risk", driver="GPKG", engine="pyogrio")
-    full = g[["highway", "surface_class", "rough", "osm_length", "tier", "tier_without_terrain", "speed_factor", "slide_exposure", "slide_km", "tier_w1", "tier_w2", "tier_w3",
+    full = g[["osm_id", "highway", "surface_class", "rough", "osm_length", "tier", "tier_without_terrain", "speed_factor", "slide_exposure", "slide_km", "tier_w1", "tier_w2", "tier_w3",
               "region", "geometry"]].copy()
     full["tier"] = full.tier.astype(str)
     full.to_parquet(os.path.join(PROC, f"eth_roads_scored_{tag}.parquet"))       # every segment, for routing (17_)
