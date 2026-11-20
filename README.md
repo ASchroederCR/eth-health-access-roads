@@ -5,7 +5,7 @@
 This is an example of using a 15-day rainfall forecast to flag Ethiopian roads likely to slow down or become blocked. It also flags the health facilities whose referral trips get longest as a result. Each road segment is scored on three factors:
 
 1. **Forecast rain:** Google WeatherNext 3 at 0.1°, via Earth Engine. Daily rain is bias-corrected against Google PARDIG observations, because the raw forecast gave only about half the rain that fell in a check against PARDIG.
-2. **Road surface:** paved or unpaved, plus mapped condition. From HeiGIT's Mapillary-based road surface dataset (OpenStreetMap).
+2. **Roads and surface:** the road network is today's OpenStreetMap extract for Ethiopia (Geofabrik). Each road's surface (paved or unpaved, plus mapped condition) comes from HeiGIT's Mapillary-based road surface dataset, joined by OSM way id, or from the road's own OSM tag where HeiGIT doesn't have it.
 3. **Terrain steepness:** Google GEM-15 bare-earth elevation, as road grade and ground slope.
 
 The road network is then used to route every hospital, health centre and health post (about 19,700 approved facilities) under normal and forecast speeds. The same routing is also run on the Malaria Atlas Project's motorized friction surface, and the web map can switch between the two travel models.
@@ -21,12 +21,12 @@ The current outputs are for the **19 Nov 2026 00Z** WeatherNext 3 run, covering 
 
 | | |
 |---|---|
-| Vehicle road network scored | ~320,000 km |
-| Severe / Elevated / Minor slowdown, worst window | 54,809 / 59,336 / 49,546 km |
-| Road stretches exposed to slips / rock fall, any window | ~830 km |
-| **Trip to the nearest hospital:** health centres taking 30+ min longer | 600 of ~3,600 (238 take an hour or more); 129 on the MAP friction surface |
-| **Trip to the nearest hospital:** health posts taking 30+ min longer | 2,838 of ~15,500 (890 on the MAP friction surface) |
-| **Trip from a health post to its nearest health centre:** posts taking 30+ min longer | 423 of ~15,500 (220 on the MAP friction surface) |
+| Vehicle road network scored | ~334,000 km |
+| Severe / Elevated / Minor slowdown, worst window | 58,513 / 62,375 / 51,760 km |
+| Road stretches exposed to slips / rock fall, any window | ~890 km |
+| **Trip to the nearest hospital:** health centres taking 30+ min longer | 579 of ~3,600 (224 take an hour or more); 135 on the MAP friction surface |
+| **Trip to the nearest hospital:** health posts taking 30+ min longer | 2,776 of ~15,500 (947 on the MAP friction surface) |
+| **Trip from a health post to its nearest health centre:** posts taking 30+ min longer | 389 of ~15,500 (245 on the MAP friction surface) |
 
 The two trips are timed separately and their minutes aren't comparable: a health post's trip to its health centre is usually much shorter than a trip to a hospital. The web map colours one trip at a time (*Health facility access → Map colours show added minutes on one trip*).
 
@@ -81,31 +81,32 @@ Each road segment's tier, per window, is **accumulation (0–3) + surface (0–2
 | Factor | Levels |
 |---|---|
 | Rain (bias-corrected) | **high:** a day ≥ 20 mm, or the wettest 3 days ≥ 40 mm<br>**moderate:** a day ≥ 10 mm, or 3 days ≥ 20 mm<br>**low:** 15 days ≥ 10 mm |
-| Surface | paved 0, unpaved 1, plus 1 if OSM tags the condition as bad / very bad / horrible / impassable. Surface is mapped for about 25% of road length; the rest is inferred from road class. |
+| Surface | paved 0, unpaved 1, plus 1 if OSM tags the condition as bad / very bad / horrible / impassable. Surface is mapped for about 20% of road length; the rest is inferred from road class. |
 | Steepness | Based on the Ethiopian Roads Authority terrain classes:<br>**mountainous:** ground slope ≥ 14° or road grade ≥ 5%<br>**escarpment:** ground slope ≥ 26.6° or road grade ≥ 10% |
 
 - **Rain bias correction:** forecast rain is corrected toward observed rain before any of these levels are applied; see *Rain bias correction* above.
 - **Tiers and assumed speeds:** Normal, Minor (~10% slower), Elevated (~25% slower), Severe (~50% slower).
 - **Slip / rock-fall exposure:** judged on each ~110 m piece of road, not the whole segment. A piece is exposed when the forecast rain over it is moderate or high, and either the ground is ≥ 26.6° where NASA's global landslide susceptibility map rates it moderate or higher, or susceptibility is very high on ground ≥ 14°. Only the exposed stretches are counted (km) and drawn on the maps. The flag is reported separately and doesn't change the slowdown tier.
-- **Removed:** about 4,700 km of seismic survey cut-lines in the Ogaden that OSM maps as tracks, and about 90,000 rows that the HeiGIT file repeats verbatim (same OSM id and geometry). Before 19 Nov 2026 those repeats were kept, which counted ~28% of road length twice and made road trips about 1.5× too long.
+- **Removed:** about 4,700 km of seismic survey cut-lines in the Ogaden that OSM maps as tracks, and 361 ways (246 km) that OSM tags as under construction, no access, no motor vehicles or impassable.
+- **Road network history:** until 19 Nov 2026 the network was the HeiGIT file itself. That file repeats about 90,000 rows verbatim, which counted ~28% of road length twice and made trips about 1.5× too long; it stops at July 2024 and lacks about 8% of today's OSM road length, including stretches of the A10 and B90; and it carries no construction or access tags. The per-facility OSRM check (below) traced its worst outliers to these gaps, so the network now comes from the current OSM extract, with HeiGIT used for surface only.
 
 ### Health facility access
 - **Road graph:** every road vertex is a node. Dead ends within 30 m of another road are linked to it.
-- **Normal speeds:** trunk 70, primary 60, secondary 50, tertiary 40, minor roads 30, residential 20, tracks 15 km/h. Unpaved roads run at 70% of that.
+- **Normal speeds:** trunk 70, primary 60, secondary 50, tertiary 40, minor roads 30, residential 20, tracks 15 km/h. Unpaved roads run at 70% of that, and the roughest roads (track grade 5, or a sand or mud surface; about 2,600 km) at a further 60%.
 - **Forecast speeds:** normal speed × the road's tier factor.
 - **Joining the network:** facilities connect to the nearest road vertex, covering the gap at 5 km/h. Those more than 10 km from a mapped road are flagged and left out of the rankings.
 - **Assignment:** each facility is assigned its nearest hospital by road at normal speeds. Health posts are also assigned their nearest health centre.
 - **Two trips:** every health centre and health post is timed to its nearest hospital. Health posts are also timed, separately, to their nearest health centre. Results are always reported per trip, never pooled.
 - **Added minutes:** the forecast time minus the normal time for that same trip.
 - **Linked facilities:** a hospital's linked facilities are the health centres and posts for which it is the nearest hospital, each counted on its own trip to that hospital. This is a road-network grouping, not a population catchment or the official referral pathway.
-- **Check against a standard router** (`34_ors_check.py --router osrm`, `charts/ETH_osrm_check.png`): 200 health centre / post → hospital trips, stratified by region and trip length, routed on the public OSRM car profile with our walking legs removed. Routes come out the same length (median ratio 1.00) and rank the same way (rank correlation 0.93). Our normal times run about 1.3× OSRM's (middle half 1.19–1.42), as expected: we slow unpaved roads to 70%, and about three-quarters of route length is unpaved, while OSRM drives untagged roads at full speed. The same script runs against openrouteservice with `--router ors` and an API key in `ORS_API_KEY` or `~/.ors_key`.
-- **Every facility against OSRM** (`35_osrm_facility_check.py`, `charts/ETH_osrm_facility_check.png`, `tables/eth_osrm_facility_check_20261119.csv`): all 18,706 hospital trips and 15,232 health post → health centre trips, timed with OSRM's table service (~530 batched requests). About 81% of trips fall within 25% of the typical ratio (1.30 hospital, 1.28 post → centre), rank correlation 0.95–0.97. Flagged for review: 83 + 28 trips where ours is far slower (ratio > 2.5× typical and 30+ min more; likely a gap or detour in the road data, e.g. 30 facilities going to Karamara General Hospital, Jijiga) and 83 + 149 where OSRM is far slower (e.g. posts going to Macha Health Center, Konta, and facilities going to Tegede Primary Hospital, Western Tigray, where our graph uses a road OSRM does not).
+- **Check against a standard router** (`34_ors_check.py --router osrm`, `charts/ETH_osrm_check.png`): 200 health centre / post → hospital trips, stratified by region and trip length, routed on the public OSRM car profile with our walking legs removed. Routes come out the same length and rank the same way (rank correlation 0.98). Our normal times run about 1.3× OSRM's (middle half 1.18–1.40), as expected: we slow unpaved roads to 70%, and about three-quarters of route length is unpaved, while OSRM drives untagged roads at full speed. The same script runs against openrouteservice with `--router ors` and an API key in `ORS_API_KEY` or `~/.ors_key`.
+- **Every facility against OSRM** (`35_osrm_facility_check.py`, `charts/ETH_osrm_facility_check.png`, `tables/eth_osrm_facility_check_20261119.csv`): all 18,957 hospital trips and 15,373 health post → health centre trips, timed with OSRM's table service (~540 batched requests). 87% of hospital trips and 85% of post → centre trips fall within 25% of the typical ratio (1.27 and 1.26), rank correlation 0.97–0.98. Flagged for review: 9 + 15 trips where ours is far slower (ratio > 2.5× typical and 30+ min more) and 51 + 98 where OSRM is far slower (< 0.4× typical and 30+ min less). On the old HeiGIT network the flags were 83 + 28 and 83 + 149; the clusters around Karamara (Jijiga), Warder, Urmadag, Chilaloshed, Bokoji and Tegede are gone. The largest left is 16 posts going to Macha Health Center (Konta): their road, "Feleke Selam – Amaya", is tagged *dry weather* and *track grade 5* and stops about 18 m short of the network in OSM. Our 30 m gap-closing links join it; OSRM cannot.
 
 ### Caveats
 - Thresholds and speed factors are illustrative and haven't been checked against observed travel times or closures.
 - Road grades come from a ~110 m elevation grid, so they run high where roads cut across hillsides.
 - The bias corrections rest on 2–3 years of WeatherNext 3 runs; Bega (dry-season) hazard is caught poorly by any version (about a third, with 40–55% false alarms). PARDIG itself ran about 11% wetter than CHIRPS over the past year, but about 8% drier in the short rains (see *Rain compared with normal*).
-- Absolute delays depend on the travel surface. Rerun on the Malaria Atlas Project motorized friction surface (`20_friction_access.py`), the same health centres come out most affected (rank correlation 0.96) with similar percentage slowdowns. But MAP's baseline trips are about 2.4 times shorter, so far fewer cross a fixed 30-minute threshold (`charts/ETH_friction_vs_road_*.png`).
+- Absolute delays depend on the travel surface. Rerun on the Malaria Atlas Project motorized friction surface (`20_friction_access.py`), the same health centres come out most affected (rank correlation 0.96) with similar percentage slowdowns. But MAP's baseline trips are about 2.3 times shorter, so far fewer cross a fixed 30-minute threshold (`charts/ETH_friction_vs_road_*.png`).
 - The landslide susceptibility map is ~1 km, so it describes the hillside setting, not the road cut itself.
 - Routing is by road only. Seasonal river crossings, ferries and closures aren't modelled.
 
@@ -160,6 +161,7 @@ python scripts/18_build_webmap.py
 ```
 
 These inputs aren't included; place them under `data/` first:
+- `data/raw/osm/ethiopia-<yymmdd>.osm.pbf`: current [Geofabrik extract for Ethiopia](https://download.geofabrik.de/africa/ethiopia.html) (~140 MB). The newest file in the folder is used.
 - `data/raw/roads/heigit_eth_roadsurface_lines.geojson`: [HeiGIT road surface, Ethiopia](https://downloads.ohsome.org/hdx/mapillary_road_surface/heigit_eth_roadsurface_lines.geojson) (HDX).
 - `data/raw/boundaries/geoboundaries_adm1/ETH_ADM1.geojson`: [geoBoundaries](https://www.geoboundaries.org/) Ethiopia ADM1.
 - `data/raw/landslide/global-landslide-susceptibility-map-2-27-23.tif`: [NASA global landslide susceptibility map](https://gpm.nasa.gov/sites/default/files/downloads/global-landslide-susceptibility-map-2-27-23.tif) (2023 version).
@@ -167,7 +169,7 @@ These inputs aren't included; place them under `data/` first:
 - `data/health_facilities/ethiopian-health-facilities.csv`: Ethiopian health facility register, with columns `Id, Name, Latitude, Longitude, Type, Status, admin1Name, admin2Name, admin3Name, …`.
 
 ## Data sources and attribution
-- Roads: © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), available under the ODbL. The road surface model is by HeiGIT (Heidelberg Institute for Geoinformation Technology). The road data in `docs/data/` is derived from OSM and is under the ODbL.
+- Roads: © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), available under the ODbL. Road network from the Geofabrik OpenStreetMap extract of 19 Nov 2026. The road surface model is by HeiGIT (Heidelberg Institute for Geoinformation Technology). The road data in `docs/data/` is derived from OSM and is under the ODbL.
 - Elevation: Google GEM-15 (Earth Engine, `projects/climate-and-sustainability/assets/gem-15_v1`).
 - Landslide susceptibility: NASA Goddard Space Flight Center global landslide susceptibility map (Stanley & Kirschbaum, 2017, *Natural Hazards*; 2023 update), from the [GPM landslides page](https://gpm.nasa.gov/landslides/projects.html).
 - Rain forecast: Google WeatherNext 3 (Earth Engine, `projects/gcp-public-data-weathernext/assets/weathernext_3_0_0_0p1deg`). WeatherNext 2 (`weathernext_2_0_0`) was used for calibration.

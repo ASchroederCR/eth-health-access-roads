@@ -90,7 +90,7 @@ if __name__ == "__main__":
 
     # --- forecast friction: slow cells crossed by our scored roads -------------------------------
     g = gpd.read_parquet(f)
-    v0 = ha.base_speed(g.highway, g.surface_class)
+    v0 = ha.base_speed(g.highway, g.surface_class, g["rough"] if "rough" in g.columns else None)
     dens = shapely.segmentize(g.geometry.values, 0.002)
     xy, idx = shapely.get_coordinates(dens, return_index=True)
     r, c = to_rc(tr, xy[:, 0], xy[:, 1], F.shape)
@@ -212,7 +212,7 @@ if __name__ == "__main__":
     c3.axvline(1.5, color=MUTED, lw=0.8, ls=":")                    # different trip either side
     c3.set_xticks(xs, labs, fontsize=8.5); c3.grid(axis="x", visible=False); c3.legend(frameon=False, fontsize=9, loc="upper right")
     wn.title(c3, "Facilities losing access under the forecast", "count, on two separate trips")
-    wn.foot(fig, "Road model: HeiGIT/OSM roads with class speeds, 5 km/h walking to the road. MAP friction model: Malaria Atlas Project 2019 motorized "
+    wn.foot(fig, "Road model: OSM roads (HeiGIT surfaces) with class speeds, 5 km/h walking to the road. MAP friction model: Malaria Atlas Project 2019 motorized "
                  "friction (~1 km; roads, land cover, off-road speeds), cells crossed by a scored road slowed by its forecast tier.\n"
                  "Both: approved facilities from the Ethiopian register, each trip to the facility's own nearest hospital (health posts: health centre) "
                  f"at normal speeds; WeatherNext 3 run {pd.Timestamp(tag):%d %b %Y}.")

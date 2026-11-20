@@ -3,8 +3,11 @@
 forecast, given their surface (paved / unpaved).
 
 Inputs
-  data/raw/roads/heigit_eth_roadsurface_lines.geojson   HeiGIT Mapillary road surface lines (HDX, Nov 2024)
-      surface = OSM surface tag first, then the Mapillary image model (combined_surface_osm_priority).
+  data/raw/osm/ethiopia-<yymmdd>.osm.pbf                 current OpenStreetMap extract (Geofabrik): the road network
+      (vehicle classes; ways tagged under construction, access / motor_vehicle / vehicle = no, or impassable dropped)
+  data/raw/roads/heigit_eth_roadsurface_lines.geojson   HeiGIT Mapillary road surface lines (HDX; OSM as of July 2024)
+      surface joined by OSM way id = OSM surface tag first, then the Mapillary image model
+      (combined_surface_osm_priority); ways HeiGIT lacks use their own OSM surface tag.
       About 3/4 of the road length has neither; for those the surface is inferred from the road class,
       using the share of each class that is paved among the labelled roads.
   data/raw/weathernext3/wn3_eth_<init>.npz             WeatherNext 3 daily rainfall (0.1 deg; ensemble mean, p50, p90)
@@ -67,7 +70,8 @@ Outputs (<init> = run date)
     python scripts\\14_roads_rain_risk.py [--init 2026-11-17]
 (no -I: needs the helpers in 11_weathernext_forecast.py, which import earthengine-api from user site-packages)
 """
-import argparse, glob, importlib.util, os
+import argparse, glob, importlib.util, os, re
+import pyogrio
 import numpy as np, pandas as pd, geopandas as gpd, shapely
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
@@ -81,7 +85,8 @@ wn = importlib.util.module_from_spec(spec); spec.loader.exec_module(wn)
 
 RRAW = os.path.join(ROOT, "data", "raw", "roads")
 SRC = os.path.join(RRAW, "heigit_eth_roadsurface_lines.geojson")
-CACHE = os.path.join(RRAW, "eth_vehicle_roads.parquet")
+CACHE = os.path.join(RRAW, "eth_vehicle_roads_osm.parquet")
+OSMD = os.path.join(ROOT, "data", "raw", "osm")          # Geofabrik ethiopia-<yymmdd>.osm.pbf
 PROC = os.path.join(ROOT, "data", "processed", "roads"); os.makedirs(PROC, exist_ok=True)
 
 VEHICLE = ["motorway", "motorway_link", "trunk", "trunk_link", "primary", "primary_link", "secondary",
@@ -98,17 +103,52 @@ RAIN_LV = [0, 5, 10, 25, 50, 100, 150, 400]
 INK, INK2, MUTED, SURF = wn.INK, wn.INK2, wn.MUTED, wn.SURF
 
 
+PAVED = {"asphalt", "paved", "concrete", "concrete:plates", "concrete:lanes", "paving_stones", "sett", "cobblestone",
+         "chipseal", "metal", "wood"}
+UNPAVED = {"unpaved", "gravel", "fine_gravel", "compacted", "dirt", "ground", "earth", "soil", "sand", "dirt/sand", "mud",
+           "grass", "pebblestone", "rock", "bare_rock", "laterite", "clay", "stone"}
+ROUGH_SURF = {"sand", "dirt/sand", "mud"}
+_TAG = re.compile(r'"((?:[^"\\]|\\.)*)"=>"((?:[^"\\]|\\.)*)"')
+
+
+def tags(s):
+    return dict(_TAG.findall(s)) if isinstance(s, str) else {}
+
+
 def load_roads():
+    """Vehicle roads from the current OSM extract (Geofabrik), with HeiGIT's surface (OSM tag first, then the Mapillary
+    image model) joined by OSM way id. Ways HeiGIT does not have (new or re-mapped since its July 2024 snapshot) take
+    the surface from their OSM tag; the rest are inferred from road class later (classify_surface).
+    Dropped: ways tagged as under construction, access=no, motor_vehicle / vehicle = no, or smoothness=impassable.
+    rough = 1 for track grade 5 or a sand / mud surface (slower in 17_)."""
     if os.path.exists(CACHE): return gpd.read_parquet(CACHE)
-    cols = ["osm_id", "highway", "surface", "smoothness", "combined_surface_osm_priority", "osm_length", "name", "name:en"]
-    g = gpd.read_file(SRC, columns=cols, engine="pyogrio", use_arrow=True)
-    # the HeiGIT file repeats ~90k ways verbatim (same osm_id and geometry): keep one copy, or road km double-count
-    # and the routing graph in 17_ sums the repeated edges into one twice-as-slow edge
-    dup = pd.DataFrame({"id": g.osm_id.values, "wkb": shapely.to_wkb(g.geometry.values, output_dimension=2)}).duplicated()
-    print(f"dropped {int(dup.sum()):,} duplicate road rows, {g.osm_length[dup.values].sum() / 1000:,.0f} km")
-    g = g[~dup.values]
-    g = g[g.highway.isin(VEHICLE)].rename(columns={"combined_surface_osm_priority": "surf_known", "name:en": "name_en"})
-    g = g.reset_index(drop=True); g.to_parquet(CACHE); return g
+    pbf = sorted(glob.glob(os.path.join(OSMD, "ethiopia-*.osm.pbf")))[-1]
+    print(f"reading {os.path.basename(pbf)}")
+    g = pyogrio.read_dataframe(pbf, layer="lines", columns=["osm_id", "name", "highway", "other_tags"],
+                               where="highway IS NOT NULL")
+    g = g[g.highway.isin(VEHICLE) & g.osm_id.notna()].copy()
+    g["osm_id"] = g.osm_id.astype(float).astype("int64")
+    t = [tags(s) for s in g.other_tags.values]
+    get = lambda k: pd.Series([d.get(k) for d in t], index=g.index)
+    g["surface"], g["smoothness"], g["tracktype"], g["name_en"] = get("surface"), get("smoothness"), get("tracktype"), get("name:en")
+    closed = (get("construction").notna() | get("access").isin(["no"]) | get("motor_vehicle").isin(["no"])
+              | get("vehicle").isin(["no"]) | (g.smoothness == "impassable"))
+    g["osm_length"] = g.geometry.to_crs(32637).length.round(0)
+    print(f"OSM vehicle ways {len(g):,}, {g.osm_length.sum() / 1000:,.0f} km; dropped as closed / not drivable "
+          f"{int(closed.sum())} ways, {g.osm_length[closed].sum() / 1000:,.0f} km")
+    g = g[~closed.values]
+    hg = gpd.read_file(SRC, columns=["osm_id", "combined_surface_osm_priority"], engine="pyogrio", use_arrow=True, read_geometry=False)
+    hs = hg.dropna(subset=["osm_id", "combined_surface_osm_priority"]).astype({"osm_id": "int64"}).drop_duplicates("osm_id")
+    hs = hs.set_index("osm_id").combined_surface_osm_priority
+    s = g.surface.str.lower()
+    osm_surf = np.where(s.isin(PAVED), "paved", np.where(s.isin(UNPAVED), "unpaved", None))
+    g["surf_known"] = pd.Series(g.osm_id.map(hs).values, index=g.index).where(lambda x: x.notna(), osm_surf)
+    g["in_heigit"] = g.osm_id.isin(set(hg.osm_id.dropna().astype("int64")))
+    g["rough"] = ((g.tracktype == "grade5") | s.isin(ROUGH_SURF)).astype("int8")
+    print(f"  in the HeiGIT file {g.osm_length[g.in_heigit].sum() / g.osm_length.sum():.0%} of length; "
+          f"surface known {g.osm_length[g.surf_known.notna()].sum() / g.osm_length.sum():.0%}; rough {g.osm_length[g.rough == 1].sum() / 1000:,.0f} km")
+    g = g.drop(columns=["other_tags", "tracktype"]).reset_index(drop=True)
+    g.to_parquet(CACHE); return g
 
 
 SEISMIC_BOX = (44.0, 5.5, 45.5, 6.8)    # Calub / Hilala gas fields, Ogaden
@@ -375,7 +415,7 @@ if __name__ == "__main__":
     flag = g[g.tier != "Normal"].copy(); flag["tier"] = flag.tier.astype(str)
     flag.drop(columns=["surf_known"]).to_file(os.path.join(PROC, f"eth_roads_rain_risk_{tag}.gpkg"),
                                               layer="roads_rain_risk", driver="GPKG", engine="pyogrio")
-    full = g[["highway", "surface_class", "osm_length", "tier", "tier_without_terrain", "speed_factor", "slide_exposure", "slide_km", "tier_w1", "tier_w2", "tier_w3",
+    full = g[["highway", "surface_class", "rough", "osm_length", "tier", "tier_without_terrain", "speed_factor", "slide_exposure", "slide_km", "tier_w1", "tier_w2", "tier_w3",
               "region", "geometry"]].copy()
     full["tier"] = full.tier.astype(str)
     full.to_parquet(os.path.join(PROC, f"eth_roads_scored_{tag}.parquet"))       # every segment, for routing (17_)
@@ -469,7 +509,7 @@ if __name__ == "__main__":
                  "Steepness: mountainous = terrain ≥ 14° or road grade ≥ 5 %; escarpment = ≥ 26.6° or ≥ 10 %.\n"
                  "Slip / rock-fall exposure, per ~110 m piece: moderate+ rain and either ground ≥ 26.6° with NASA landslide susceptibility moderate+, "
                  "or very high susceptibility on ground ≥ 14°. Speed factors are illustrative, not calibrated. "
-                 f"Roads: HeiGIT Mapillary road surface (OSM, Nov 2024); surface known for {known:.0%} of length, the rest inferred from road class.\n"
+                 f"Roads: OpenStreetMap (Geofabrik extract) with HeiGIT Mapillary road surface; surface known for {known:.0%} of length, the rest inferred from road class.\n"
                  f"Health facilities: approved hospitals and health centres from the Ethiopian health facility register. "
                  f"Terrain: Google GEM-15 bare-earth model, slope from 15 m averaged to ~110 m, sampled every ~110 m along each road. "
                  f"Vehicle roads only, {km.sum():,.0f} km; {seis_km:,.0f} km of seismic survey lines in the Ogaden removed.",
@@ -529,7 +569,7 @@ if __name__ == "__main__":
     a2.set_yticklabels([]); a2.set_xlabel("share of the region's road length, %"); a2.grid(axis="y", visible=False)
     a2.set_xlim(0, max(10, t2["share_slowed_%"].max() * 1.18))
     wn.title(a2, "Share of the network", "Minor + Elevated + Severe")
-    wn.foot(fig, "Vehicle roads from HeiGIT Mapillary road surface lines; segments assigned to the region containing their midpoint. "
+    wn.foot(fig, "Vehicle roads from OpenStreetMap (Geofabrik) with HeiGIT surfaces; segments assigned to the region containing their midpoint. "
                  "Tiers as in ETH_roads_rain_risk_map.png.")
     wn.save(fig, os.path.join(wn.OUT, "ETH_roads_rain_risk_adm1.png"))
 

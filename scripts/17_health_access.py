@@ -9,7 +9,7 @@ Inputs
 Method
   * Road graph: every road vertex is a node (OSM ways that meet share a vertex), consecutive vertices are edges.
   * Normal speed by road class (km/h): motorway 80, trunk 70, primary 60, secondary 50, tertiary 40, unclassified /
-    road 30, residential 20, service / track 15, living street 10; links 80% of their class; unpaved roads x 0.7.
+    road 30, residential 20, service / track 15, living street 10; links 80% of their class; unpaved roads x 0.7; track grade 5 or sand / mud surface a further x 0.6.
     Forecast speed = normal x the segment's tier speed factor (Minor 0.9, Elevated 0.75, Severe 0.5).
   * Mapping gaps: dead-end vertices within 30 m of another road vertex are linked (at 5 km/h), so a way that stops
     just short of a junction does not force a long detour.
@@ -59,10 +59,14 @@ DLV = [0, 5, 15, 30, 60, 1e9]; DLAB = ["< 5 min", "5–15", "15–30", "30–60"
 DCOL = ["#d9d8d2", "#f6cf7a", "#ec9a3b", "#c95a1c", "#7d2a0c"]
 
 
-def base_speed(hw, surf):
+ROUGH = 0.6          # track grade 5 or a sand / mud surface (14_ rough flag): a further x 0.6
+
+
+def base_speed(hw, surf, rough=None):
     h = hw.str.replace("_link", "", regex=False)
     v = h.map(SPEED).fillna(20).values * np.where(hw.str.endswith("_link"), 0.8, 1.0)
-    return v * np.where(surf.values == "unpaved", 0.7, 1.0)
+    v = v * np.where(surf.values == "unpaved", 0.7, 1.0)
+    return v if rough is None else v * np.where(np.asarray(rough) == 1, ROUGH, 1.0)
 
 
 def build_graph(g):
@@ -137,7 +141,7 @@ if __name__ == "__main__":
 
     # --- graph ---------------------------------------------------------------------------
     nodes, a, b, seg, km = build_graph(g)
-    v0 = base_speed(g.highway, g.surface_class)
+    v0 = base_speed(g.highway, g.surface_class, g["rough"] if "rough" in g.columns else None)
     sf = g.speed_factor.values
     vs = np.where(seg >= 0, v0[np.maximum(seg, 0)], WALK); fs = np.where(seg >= 0, sf[np.maximum(seg, 0)], 1.0)
     w0 = km / vs * 60; w1 = km / (vs * fs) * 60

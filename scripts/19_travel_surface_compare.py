@@ -20,7 +20,7 @@ Method
   MAP has no rain. "MAP + forecast" applies our per-cell forecast/normal ratio to MAP's baseline, i.e. what MAP's
   times would become if each place slowed by the same factor our model gives it.
   Differences between ours and MAP mix three things: off-road travel (MAP uses land-cover speeds, we walk at 5 km/h),
-  the road network and speeds (MAP: OSM + Google roads 2019-20; ours: OSM via HeiGIT 2024 with class speeds), and the
+  the road network and speeds (MAP: OSM + Google roads 2019-20; ours: current OSM with class speeds), and the
   facility list (MAP's global compilation vs the Ethiopian register).
 
 Outputs
@@ -95,7 +95,7 @@ if __name__ == "__main__":
     pad = 1.0                                                           # route over a margin around the clip
     g = g.cx[x0 - pad:x1 + pad, y0 - pad:y1 + pad].reset_index(drop=True)
     nodes, a, b, seg, km = ha.build_graph(g)
-    v0 = ha.base_speed(g.highway, g.surface_class); sf = g.speed_factor.values
+    v0 = ha.base_speed(g.highway, g.surface_class, g["rough"] if "rough" in g.columns else None); sf = g.speed_factor.values
     vs = np.where(seg >= 0, v0[np.maximum(seg, 0)], ha.WALK); fs = np.where(seg >= 0, sf[np.maximum(seg, 0)], 1.0)
     N = len(nodes)
     G0 = sparse.coo_matrix((km / vs * 60 + 1e-6, (a, b)), shape=(N, N)).tocsr(); G0.sum_duplicates()
@@ -184,7 +184,7 @@ if __name__ == "__main__":
     fig.text(0.125, 0.937, f"North-west Ethiopia (extent of the supplied MAP clip) · time to the nearest health post, centre or hospital · "
              f"forecast: WeatherNext 3 run {pd.Timestamp(tag):%d %b %Y}", fontsize=9.5, color=INK2)
     fig.text(0.125, 0.085, "MAP: Malaria Atlas Project 2020 motorized travel time to healthcare (Weiss et al. 2020), ~1 km; it uses land-cover off-road "
-             "speeds, OSM + Google roads and its own facility list.\nOurs: HeiGIT/OSM roads with class speeds, 5 km/h walking off-road, approved facilities "
+             "speeds, OSM + Google roads and its own facility list.\nOurs: OSM roads (HeiGIT surfaces) with class speeds, 5 km/h walking off-road, approved facilities "
              "from the Ethiopian register. Bottom right: MAP times x our forecast/normal ratio for each cell.", fontsize=8, color=MUTED, va="top")
     wn.save(fig, os.path.join(wn.OUT, "ETH_travel_surface_compare_map.png"))
 
@@ -208,6 +208,6 @@ if __name__ == "__main__":
     s2.set_xticks(xs_, ["over 30 min", "over 1 hour", "over 2 hours"]); s2.set_ylabel("share of population, %")
     s2.grid(axis="x", visible=False); s2.legend(loc="upper right", frameon=False, fontsize=8.5)
     wn.title(s2, "People beyond a travel-time threshold", f"{tot / 1e6:.1f} M people in the clip (WorldPop 2020)")
-    wn.foot(fig, "Ours = HeiGIT/OSM road network with class speeds and 5 km/h walking to the road; MAP = Malaria Atlas Project 2020 motorized surface. "
+    wn.foot(fig, "Ours = OSM road network (HeiGIT surfaces) with class speeds and 5 km/h walking to the road; MAP = Malaria Atlas Project 2020 motorized surface. "
                  "'MAP + our forecast slowdown' multiplies MAP times by our forecast/normal ratio per cell.")
     wn.save(fig, os.path.join(wn.OUT, "ETH_travel_surface_compare_stats.png"))
