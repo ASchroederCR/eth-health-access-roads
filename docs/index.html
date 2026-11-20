@@ -297,27 +297,42 @@ section { display: flex; flex-direction: column; gap: 6px; }
 <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script>
 const SUMMARY = {
- "init": "19 Nov 2026",
- "start": "19 Nov",
- "end": "03 Dec 2026",
- "total_km": 334137,
+ "init": "20 Nov 2026",
+ "start": "20 Nov",
+ "end": "04 Dec 2026",
+ "total_km": 334136,
  "tiers": {
-  "Normal": 161489,
-  "Minor": 51760,
-  "Elevated": 62375,
-  "Severe": 58513
+  "Normal": 154879,
+  "Minor": 58625,
+  "Elevated": 67690,
+  "Severe": 52942
  },
- "slide_km": 892,
- "raised_km": 78252,
+ "slide_km": 1153,
+ "raised_km": 82192,
  "regions": [
   {
+   "name": "Dire Dawa",
+   "Normal": 143,
+   "Minor": 628,
+   "Elevated": 391,
+   "Severe": 0,
+   "share": 87.7,
+   "slide": 6,
+   "bbox": [
+    41.729,
+    9.472,
+    42.341,
+    9.785
+   ]
+  },
+  {
    "name": "SNNPR",
-   "Normal": 12747,
-   "Minor": 10688,
-   "Elevated": 17498,
-   "Severe": 23108,
-   "share": 80.1,
-   "slide": 525,
+   "Normal": 9932,
+   "Minor": 13264,
+   "Elevated": 19765,
+   "Severe": 21080,
+   "share": 84.5,
+   "slide": 624,
    "bbox": [
     34.878,
     4.441,
@@ -327,12 +342,12 @@ const SUMMARY = {
   },
   {
    "name": "Amhara",
-   "Normal": 12342,
-   "Minor": 8178,
-   "Elevated": 13813,
-   "Severe": 12694,
-   "share": 73.8,
-   "slide": 319,
+   "Normal": 12550,
+   "Minor": 8449,
+   "Elevated": 13976,
+   "Severe": 12051,
+   "share": 73.3,
+   "slide": 371,
    "bbox": [
     35.258,
     8.716,
@@ -342,11 +357,11 @@ const SUMMARY = {
   },
   {
    "name": "Tigray",
-   "Normal": 5614,
-   "Minor": 5120,
-   "Elevated": 5248,
-   "Severe": 1944,
-   "share": 68.7,
+   "Normal": 5884,
+   "Minor": 5879,
+   "Elevated": 5318,
+   "Severe": 844,
+   "share": 67.2,
    "slide": 0,
    "bbox": [
     36.452,
@@ -357,12 +372,12 @@ const SUMMARY = {
   },
   {
    "name": "Afar",
-   "Normal": 2910,
-   "Minor": 1741,
-   "Elevated": 1431,
-   "Severe": 197,
-   "share": 53.7,
-   "slide": 0,
+   "Normal": 2799,
+   "Minor": 1319,
+   "Elevated": 1972,
+   "Severe": 189,
+   "share": 55.4,
+   "slide": 1,
    "bbox": [
     39.651,
     8.842,
@@ -372,12 +387,12 @@ const SUMMARY = {
   },
   {
    "name": "Oromia",
-   "Normal": 70400,
-   "Minor": 22919,
-   "Elevated": 23489,
-   "Severe": 19936,
-   "share": 48.5,
-   "slide": 46,
+   "Normal": 66328,
+   "Minor": 26809,
+   "Elevated": 25337,
+   "Severe": 18270,
+   "share": 51.5,
+   "slide": 149,
    "bbox": [
     34.14,
     3.511,
@@ -387,11 +402,11 @@ const SUMMARY = {
   },
   {
    "name": "Gambela",
-   "Normal": 2311,
-   "Minor": 554,
-   "Elevated": 575,
-   "Severe": 536,
-   "share": 41.9,
+   "Normal": 2606,
+   "Minor": 422,
+   "Elevated": 537,
+   "Severe": 411,
+   "share": 34.5,
    "slide": 2,
    "bbox": [
     33.002,
@@ -401,48 +416,33 @@ const SUMMARY = {
    ]
   },
   {
-   "name": "Somali",
-   "Normal": 37676,
-   "Minor": 2503,
-   "Elevated": 216,
-   "Severe": 1,
-   "share": 6.7,
-   "slide": 0,
-   "bbox": [
-    39.094,
-    3.4,
-    47.959,
-    11.082
-   ]
-  },
-  {
-   "name": "Dire Dawa",
-   "Normal": 1095,
-   "Minor": 13,
-   "Elevated": 53,
-   "Severe": 0,
-   "share": 5.7,
-   "slide": 0,
-   "bbox": [
-    41.729,
-    9.472,
-    42.341,
-    9.785
-   ]
-  },
-  {
    "name": "Beneshangul Gumu",
-   "Normal": 7928,
-   "Minor": 44,
-   "Elevated": 52,
+   "Normal": 7712,
+   "Minor": 126,
+   "Elevated": 185,
    "Severe": 97,
-   "share": 2.4,
+   "share": 5.0,
    "slide": 0,
    "bbox": [
     34.101,
     8.951,
     36.693,
     11.985
+   ]
+  },
+  {
+   "name": "Somali",
+   "Normal": 38459,
+   "Minor": 1729,
+   "Elevated": 209,
+   "Severe": 0,
+   "share": 4.8,
+   "slide": 0,
+   "bbox": [
+    39.094,
+    3.4,
+    47.959,
+    11.082
    ]
   },
   {
@@ -484,11 +484,11 @@ const SUMMARY = {
  ],
  "health": {
   "hc_n": 3639,
-  "hc_30": 579,
-  "hc_60": 224,
+  "hc_30": 537,
+  "hc_60": 206,
   "hp_n": 15538,
-  "hp_30": 389,
-  "hp_h30": 2776,
+  "hp_30": 346,
+  "hp_h30": 2635,
   "top_hc": [
    {
     "n": "Liwarie Health Center",
@@ -502,7 +502,7 @@ const SUMMARY = {
     "n": "Kumba Health Center",
     "a2": "Kefa",
     "h0": 231,
-    "h1": 442,
+    "h1": 460,
     "x": 36.2284998,
     "y": 6.769212
    },
@@ -513,6 +513,14 @@ const SUMMARY = {
     "h1": 393,
     "x": 35.50259541,
     "y": 6.62399161
+   },
+   {
+    "n": "Shash Health Center",
+    "a2": "Kefa",
+    "h0": 186,
+    "h1": 369,
+    "x": 36.2110018,
+    "y": 6.8982827
    },
    {
     "n": "Dliybza Health Center",
@@ -526,25 +534,9 @@ const SUMMARY = {
     "n": "Wodo Health Center",
     "a2": "Kefa",
     "h0": 175,
-    "h1": 347,
+    "h1": 342,
     "x": 35.7617209,
     "y": 7.5937373
-   },
-   {
-    "n": "Jeba Health center",
-    "a2": "Mirab Omo",
-    "h0": 170,
-    "h1": 339,
-    "x": 35.2273425,
-    "y": 6.2522733
-   },
-   {
-    "n": "Shash Health Center",
-    "a2": "Kefa",
-    "h0": 186,
-    "h1": 351,
-    "x": 36.2110018,
-    "y": 6.8982827
    },
    {
     "n": "Kuju Health Center",
@@ -563,12 +555,20 @@ const SUMMARY = {
     "y": 11.0922925
    },
    {
-    "n": "Neti Health Center",
-    "a2": "South Wello",
-    "h0": 158,
-    "h1": 312,
-    "x": 39.5528072,
-    "y": 10.76075
+    "n": "Goba Chara Health Center",
+    "a2": "Kefa",
+    "h0": 159,
+    "h1": 313,
+    "x": 36.1979633,
+    "y": 6.960262
+   },
+   {
+    "n": "Metekleya Health Center",
+    "a2": "Gabi /Zone 3",
+    "h0": 280,
+    "h1": 434,
+    "x": 39.8875452,
+    "y": 9.4601623
    }
   ],
   "top_h": [
@@ -576,7 +576,7 @@ const SUMMARY = {
     "n": "Chora Primary Hospital",
     "a2": "Buno Bedele",
     "cf": 257,
-    "c30": 172,
+    "c30": 193,
     "x": 36.11040667,
     "y": 8.376255
    },
@@ -592,7 +592,7 @@ const SUMMARY = {
     "n": "Setema Primary Hospital",
     "a2": "Jimma",
     "cf": 110,
-    "c30": 94,
+    "c30": 90,
     "x": 36.2035673,
     "y": 7.9820519
    },
@@ -600,25 +600,9 @@ const SUMMARY = {
     "n": "Teppi General Hospital",
     "a2": "Sheka",
     "cf": 123,
-    "c30": 74,
+    "c30": 71,
     "x": 35.426415,
     "y": 7.1966211
-   },
-   {
-    "n": "Mizan Teppi university Teaching Hospital",
-    "a2": "Bench Sheko",
-    "cf": 118,
-    "c30": 67,
-    "x": 35.5486578,
-    "y": 6.9519356
-   },
-   {
-    "n": "Jinka General Hospital",
-    "a2": "South Omo",
-    "cf": 112,
-    "c30": 66,
-    "x": 36.5619494,
-    "y": 5.7821353
    },
    {
     "n": "Sawla General Hospital",
@@ -627,6 +611,14 @@ const SUMMARY = {
     "c30": 66,
     "x": 36.8938202,
     "y": 6.3027797
+   },
+   {
+    "n": "Jinka General Hospital",
+    "a2": "South Omo",
+    "cf": 112,
+    "c30": 64,
+    "x": 36.5619494,
+    "y": 5.7821353
    },
    {
     "n": "Bedele General hospital",
@@ -651,14 +643,22 @@ const SUMMARY = {
     "c30": 55,
     "x": 37.4818119,
     "y": 11.246865
+   },
+   {
+    "n": "Selamber Primary Hospital",
+    "a2": "Gamo",
+    "cf": 77,
+    "c30": 53,
+    "x": 37.45684,
+    "y": 6.480505
    }
   ],
   "win": [
    {
-    "hc_30": 485,
-    "hc_60": 165,
-    "hp_30": 322,
-    "hp_h30": 2380,
+    "hc_30": 419,
+    "hc_60": 139,
+    "hp_30": 278,
+    "hp_h30": 2084,
     "top_hc": [
      {
       "n": "Kumba Health Center",
@@ -677,30 +677,6 @@ const SUMMARY = {
       "y": 6.62399161
      },
      {
-      "n": "Wodo Health Center",
-      "a2": "Kefa",
-      "h0": 175,
-      "h1": 347,
-      "x": 35.7617209,
-      "y": 7.5937373
-     },
-     {
-      "n": "Jeba Health center",
-      "a2": "Mirab Omo",
-      "h0": 170,
-      "h1": 339,
-      "x": 35.2273425,
-      "y": 6.2522733
-     },
-     {
-      "n": "Liwarie Health Center",
-      "a2": "North Gondar",
-      "h0": 236,
-      "h1": 402,
-      "x": 38.5091099,
-      "y": 13.2328929
-     },
-     {
       "n": "Shash Health Center",
       "a2": "Kefa",
       "h0": 186,
@@ -717,28 +693,52 @@ const SUMMARY = {
       "y": 6.54904496
      },
      {
+      "n": "Liwarie Health Center",
+      "a2": "North Gondar",
+      "h0": 236,
+      "h1": 394,
+      "x": 38.5091099,
+      "y": 13.2328929
+     },
+     {
+      "n": "Wodo Health Center",
+      "a2": "Kefa",
+      "h0": 175,
+      "h1": 319,
+      "x": 35.7617209,
+      "y": 7.5937373
+     },
+     {
       "n": "Dliybza Health Center",
       "a2": "North Gondar",
       "h0": 177,
-      "h1": 325,
+      "h1": 320,
       "x": 38.4403121,
       "y": 13.1181669
-     },
-     {
-      "n": "Oba Health Center",
-      "a2": "Jimma",
-      "h0": 165,
-      "h1": 309,
-      "x": 36.1461507,
-      "y": 7.5704749
      },
      {
       "n": "Jembelew Health Center",
       "a2": "North Gondar",
       "h0": 155,
-      "h1": 296,
+      "h1": 298,
       "x": 38.3639714,
       "y": 13.0991121
+     },
+     {
+      "n": "Oba Health Center",
+      "a2": "Jimma",
+      "h0": 165,
+      "h1": 305,
+      "x": 36.1461507,
+      "y": 7.5704749
+     },
+     {
+      "n": "Jeba Health center",
+      "a2": "Mirab Omo",
+      "h0": 170,
+      "h1": 309,
+      "x": 35.2273425,
+      "y": 6.2522733
      }
     ],
     "top_h": [
@@ -746,7 +746,7 @@ const SUMMARY = {
       "n": "Chora Primary Hospital",
       "a2": "Buno Bedele",
       "cf": 257,
-      "c30": 162,
+      "c30": 119,
       "x": 36.11040667,
       "y": 8.376255
      },
@@ -762,7 +762,7 @@ const SUMMARY = {
       "n": "Setema Primary Hospital",
       "a2": "Jimma",
       "cf": 110,
-      "c30": 94,
+      "c30": 89,
       "x": 36.2035673,
       "y": 7.9820519
      },
@@ -770,17 +770,9 @@ const SUMMARY = {
       "n": "Teppi General Hospital",
       "a2": "Sheka",
       "cf": 123,
-      "c30": 73,
+      "c30": 69,
       "x": 35.426415,
       "y": 7.1966211
-     },
-     {
-      "n": "Jinka General Hospital",
-      "a2": "South Omo",
-      "cf": 112,
-      "c30": 66,
-      "x": 36.5619494,
-      "y": 5.7821353
      },
      {
       "n": "Sawla General Hospital",
@@ -791,12 +783,12 @@ const SUMMARY = {
       "y": 6.3027797
      },
      {
-      "n": "Mizan Teppi university Teaching Hospital",
-      "a2": "Bench Sheko",
-      "cf": 118,
-      "c30": 65,
-      "x": 35.5486578,
-      "y": 6.9519356
+      "n": "Jinka General Hospital",
+      "a2": "South Omo",
+      "cf": 112,
+      "c30": 64,
+      "x": 36.5619494,
+      "y": 5.7821353
      },
      {
       "n": "Bedele General hospital",
@@ -821,78 +813,46 @@ const SUMMARY = {
       "c30": 54,
       "x": 37.4818119,
       "y": 11.246865
+     },
+     {
+      "n": "Selamber Primary Hospital",
+      "a2": "Gamo",
+      "cf": 77,
+      "c30": 53,
+      "x": 37.45684,
+      "y": 6.480505
      }
     ]
    },
    {
-    "hc_30": 129,
-    "hc_60": 44,
-    "hp_30": 70,
-    "hp_h30": 583,
+    "hc_30": 100,
+    "hc_60": 46,
+    "hp_30": 44,
+    "hp_h30": 472,
     "top_hc": [
      {
       "n": "Liwarie Health Center",
       "a2": "North Gondar",
       "h0": 236,
-      "h1": 400,
+      "h1": 436,
       "x": 38.5091099,
       "y": 13.2328929
      },
      {
-      "n": "Kumba Health Center",
-      "a2": "Kefa",
-      "h0": 231,
-      "h1": 391,
-      "x": 36.2284998,
-      "y": 6.769212
+      "n": "Dliybza Health Center",
+      "a2": "North Gondar",
+      "h0": 177,
+      "h1": 329,
+      "x": 38.4403121,
+      "y": 13.1181669
      },
      {
-      "n": "Bareda Health Center",
-      "a2": "Mirab Omo",
-      "h0": 197,
-      "h1": 345,
-      "x": 35.50259541,
-      "y": 6.62399161
-     },
-     {
-      "n": "Shash Health Center",
-      "a2": "Kefa",
-      "h0": 186,
-      "h1": 331,
-      "x": 36.2110018,
-      "y": 6.8982827
-     },
-     {
-      "n": "Goba Chara Health Center",
-      "a2": "Kefa",
-      "h0": 159,
-      "h1": 294,
-      "x": 36.1979633,
-      "y": 6.960262
-     },
-     {
-      "n": "Sira Hiwot Health Center",
-      "a2": "Kefa",
-      "h0": 156,
-      "h1": 291,
-      "x": 36.1928683,
-      "y": 6.9621883
-     },
-     {
-      "n": "Wodo Health Center",
-      "a2": "Kefa",
-      "h0": 175,
-      "h1": 304,
-      "x": 35.7617209,
-      "y": 7.5937373
-     },
-     {
-      "n": "Chero Harot Health Center",
-      "a2": "Mirab Omo",
-      "h0": 136,
-      "h1": 264,
-      "x": 35.88983499,
-      "y": 6.48407877
+      "n": "Jembelew Health Center",
+      "a2": "North Gondar",
+      "h0": 155,
+      "h1": 300,
+      "x": 38.3639714,
+      "y": 13.0991121
      },
      {
       "n": "Shekibedo health center",
@@ -909,17 +869,49 @@ const SUMMARY = {
       "h1": 258,
       "x": 38.9722391,
       "y": 11.0326504
+     },
+     {
+      "n": "Akile Health Center",
+      "a2": "West Gojam",
+      "h0": 157,
+      "h1": 277,
+      "x": 37.6319071,
+      "y": 11.0922925
+     },
+     {
+      "n": "Adisberihan Health Center",
+      "a2": "Kefa",
+      "h0": 156,
+      "h1": 268,
+      "x": 35.6148449,
+      "y": 7.54647
+     },
+     {
+      "n": "Gilbena Health Center",
+      "a2": "North Gondar",
+      "h0": 207,
+      "h1": 317,
+      "x": 38.3872671,
+      "y": 13.3936665
+     },
+     {
+      "n": "Chago health center",
+      "a2": "Sheka",
+      "h0": 136,
+      "h1": 246,
+      "x": 35.5409373,
+      "y": 7.7102785
+     },
+     {
+      "n": "Washera Health Center",
+      "a2": "West Gojam",
+      "h0": 111,
+      "h1": 220,
+      "x": 37.5606471,
+      "y": 11.1131847
      }
     ],
     "top_h": [
-     {
-      "n": "Odda Primary Hospital",
-      "a2": "Kefa",
-      "cf": 129,
-      "c30": 98,
-      "x": 36.4718748,
-      "y": 7.1198403
-     },
      {
       "n": "Teppi General Hospital",
       "a2": "Sheka",
@@ -929,36 +921,28 @@ const SUMMARY = {
       "y": 7.1966211
      },
      {
+      "n": "Adet Primary Hospital",
+      "a2": "West Gojam",
+      "cf": 124,
+      "c30": 49,
+      "x": 37.4818119,
+      "y": 11.246865
+     },
+     {
       "n": "Doctor Ambachew Metasebia Primary Hospital",
       "a2": "South Gondar",
       "cf": 69,
-      "c30": 45,
+      "c30": 46,
       "x": 38.4726673,
       "y": 11.7471834
      },
      {
-      "n": "Mizan Teppi university Teaching Hospital",
-      "a2": "Bench Sheko",
-      "cf": 118,
-      "c30": 44,
-      "x": 35.5486578,
-      "y": 6.9519356
-     },
-     {
-      "n": "Setema Primary Hospital",
-      "a2": "Jimma",
-      "cf": 110,
-      "c30": 43,
-      "x": 36.2035673,
-      "y": 7.9820519
-     },
-     {
-      "n": "Bachuma primary Hospital",
-      "a2": "Mirab Omo",
-      "cf": 64,
+      "n": "Janamora Primary Hospital",
+      "a2": "North Gondar",
+      "cf": 57,
       "c30": 42,
-      "x": 35.9026526,
-      "y": 6.8246609
+      "x": 38.1128117,
+      "y": 13.0101177
      },
      {
       "n": "Amhara Sayint Primary Hospital",
@@ -969,36 +953,52 @@ const SUMMARY = {
       "y": 11.0311312
      },
      {
-      "n": "Kamba Primary Hospital",
-      "a2": "Gamo",
-      "cf": 42,
-      "c30": 28,
-      "x": 37.1669708,
-      "y": 6.0479924
+      "n": "Odda Primary Hospital",
+      "a2": "Kefa",
+      "cf": 129,
+      "c30": 38,
+      "x": 36.4718748,
+      "y": 7.1198403
      },
      {
-      "n": "Janamora Primary Hospital",
-      "a2": "North Gondar",
-      "cf": 57,
-      "c30": 25,
-      "x": 38.1128117,
-      "y": 13.0101177
+      "n": "Setema Primary Hospital",
+      "a2": "Jimma",
+      "cf": 110,
+      "c30": 36,
+      "x": 36.2035673,
+      "y": 7.9820519
      },
      {
-      "n": "Adet Primary Hospital",
+      "n": "Mekane Eyesus Primary Hospital",
+      "a2": "South Gondar",
+      "cf": 76,
+      "c30": 20,
+      "x": 38.0519795,
+      "y": 11.6047319
+     },
+     {
+      "n": "Mertulemariam Primary Hospital",
+      "a2": "East Gojam",
+      "cf": 62,
+      "c30": 18,
+      "x": 38.2791044,
+      "y": 10.8562184
+     },
+     {
+      "n": "Dembecha Primery Hospital",
       "a2": "West Gojam",
-      "cf": 124,
-      "c30": 21,
-      "x": 37.4818119,
-      "y": 11.246865
+      "cf": 57,
+      "c30": 17,
+      "x": 37.4786285,
+      "y": 10.5580959
      }
     ]
    },
    {
-    "hc_30": 265,
-    "hc_60": 103,
-    "hp_30": 165,
-    "hp_h30": 1289,
+    "hc_30": 291,
+    "hc_60": 128,
+    "hp_30": 179,
+    "hp_h30": 1488,
     "top_hc": [
      {
       "n": "Liwarie Health Center",
@@ -1009,6 +1009,14 @@ const SUMMARY = {
       "y": 13.2328929
      },
      {
+      "n": "Kumba Health Center",
+      "a2": "Kefa",
+      "h0": 231,
+      "h1": 410,
+      "x": 36.2284998,
+      "y": 6.769212
+     },
+     {
       "n": "Dliybza Health Center",
       "a2": "North Gondar",
       "h0": 177,
@@ -1017,20 +1025,12 @@ const SUMMARY = {
       "y": 13.1181669
      },
      {
-      "n": "Wodo Health Center",
+      "n": "Shash Health Center",
       "a2": "Kefa",
-      "h0": 175,
-      "h1": 337,
-      "x": 35.7617209,
-      "y": 7.5937373
-     },
-     {
-      "n": "Kumba Health Center",
-      "a2": "Kefa",
-      "h0": 231,
-      "h1": 393,
-      "x": 36.2284998,
-      "y": 6.769212
+      "h0": 186,
+      "h1": 350,
+      "x": 36.2110018,
+      "y": 6.8982827
      },
      {
       "n": "Akile Health Center",
@@ -1041,12 +1041,28 @@ const SUMMARY = {
       "y": 11.0922925
      },
      {
-      "n": "Neti Health Center",
-      "a2": "South Wello",
-      "h0": 158,
-      "h1": 312,
-      "x": 39.5528072,
-      "y": 10.76075
+      "n": "Goba Chara Health Center",
+      "a2": "Kefa",
+      "h0": 159,
+      "h1": 313,
+      "x": 36.1979633,
+      "y": 6.960262
+     },
+     {
+      "n": "Metekleya Health Center",
+      "a2": "Gabi /Zone 3",
+      "h0": 280,
+      "h1": 434,
+      "x": 39.8875452,
+      "y": 9.4601623
+     },
+     {
+      "n": "Sira Hiwot Health Center",
+      "a2": "Kefa",
+      "h0": 156,
+      "h1": 310,
+      "x": 36.1928683,
+      "y": 6.9621883
      },
      {
       "n": "Degele health center",
@@ -1063,40 +1079,24 @@ const SUMMARY = {
       "h1": 305,
       "x": 38.3639714,
       "y": 13.0991121
-     },
-     {
-      "n": "Shash Health Center",
-      "a2": "Kefa",
-      "h0": 186,
-      "h1": 332,
-      "x": 36.2110018,
-      "y": 6.8982827
-     },
-     {
-      "n": "Waro Health Center",
-      "a2": "South Wello",
-      "h0": 141,
-      "h1": 280,
-      "x": 38.8550187,
-      "y": 11.1153758
      }
     ],
     "top_h": [
      {
-      "n": "Odda Primary Hospital",
-      "a2": "Kefa",
-      "cf": 129,
-      "c30": 103,
-      "x": 36.4718748,
-      "y": 7.1198403
-     },
-     {
       "n": "Chora Primary Hospital",
       "a2": "Buno Bedele",
       "cf": 257,
-      "c30": 96,
+      "c30": 140,
       "x": 36.11040667,
       "y": 8.376255
+     },
+     {
+      "n": "Odda Primary Hospital",
+      "a2": "Kefa",
+      "cf": 129,
+      "c30": 104,
+      "x": 36.4718748,
+      "y": 7.1198403
      },
      {
       "n": "Teppi General Hospital",
@@ -1110,15 +1110,23 @@ const SUMMARY = {
       "n": "Setema Primary Hospital",
       "a2": "Jimma",
       "cf": 110,
-      "c30": 67,
+      "c30": 69,
       "x": 36.2035673,
       "y": 7.9820519
+     },
+     {
+      "n": "Adet Primary Hospital",
+      "a2": "West Gojam",
+      "cf": 124,
+      "c30": 53,
+      "x": 37.4818119,
+      "y": 11.246865
      },
      {
       "n": "Selam General Hospital",
       "a2": "South Wello",
       "cf": 89,
-      "c30": 52,
+      "c30": 51,
       "x": 39.6341505,
       "y": 11.1277854
      },
@@ -1131,22 +1139,6 @@ const SUMMARY = {
       "y": 11.0311312
      },
      {
-      "n": "Adet Primary Hospital",
-      "a2": "West Gojam",
-      "cf": 124,
-      "c30": 50,
-      "x": 37.4818119,
-      "y": 11.246865
-     },
-     {
-      "n": "Woldia Comperhensive Specialized Hospital",
-      "a2": "North Wello",
-      "cf": 89,
-      "c30": 47,
-      "x": 39.5990159,
-      "y": 11.8325277
-     },
-     {
       "n": "Doctor Ambachew Metasebia Primary Hospital",
       "a2": "South Gondar",
       "cf": 69,
@@ -1155,45 +1147,53 @@ const SUMMARY = {
       "y": 11.7471834
      },
      {
-      "n": "Debre Birhan Comprehensive Specialized Hospital",
-      "a2": "North Shewa (AM)",
-      "cf": 63,
-      "c30": 43,
-      "x": 39.5351612,
-      "y": 9.6790154
+      "n": "Limu Seka Primary hospital",
+      "a2": "Jimma",
+      "cf": 59,
+      "c30": 44,
+      "x": 36.9508394,
+      "y": 8.2967491
+     },
+     {
+      "n": "Woldia Comperhensive Specialized Hospital",
+      "a2": "North Wello",
+      "cf": 89,
+      "c30": 41,
+      "x": 39.5990159,
+      "y": 11.8325277
      }
     ]
    }
   ],
   "fr": {
    "hc_n": 3639,
-   "hc_30": 139,
-   "hc_60": 20,
+   "hc_30": 119,
+   "hc_60": 13,
    "hp_n": 15538,
-   "hp_30": 246,
-   "hp_h30": 947,
+   "hp_30": 230,
+   "hp_h30": 900,
    "top_hc": [
     {
      "n": "Shekibedo health center",
      "a2": "Sheka",
      "h0": 846,
-     "h1": 1100,
+     "h1": 1095,
      "x": 35.2689202,
      "y": 7.6808947
     },
     {
-     "n": "Achagna Health Center",
-     "a2": "Agnewak",
-     "h0": 146,
-     "h1": 240,
-     "x": 34.7713421,
-     "y": 6.755766
+     "n": "Kumba Health Center",
+     "a2": "Kefa",
+     "h0": 87,
+     "h1": 170,
+     "x": 36.2284998,
+     "y": 6.769212
     },
     {
      "n": "Degele health center",
      "a2": "Sheka",
      "h0": 93,
-     "h1": 176,
+     "h1": 171,
      "x": 35.3919973,
      "y": 7.8068033
     },
@@ -1201,49 +1201,17 @@ const SUMMARY = {
      "n": "Qeja health center",
      "a2": "Sheka",
      "h0": 90,
-     "h1": 168,
+     "h1": 163,
      "x": 35.4584893,
      "y": 7.8079981
     },
     {
-     "n": "Dimma Health Center",
-     "a2": "Mirab Omo",
-     "h0": 79,
-     "h1": 156,
-     "x": 35.18616,
-     "y": 6.50273
-    },
-    {
-     "n": "Kumba Health Center",
+     "n": "Shash Health Center",
      "a2": "Kefa",
-     "h0": 87,
-     "h1": 163,
-     "x": 36.2284998,
-     "y": 6.769212
-    },
-    {
-     "n": "Kuraze Three Health Center",
-     "a2": "Mirab Omo",
-     "h0": 110,
-     "h1": 184,
-     "x": 35.9118389,
-     "y": 6.069715
-    },
-    {
-     "n": "Gebissa Health center",
-     "a2": "Mirab Omo",
-     "h0": 81,
-     "h1": 152,
-     "x": 35.179186,
-     "y": 6.3576514
-    },
-    {
-     "n": "Masha Health Center",
-     "a2": "Sheka",
-     "h0": 81,
-     "h1": 152,
-     "x": 35.4781858,
-     "y": 7.7431169
+     "h0": 71,
+     "h1": 139,
+     "x": 36.2110018,
+     "y": 6.8982827
     },
     {
      "n": "Bareda Health Center",
@@ -1252,6 +1220,38 @@ const SUMMARY = {
      "h1": 133,
      "x": 35.50259541,
      "y": 6.62399161
+    },
+    {
+     "n": "Masha Health Center",
+     "a2": "Sheka",
+     "h0": 81,
+     "h1": 147,
+     "x": 35.4781858,
+     "y": 7.7431169
+    },
+    {
+     "n": "Oba Health Center",
+     "a2": "Jimma",
+     "h0": 78,
+     "h1": 142,
+     "x": 36.1461507,
+     "y": 7.5704749
+    },
+    {
+     "n": "Kuraze Three Health Center",
+     "a2": "Mirab Omo",
+     "h0": 110,
+     "h1": 174,
+     "x": 35.9118389,
+     "y": 6.069715
+    },
+    {
+     "n": "Koreb Health center",
+     "a2": "South Wello",
+     "h0": 99,
+     "h1": 163,
+     "x": 38.8163305,
+     "y": 11.2931042
     }
    ],
    "top_h": [
@@ -1259,7 +1259,7 @@ const SUMMARY = {
      "n": "Odda Primary Hospital",
      "a2": "Kefa",
      "cf": 178,
-     "c30": 77,
+     "c30": 95,
      "x": 36.4718748,
      "y": 7.1198403
     },
@@ -1275,7 +1275,7 @@ const SUMMARY = {
      "n": "Teppi General Hospital",
      "a2": "Sheka",
      "cf": 112,
-     "c30": 56,
+     "c30": 55,
      "x": 35.426415,
      "y": 7.1966211
     },
@@ -1283,7 +1283,7 @@ const SUMMARY = {
      "n": "Setema Primary Hospital",
      "a2": "Jimma",
      "cf": 105,
-     "c30": 54,
+     "c30": 48,
      "x": 36.2035673,
      "y": 7.9820519
     },
@@ -1291,7 +1291,7 @@ const SUMMARY = {
      "n": "Janamora Primary Hospital",
      "a2": "North Gondar",
      "cf": 63,
-     "c30": 46,
+     "c30": 47,
      "x": 38.1128117,
      "y": 13.0101177
     },
@@ -1307,7 +1307,7 @@ const SUMMARY = {
      "n": "Adet Primary Hospital",
      "a2": "West Gojam",
      "cf": 129,
-     "c30": 31,
+     "c30": 33,
      "x": 37.4818119,
      "y": 11.246865
     },
@@ -1315,7 +1315,7 @@ const SUMMARY = {
      "n": "Amhara Sayint Primary Hospital",
      "a2": "South Wello",
      "cf": 61,
-     "c30": 28,
+     "c30": 25,
      "x": 38.775147,
      "y": 11.0311312
     },
@@ -1328,54 +1328,30 @@ const SUMMARY = {
      "y": 6.4665405
     },
     {
-     "n": "Jinka General Hospital",
-     "a2": "South Omo",
-     "cf": 95,
-     "c30": 24,
-     "x": 36.5619494,
-     "y": 5.7821353
+     "n": "Bachuma primary Hospital",
+     "a2": "Mirab Omo",
+     "cf": 66,
+     "c30": 21,
+     "x": 35.9026526,
+     "y": 6.8246609
     }
    ],
    "hc_median_normal": 17.3,
    "road_hc_median_normal": 39.5,
    "win": [
     {
-     "hc_30": 108,
-     "hc_60": 17,
-     "hp_30": 209,
-     "hp_h30": 766,
+     "hc_30": 88,
+     "hc_60": 10,
+     "hp_30": 195,
+     "hp_h30": 700,
      "top_hc": [
       {
        "n": "Shekibedo health center",
        "a2": "Sheka",
        "h0": 846,
-       "h1": 1099,
+       "h1": 1056,
        "x": 35.2689202,
        "y": 7.6808947
-      },
-      {
-       "n": "Achagna Health Center",
-       "a2": "Agnewak",
-       "h0": 146,
-       "h1": 240,
-       "x": 34.7713421,
-       "y": 6.755766
-      },
-      {
-       "n": "Qeja health center",
-       "a2": "Sheka",
-       "h0": 90,
-       "h1": 167,
-       "x": 35.4584893,
-       "y": 7.8079981
-      },
-      {
-       "n": "Dimma Health Center",
-       "a2": "Mirab Omo",
-       "h0": 79,
-       "h1": 156,
-       "x": 35.18616,
-       "y": 6.50273
       },
       {
        "n": "Kumba Health Center",
@@ -1386,36 +1362,20 @@ const SUMMARY = {
        "y": 6.769212
       },
       {
+       "n": "Qeja health center",
+       "a2": "Sheka",
+       "h0": 90,
+       "h1": 161,
+       "x": 35.4584893,
+       "y": 7.8079981
+      },
+      {
        "n": "Degele health center",
        "a2": "Sheka",
        "h0": 93,
-       "h1": 167,
+       "h1": 161,
        "x": 35.3919973,
        "y": 7.8068033
-      },
-      {
-       "n": "Kuraze Three Health Center",
-       "a2": "Mirab Omo",
-       "h0": 110,
-       "h1": 184,
-       "x": 35.9118389,
-       "y": 6.069715
-      },
-      {
-       "n": "Gebissa Health center",
-       "a2": "Mirab Omo",
-       "h0": 81,
-       "h1": 152,
-       "x": 35.179186,
-       "y": 6.3576514
-      },
-      {
-       "n": "Masha Health Center",
-       "a2": "Sheka",
-       "h0": 81,
-       "h1": 152,
-       "x": 35.4781858,
-       "y": 7.7431169
       },
       {
        "n": "Bareda Health Center",
@@ -1424,6 +1384,46 @@ const SUMMARY = {
        "h1": 133,
        "x": 35.50259541,
        "y": 6.62399161
+      },
+      {
+       "n": "Masha Health Center",
+       "a2": "Sheka",
+       "h0": 81,
+       "h1": 146,
+       "x": 35.4781858,
+       "y": 7.7431169
+      },
+      {
+       "n": "Kuraze Three Health Center",
+       "a2": "Mirab Omo",
+       "h0": 110,
+       "h1": 174,
+       "x": 35.9118389,
+       "y": 6.069715
+      },
+      {
+       "n": "Kuraze One Health Center",
+       "a2": "South Omo",
+       "h0": 97,
+       "h1": 158,
+       "x": 35.9911738,
+       "y": 6.1158712
+      },
+      {
+       "n": "Shash Health Center",
+       "a2": "Kefa",
+       "h0": 71,
+       "h1": 132,
+       "x": 36.2110018,
+       "y": 6.8982827
+      },
+      {
+       "n": "Achagna Health Center",
+       "a2": "Agnewak",
+       "h0": 146,
+       "h1": 207,
+       "x": 34.7713421,
+       "y": 6.755766
       }
      ],
      "top_h": [
@@ -1436,18 +1436,10 @@ const SUMMARY = {
        "y": 7.1198403
       },
       {
-       "n": "Setema Primary Hospital",
-       "a2": "Jimma",
-       "cf": 105,
-       "c30": 54,
-       "x": 36.2035673,
-       "y": 7.9820519
-      },
-      {
        "n": "Teppi General Hospital",
        "a2": "Sheka",
        "cf": 112,
-       "c30": 54,
+       "c30": 53,
        "x": 35.426415,
        "y": 7.1966211
       },
@@ -1455,9 +1447,17 @@ const SUMMARY = {
        "n": "Janamora Primary Hospital",
        "a2": "North Gondar",
        "cf": 63,
-       "c30": 46,
+       "c30": 47,
        "x": 38.1128117,
        "y": 13.0101177
+      },
+      {
+       "n": "Setema Primary Hospital",
+       "a2": "Jimma",
+       "cf": 105,
+       "c30": 45,
+       "x": 36.2035673,
+       "y": 7.9820519
       },
       {
        "n": "Maji Primary Hospital",
@@ -1471,7 +1471,7 @@ const SUMMARY = {
        "n": "Darimu Primary Hospital",
        "a2": "Ilu Aba Bora",
        "cf": 247,
-       "c30": 31,
+       "c30": 27,
        "x": 35.5074709,
        "y": 8.585586
       },
@@ -1484,14 +1484,6 @@ const SUMMARY = {
        "y": 6.4665405
       },
       {
-       "n": "Jinka General Hospital",
-       "a2": "South Omo",
-       "cf": 95,
-       "c30": 24,
-       "x": 36.5619494,
-       "y": 5.7821353
-      },
-      {
        "n": "Bachuma primary Hospital",
        "a2": "Mirab Omo",
        "cf": 66,
@@ -1500,42 +1492,90 @@ const SUMMARY = {
        "y": 6.8246609
       },
       {
-       "n": "Limu Seka Primary hospital",
-       "a2": "Jimma",
-       "cf": 64,
-       "c30": 20,
-       "x": 36.9508394,
-       "y": 8.2967491
+       "n": "Jinka General Hospital",
+       "a2": "South Omo",
+       "cf": 95,
+       "c30": 21,
+       "x": 36.5619494,
+       "y": 5.7821353
+      },
+      {
+       "n": "Adet Primary Hospital",
+       "a2": "West Gojam",
+       "cf": 129,
+       "c30": 21,
+       "x": 37.4818119,
+       "y": 11.246865
       }
      ]
     },
     {
-     "hc_30": 24,
+     "hc_30": 27,
      "hc_60": 1,
-     "hp_30": 55,
-     "hp_h30": 193,
+     "hp_30": 46,
+     "hp_h30": 172,
      "top_hc": [
       {
        "n": "Shekibedo health center",
        "a2": "Sheka",
        "h0": 846,
-       "h1": 1016,
+       "h1": 1028,
        "x": 35.2689202,
        "y": 7.6808947
       },
       {
-       "n": "Kumba Health Center",
-       "a2": "Kefa",
-       "h0": 87,
-       "h1": 146,
-       "x": 36.2284998,
-       "y": 6.769212
+       "n": "Shmie Health center",
+       "a2": "East Gojam",
+       "h0": 155,
+       "h1": 207,
+       "x": 37.8552681,
+       "y": 10.8157064
+      },
+      {
+       "n": "Belese Health Center",
+       "a2": "North Gondar",
+       "h0": 234,
+       "h1": 286,
+       "x": 38.0547145,
+       "y": 13.0249402
+      },
+      {
+       "n": "Telfetit  Health Center",
+       "a2": "North Wello",
+       "h0": 126,
+       "h1": 176,
+       "x": 39.1584389,
+       "y": 12.0792884
+      },
+      {
+       "n": "Dliybza Health Center",
+       "a2": "North Gondar",
+       "h0": 73,
+       "h1": 123,
+       "x": 38.4403121,
+       "y": 13.1181669
+      },
+      {
+       "n": "Sabra Health Center",
+       "a2": "North Gondar",
+       "h0": 288,
+       "h1": 339,
+       "x": 38.3815465,
+       "y": 13.3031299
+      },
+      {
+       "n": "Liwarie Health Center",
+       "a2": "North Gondar",
+       "h0": 314,
+       "h1": 364,
+       "x": 38.5091099,
+       "y": 13.2328929
       },
       {
        "n": "Degele health center",
        "a2": "Sheka",
        "h0": 93,
-       "h1": 150,
+       "h1": 140,
        "x": 35.3919973,
        "y": 7.8068033
       },
@@ -1543,57 +1583,17 @@ const SUMMARY = {
        "n": "Qeja health center",
        "a2": "Sheka",
        "h0": 90,
-       "h1": 145,
+       "h1": 135,
        "x": 35.4584893,
        "y": 7.8079981
       },
       {
-       "n": "Shash Health Center",
-       "a2": "Kefa",
-       "h0": 71,
-       "h1": 125,
-       "x": 36.2110018,
-       "y": 6.8982827
-      },
-      {
-       "n": "Masha Health Center",
-       "a2": "Sheka",
-       "h0": 81,
-       "h1": 134,
-       "x": 35.4781858,
-       "y": 7.7431169
-      },
-      {
-       "n": "Shmie Health center",
-       "a2": "East Gojam",
-       "h0": 155,
-       "h1": 206,
-       "x": 37.8552681,
-       "y": 10.8157064
-      },
-      {
-       "n": "Goba Chara Health Center",
-       "a2": "Kefa",
-       "h0": 61,
-       "h1": 111,
-       "x": 36.1979633,
-       "y": 6.960262
-      },
-      {
-       "n": "Sira Hiwot Health Center",
-       "a2": "Kefa",
-       "h0": 61,
-       "h1": 111,
-       "x": 36.1928683,
-       "y": 6.9621883
-      },
-      {
-       "n": "Bareda Health Center",
-       "a2": "Mirab Omo",
-       "h0": 67,
+       "n": "Jembelew Health Center",
+       "a2": "North Gondar",
+       "h0": 72,
        "h1": 116,
-       "x": 35.50259541,
-       "y": 6.62399161
+       "x": 38.3639714,
+       "y": 13.0991121
       }
      ],
      "top_h": [
@@ -1606,42 +1606,34 @@ const SUMMARY = {
        "y": 7.1966211
       },
       {
-       "n": "Odda Primary Hospital",
-       "a2": "Kefa",
-       "cf": 178,
-       "c30": 50,
-       "x": 36.4718748,
-       "y": 7.1198403
-      },
-      {
-       "n": "Maji Primary Hospital",
-       "a2": "Mirab Omo",
-       "cf": 60,
-       "c30": 25,
-       "x": 35.5888443,
-       "y": 6.1748015
-      },
-      {
-       "n": "Bachuma primary Hospital",
-       "a2": "Mirab Omo",
-       "cf": 66,
-       "c30": 19,
-       "x": 35.9026526,
-       "y": 6.8246609
-      },
-      {
        "n": "Janamora Primary Hospital",
        "a2": "North Gondar",
        "cf": 63,
-       "c30": 13,
+       "c30": 46,
        "x": 38.1128117,
        "y": 13.0101177
+      },
+      {
+       "n": "Adet Primary Hospital",
+       "a2": "West Gojam",
+       "cf": 129,
+       "c30": 31,
+       "x": 37.4818119,
+       "y": 11.246865
+      },
+      {
+       "n": "Mekane Eyesus Primary Hospital",
+       "a2": "South Gondar",
+       "cf": 100,
+       "c30": 12,
+       "x": 38.0519795,
+       "y": 11.6047319
       },
       {
        "n": "Bibugn Primary Hospital",
        "a2": "East Gojam",
        "cf": 44,
-       "c30": 10,
+       "c30": 11,
        "x": 37.7418758,
        "y": 10.8594019
       },
@@ -1654,42 +1646,50 @@ const SUMMARY = {
        "y": 7.9820519
       },
       {
-       "n": "Mizan Teppi university Teaching Hospital",
-       "a2": "Bench Sheko",
-       "cf": 98,
-       "c30": 5,
-       "x": 35.5486578,
-       "y": 6.9519356
+       "n": "Amhara Sayint Primary Hospital",
+       "a2": "South Wello",
+       "cf": 61,
+       "c30": 4,
+       "x": 38.775147,
+       "y": 11.0311312
       },
       {
-       "n": "Debre tabor Comperhensive Specialized  Hospital",
-       "a2": "South Gondar",
+       "n": "Kidus Lalibela General Hospital",
+       "a2": "North Wello",
        "cf": 75,
-       "c30": 5,
-       "x": 38.0229,
-       "y": 11.8565826
+       "c30": 4,
+       "x": 39.0530968,
+       "y": 12.0392709
       },
       {
-       "n": "Laska Primary HospItal",
-       "a2": "Basketo",
-       "cf": 50,
+       "n": "Endabaguna Primary hospital",
+       "a2": "North Western",
+       "cf": 40,
        "c30": 3,
-       "x": 36.6307925,
-       "y": 6.2989174
+       "x": 38.1869168,
+       "y": 13.9508258
+      },
+      {
+       "n": "Odda Primary Hospital",
+       "a2": "Kefa",
+       "cf": 178,
+       "c30": 2,
+       "x": 36.4718748,
+       "y": 7.1198403
       }
      ]
     },
     {
-     "hc_30": 67,
-     "hc_60": 5,
-     "hp_30": 110,
-     "hp_h30": 439,
+     "hc_30": 69,
+     "hc_60": 7,
+     "hp_30": 120,
+     "hp_h30": 504,
      "top_hc": [
       {
        "n": "Shekibedo health center",
        "a2": "Sheka",
        "h0": 846,
-       "h1": 1092,
+       "h1": 1094,
        "x": 35.2689202,
        "y": 7.6808947
       },
@@ -1697,7 +1697,7 @@ const SUMMARY = {
        "n": "Degele health center",
        "a2": "Sheka",
        "h0": 93,
-       "h1": 168,
+       "h1": 169,
        "x": 35.3919973,
        "y": 7.8068033
       },
@@ -1705,65 +1705,65 @@ const SUMMARY = {
        "n": "Qeja health center",
        "a2": "Sheka",
        "h0": 90,
-       "h1": 161,
+       "h1": 162,
        "x": 35.4584893,
        "y": 7.8079981
-      },
-      {
-       "n": "Deldiye Health Center",
-       "a2": "North Wello",
-       "h0": 70,
-       "h1": 134,
-       "x": 39.3478882,
-       "y": 12.197674
-      },
-      {
-       "n": "Masha Health Center",
-       "a2": "Sheka",
-       "h0": 81,
-       "h1": 144,
-       "x": 35.4781858,
-       "y": 7.7431169
       },
       {
        "n": "Kumba Health Center",
        "a2": "Kefa",
        "h0": 87,
-       "h1": 146,
+       "h1": 153,
        "x": 36.2284998,
        "y": 6.769212
       },
       {
-       "n": "Enjafat Health Center",
-       "a2": "North Wello",
-       "h0": 63,
-       "h1": 120,
-       "x": 39.235533,
-       "y": 12.1558473
+       "n": "Masha Health Center",
+       "a2": "Sheka",
+       "h0": 81,
+       "h1": 145,
+       "x": 35.4781858,
+       "y": 7.7431169
       },
       {
-       "n": "Yina Health Center",
-       "a2": "Sheka",
-       "h0": 66,
-       "h1": 120,
-       "x": 35.5040003,
-       "y": 7.6308363
+       "n": "Deldiye Health Center",
+       "a2": "North Wello",
+       "h0": 70,
+       "h1": 133,
+       "x": 39.3478882,
+       "y": 12.197674
       },
       {
        "n": "Shash Health Center",
        "a2": "Kefa",
        "h0": 71,
-       "h1": 125,
+       "h1": 132,
        "x": 36.2110018,
        "y": 6.8982827
       },
       {
-       "n": "Dliybza Health Center",
-       "a2": "North Gondar",
-       "h0": 73,
-       "h1": 125,
-       "x": 38.4403121,
-       "y": 13.1181669
+       "n": "Goba Chara Health Center",
+       "a2": "Kefa",
+       "h0": 61,
+       "h1": 118,
+       "x": 36.1979633,
+       "y": 6.960262
+      },
+      {
+       "n": "Sira Hiwot Health Center",
+       "a2": "Kefa",
+       "h0": 61,
+       "h1": 118,
+       "x": 36.1928683,
+       "y": 6.9621883
+      },
+      {
+       "n": "Enjafat Health Center",
+       "a2": "North Wello",
+       "h0": 63,
+       "h1": 119,
+       "x": 39.235533,
+       "y": 12.1558473
       }
      ],
      "top_h": [
@@ -1771,9 +1771,17 @@ const SUMMARY = {
        "n": "Darimu Primary Hospital",
        "a2": "Ilu Aba Bora",
        "cf": 247,
-       "c30": 63,
+       "c30": 71,
        "x": 35.5074709,
        "y": 8.585586
+      },
+      {
+       "n": "Odda Primary Hospital",
+       "a2": "Kefa",
+       "cf": 178,
+       "c30": 65,
+       "x": 36.4718748,
+       "y": 7.1198403
       },
       {
        "n": "Teppi General Hospital",
@@ -1782,14 +1790,6 @@ const SUMMARY = {
        "c30": 55,
        "x": 35.426415,
        "y": 7.1966211
-      },
-      {
-       "n": "Odda Primary Hospital",
-       "a2": "Kefa",
-       "cf": 178,
-       "c30": 49,
-       "x": 36.4718748,
-       "y": 7.1198403
       },
       {
        "n": "Janamora Primary Hospital",
@@ -1803,7 +1803,7 @@ const SUMMARY = {
        "n": "Setema Primary Hospital",
        "a2": "Jimma",
        "cf": 105,
-       "c30": 40,
+       "c30": 44,
        "x": 36.2035673,
        "y": 7.9820519
       },
@@ -1811,7 +1811,7 @@ const SUMMARY = {
        "n": "Amhara Sayint Primary Hospital",
        "a2": "South Wello",
        "cf": 61,
-       "c30": 28,
+       "c30": 22,
        "x": 38.775147,
        "y": 11.0311312
       },
@@ -1819,7 +1819,7 @@ const SUMMARY = {
        "n": "Adet Primary Hospital",
        "a2": "West Gojam",
        "cf": 129,
-       "c30": 19,
+       "c30": 21,
        "x": 37.4818119,
        "y": 11.246865
       },
@@ -1843,7 +1843,7 @@ const SUMMARY = {
        "n": "Tenta Primary Hospital",
        "a2": "South Wello",
        "cf": 64,
-       "c30": 15,
+       "c30": 13,
        "x": 39.2564283,
        "y": 11.2659248
       }
@@ -1861,41 +1861,41 @@ const SUMMARY = {
  "windows": [
   {
    "label": "Days 1\u20133",
-   "dates": "19 Nov \u2013 21 Nov",
-   "Minor": 44356,
-   "Elevated": 57610,
-   "Severe": 50487,
-   "slip": 346,
-   "intense_share": 0.002
+   "dates": "20 Nov \u2013 22 Nov",
+   "Minor": 46814,
+   "Elevated": 56431,
+   "Severe": 44381,
+   "slip": 413,
+   "intense_share": 0.006
   },
   {
    "label": "Days 4\u20137",
-   "dates": "22 Nov \u2013 25 Nov",
-   "Minor": 13394,
-   "Elevated": 25466,
-   "Severe": 8079,
-   "slip": 56,
-   "intense_share": 0.008
+   "dates": "23 Nov \u2013 26 Nov",
+   "Minor": 8501,
+   "Elevated": 14575,
+   "Severe": 5356,
+   "slip": 104,
+   "intense_share": 0.006
   },
   {
    "label": "Days 8\u201315",
-   "dates": "26 Nov \u2013 03 Dec",
-   "Minor": 22699,
-   "Elevated": 33380,
-   "Severe": 18201,
-   "slip": 619,
-   "intense_share": 0.023
+   "dates": "27 Nov \u2013 04 Dec",
+   "Minor": 38540,
+   "Elevated": 43882,
+   "Severe": 21688,
+   "slip": 928,
+   "intense_share": 0.039
   }
  ],
  "normal": {
   "ratio_window": "04 Nov - 19 Dec",
-  "obs": 269,
-  "w1": 35,
+  "obs": 248,
+  "w1": 33,
   "w2": 41,
-  "w3": 236,
-  "all": 117,
-  "above": 39,
-  "below": 36
+  "w3": 363,
+  "all": 160,
+  "above": 60,
+  "below": 14
  }
 };
 const TIERS = [
@@ -2062,7 +2062,7 @@ function decode(d) {
   return feats;
 }
 // data files keep fixed names, so tag each request with this build's version: browsers then never mix a new page with old data
-const DATA_VERSION = "202611192203-2f2075";
+const DATA_VERSION = "202611201010-51db1e";
 const dv = u => `${u}?v=${DATA_VERSION}`;
 const getJSON = u => fetch(dv(u), { cache: "no-cache" }).then(r => { if (!r.ok) throw new Error(u + " " + r.status); return r.json(); });
 
