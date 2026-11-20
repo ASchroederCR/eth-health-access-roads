@@ -108,7 +108,7 @@ Each road segment's tier, per window, is **accumulation (0–3) + surface (0–2
   - The slowdown as a share of the normal trip is the same: median 15% on both routers for centre → hospital, 12% (ours) vs 14% for post → centre.
   - GraphHopper's added minutes are smaller because its normal trips are faster (ours are 1.47× its time for centre → hospital, 1.75× for post → centre: it drives unpaved roads faster and has no slope). So it counts fewer facilities over 30 min: 366 health centres to 524, and 91 health posts to 261; nearly all of its 30+ centres (359 of 366) are also ours. The regional ranking holds (Amhara, Oromia, SNNP, South West Ethiopia).
   - The 30-minute counts therefore carry the uncertainty of the base speeds; which facilities are hit, and by how much relative to their normal trip, does not depend on the router. Not compared: 1,693 trips (mostly health posts) whose facility lies several km from any road, which GraphHopper will not snap to (median 2.7 km).
-  - Needs Java 17+ and the GraphHopper web jar (`GH_HOME`, default `~/tools`); tagging, four graph builds and routing take about 10 minutes.
+  - Runs with each daily update (a failure there is logged as a warning and does not hold back the rest). Needs Java 17+ and the GraphHopper web jar (`GH_HOME`, default `~/tools`); its tagged extracts and graphs (~1.2 GB, only the latest run kept) go to `GH_WORK` (default `~/tools/graphhopper/work`). Tagging, four graph builds and routing take about 10 minutes.
 
 ### Caveats
 - Thresholds and speed factors are illustrative and haven't been checked against observed travel times or closures.

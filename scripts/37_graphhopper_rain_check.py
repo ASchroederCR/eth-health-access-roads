@@ -39,7 +39,9 @@ import importlib.util
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TB = os.path.join(ROOT, "data", "processed", "tables"); PROC = os.path.join(ROOT, "data", "processed", "roads")
-OSMD = os.path.join(ROOT, "data", "raw", "osm"); GHD = os.path.join(OSMD, "graphhopper")
+OSMD = os.path.join(ROOT, "data", "raw", "osm")
+GH_HOME = os.environ.get("GH_HOME", os.path.join(os.path.expanduser("~"), "tools"))
+GHD = os.environ.get("GH_WORK", os.path.join(GH_HOME, "graphhopper", "work"))   # ~1.2 GB per run; kept out of synced folders
 spec = importlib.util.spec_from_file_location("wn", os.path.join(ROOT, "scripts", "11_weathernext_forecast.py"))
 wn = importlib.util.module_from_spec(spec); spec.loader.exec_module(wn)
 for _f in glob.glob(os.path.join(ROOT, "assets", "fonts", "roboto", "*.ttf")): _fm.fontManager.addfont(_f)
@@ -57,6 +59,17 @@ OURS = {("hospital", "w1"): "to_hosp_added_w1_min", ("hospital", "w2"): "to_hosp
         ("centre", "w3"): "to_hc_added_w3_min", ("centre", "worst"): "to_hc_added_min"}
 COSLAT = np.cos(np.deg2rad(9.0))
 PORT = 8989
+
+
+def clear_old_runs(tag):
+    """Each run's tagged extracts and graphs take ~1.2 GB; keep only this run's."""
+    for p in glob.glob(os.path.join(GHD, "eth_tiers_*")) + glob.glob(os.path.join(GHD, "graph_eth_tiers_*")):
+        if f"_{tag}_" in os.path.basename(p): continue
+        try:
+            shutil.rmtree(p) if os.path.isdir(p) else os.remove(p)
+            print(f"removed old {os.path.basename(p)}", flush=True)
+        except OSError as e:                                    # a locked file: try again next run
+            print(f"could not remove old {os.path.basename(p)}: {e}", flush=True)
 
 
 def tag_extracts(pbf, tiers, tag):
@@ -208,12 +221,13 @@ if __name__ == "__main__":
     if a.init is None:
         a.init = pd.Timestamp(sorted(glob.glob(os.path.join(TB, "eth_health_access_2*.csv")))[-1][-12:-4]).strftime("%Y-%m-%d")
     tag = a.init.replace("-", "")
-    home = os.environ.get("GH_HOME", os.path.join(os.path.expanduser("~"), "tools"))
+    home = GH_HOME
     jar = sorted(glob.glob(os.path.join(home, "graphhopper", "graphhopper-web-*.jar")))[-1]; java = java_cmd(home)
     print(f"GraphHopper {os.path.basename(jar)} with {java}", flush=True)
 
     r = pd.read_parquet(os.path.join(PROC, f"eth_roads_scored_{tag}.parquet"), columns=["osm_id"] + list(SCEN.values()))
     pbf = sorted(glob.glob(os.path.join(OSMD, "ethiopia-*.osm.pbf")))[-1]
+    clear_old_runs(tag)
     outs = tag_extracts(pbf, r, tag)
 
     d = pd.read_csv(os.path.join(TB, f"eth_health_access_{tag}.csv"))
