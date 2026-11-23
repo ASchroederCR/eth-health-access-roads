@@ -12,7 +12,7 @@
 :root {
   --bg: #f3f4f1; --panel: #fbfbf9; --ink: #1d211f; --ink2: #4a504c; --muted: #737a75; --rule: #dcdfd9;
   --mapbg: #e6e8e3; --chip: #eceee9;
-  --minor: #f2b33d; --elev: #e0701f; --sev: #a8320f; --slip: #1d211f; --flood: #1f5fbf; --fl1: #8fb4ee; --fl2: #2f6fd0; --fl3: #0b2f66; --ctx: #8e9590; --adm: #5d635f;
+  --minor: #f2b33d; --elev: #e0701f; --sev: #a8320f; --slip: #1d211f; --flood: #1f5fbf; --fl1: #8fb4ee; --fl2: #2f6fd0; --fl3: #0b2f66; --net: #f2c200; --ctx: #8e9590; --adm: #5d635f;
   --r1: #e6effa; --r2: #cde2fb; --r3: #9ec5f4; --r4: #6da7ec; --r5: #3987e5; --r6: #256abf;
   --hs-min: 0; --focus: #2a6fb8;
   --outside: #ffffff; --int1: #cdb7e6; --int2: #8656bd;
@@ -27,7 +27,7 @@
   :root:not([data-theme="light"]) {
     --bg: #141716; --panel: #1a1e1c; --ink: #e8ebe7; --ink2: #b8beb9; --muted: #8b928d; --rule: #2d3330;
     --mapbg: #1f2321; --chip: #232826;
-    --minor: #e3a83f; --elev: #f2812f; --sev: #ff5a3c; --slip: #f4f6f3; --flood: #6aa8ff; --fl1: #3f6db0; --fl2: #7fb2ff; --fl3: #d4e6ff; --ctx: #66706a; --adm: #a2aaa4;
+    --minor: #e3a83f; --elev: #f2812f; --sev: #ff5a3c; --slip: #f4f6f3; --flood: #6aa8ff; --fl1: #3f6db0; --fl2: #7fb2ff; --fl3: #d4e6ff; --net: #ffd60a; --ctx: #66706a; --adm: #a2aaa4;
     --r1: #1d2a37; --r2: #213651; --r3: #24456d; --r4: #285b93; --r5: #2f74bd; --r6: #4691dc;
     --pn1: #e0a458; --pn2: #8a6630; --pn3: #3a3f3c; --pn4: #2f6aa8; --pn5: #6aa8ec; --rain-op: 0.8; --pn-op: 0.85; --ctrl-icon: invert(1); --hosp: #f4f6f3; --hs-min: 0.32; --outside: #141716; --int1: #5d4a78; --int2: #b38be0; --d0: #4d5450; --d1: #6e5a24; --d2: #a8661f; --d3: #e27b33; --d4: #ffb07a; --hfring: #141716; --focus: #6aa8ec; color-scheme: dark;
   }
@@ -35,7 +35,7 @@
 :root[data-theme="dark"] {
   --bg: #141716; --panel: #1a1e1c; --ink: #e8ebe7; --ink2: #b8beb9; --muted: #8b928d; --rule: #2d3330;
   --mapbg: #1f2321; --chip: #232826;
-  --minor: #e3a83f; --elev: #f2812f; --sev: #ff5a3c; --slip: #f4f6f3; --flood: #6aa8ff; --fl1: #3f6db0; --fl2: #7fb2ff; --fl3: #d4e6ff; --ctx: #66706a; --adm: #a2aaa4;
+  --minor: #e3a83f; --elev: #f2812f; --sev: #ff5a3c; --slip: #f4f6f3; --flood: #6aa8ff; --fl1: #3f6db0; --fl2: #7fb2ff; --fl3: #d4e6ff; --net: #ffd60a; --ctx: #66706a; --adm: #a2aaa4;
   --r1: #1d2a37; --r2: #213651; --r3: #24456d; --r4: #285b93; --r5: #2f74bd; --r6: #4691dc;
   --pn1: #e0a458; --pn2: #8a6630; --pn3: #3a3f3c; --pn4: #2f6aa8; --pn5: #6aa8ec; --rain-op: 0.8; --pn-op: 0.85; --ctrl-icon: invert(1); --hosp: #f4f6f3; --hs-min: 0.32; --outside: #141716; --int1: #5d4a78; --int2: #b38be0; --d0: #4d5450; --d1: #6e5a24; --d2: #a8661f; --d3: #e27b33; --d4: #ffb07a; --hfring: #141716; --focus: #6aa8ec; color-scheme: dark;
 }
@@ -558,6 +558,7 @@ function applyTheme() {
   if (has("slip")) map.setPaintProperty("slip", "line-color", css("--slip"));
   if (has("flood")) map.setPaintProperty("flood", "line-color", css("--flood"));
   if (has("xings")) xingImages();
+  if (has("net-hull")) map.setPaintProperty("net-hull", "line-color", css("--net"));
 
   if (has("roads")) map.setPaintProperty("roads", "line-color", tierColor());
   ["hf-hp", "hf-main"].forEach(id => { if (has(id)) { map.setPaintProperty(id, "circle-color", hfColor(id));
@@ -931,7 +932,7 @@ async function ensureFootprintLayers() {
   const before = map.getLayer("hf-hp") ? "hf-hp" : undefined;
   map.addLayer({ id: "net-wd", type: "line", source: "net-wd", paint: { "line-color": css("--ink2"), "line-width": 0.8, "line-opacity": 0.7, "line-dasharray": [2, 1.5] } }, before);
   map.addLayer({ id: "net-hull-fill", type: "fill", source: "net-hull", paint: { "fill-color": css("--fl2"), "fill-opacity": 0.07 } }, before);
-  map.addLayer({ id: "net-hull", type: "line", source: "net-hull", paint: { "line-color": css("--ink"), "line-width": 1.8, "line-opacity": 0.85 } }, before);
+  map.addLayer({ id: "net-hull", type: "line", source: "net-hull", paint: { "line-color": css("--net"), "line-width": 2.2, "line-opacity": 1 } }, before);
 }
 function clearFootprint() {
   if (!map) return;
@@ -1014,7 +1015,7 @@ function legendItems() {
     ...[["--d0", "< 5"], ["--d1", "5–15"], ["--d2", "15–30"], ["--d3", "30–60"], ["--d4", "60+"]].map(([t, l]) => ({ dot: css(t), l: l + " min" })),
     ...(state.trip === "hc" ? [{ dot: css("--panel"), ring: css("--ink"), l: "Health centre (destination)" }] : []),
     { sq: true, ring: css("--hosp"), l: "Hospital" });
-  if (cardHosp) L.push({ line: css("--ink"), w: 2, l: "Network footprint (population profile)" }, { line: css("--ink2"), w: 1, dash: [4, 3], l: "Woredas overlapped" });
+  if (cardHosp) L.push({ line: css("--net"), w: 2, l: "Network footprint (population profile)" }, { line: css("--ink2"), w: 1, dash: [4, 3], l: "Woredas overlapped" });
   if (cardHosp) L.push({ h: "Selected network" }, { dot: css("--d2"), ring: css("--ink"), l: `Linked to ${cardHosp.n}` }, { dot: css("--d0"), fade: true, l: "Other facilities (faded)" });
   return L;
 }
