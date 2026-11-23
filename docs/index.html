@@ -2125,7 +2125,7 @@ function decode(d) {
   return feats;
 }
 // data files keep fixed names, so tag each request with this build's version: browsers then never mix a new page with old data
-const DATA_VERSION = "202611231723-d40693";
+const DATA_VERSION = "202611231728-d40693";
 const dv = u => `${u}?v=${DATA_VERSION}`;
 const getJSON = u => fetch(dv(u), { cache: "no-cache" }).then(r => { if (!r.ok) throw new Error(u + " " + r.status); return r.json(); });
 
@@ -2607,7 +2607,7 @@ async function addProfile(hp) {
   const ap = grid ? "" : " ≈";
   el.innerHTML = `<div class="subh" style="margin:12px 0 4px">Population profile of this network</div>
     <div class="netnote">${affected ? `<b>Flood-affected network</b> (${WIN_TXT()}): ${fk ? `${fk} km of low-lying road flagged` : ""}${fk && fx ? " and " : ""}${fx ? `${fx} river crossing${fx > 1 ? "s" : ""} at flood risk` : ""} inside the footprint.` : `No flood flags inside the footprint (${WIN_TXT()}).`}
-    Footprint: a rectangle on the mean centre (dot) of the hospital and its ${fmt(nl)} linked facilities, reaching 2 standard deviations of their spread east–west and north–south, plus about 2 km (outlined on the map)${net.ni != null ? `; ${fmt(net.ni)} of the ${fmt(nl)} facilities fall inside` : ""}. It overlaps ${wd.length} woreda${wd.length > 1 ? "s" : ""}.</div>
+    Footprint: a rectangle on the mean centre (dot) of the hospital and its ${fmt(nl)} linked facilities, reaching 2 standard deviations of their spread east–west and north–south, plus about 2 km, with any side pushed out to take in outlying facilities, so all are inside (outlined on the map). It overlaps ${wd.length} woreda${wd.length > 1 ? "s" : ""}.</div>
     <table class="pptab"><colgroup><col><col class="n"><col class="n"><col class="n"></colgroup>
       <thead><tr><th>Woreda</th><th>People inside${ap}</th><th>Under 5 inside${ap}</th><th>Woreda total</th></tr></thead>
       <tbody>${rows}</tbody></table>
