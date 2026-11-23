@@ -2117,7 +2117,7 @@ function decode(d) {
   return feats;
 }
 // data files keep fixed names, so tag each request with this build's version: browsers then never mix a new page with old data
-const DATA_VERSION = "202611231505-d40693";
+const DATA_VERSION = "202611231527-d40693";
 const dv = u => `${u}?v=${DATA_VERSION}`;
 const getJSON = u => fetch(dv(u), { cache: "no-cache" }).then(r => { if (!r.ok) throw new Error(u + " " + r.status); return r.json(); });
 
@@ -2393,7 +2393,7 @@ function riverChart(gc) {
     <div class="cap">GloFAS river flow forecast of ${esc(R.date)} for a river draining ${fmt(up)} km² · median peak ${num(md[pk])} m³/s on ${dl(pk)} · 2-year flood ${num(r2)} m³/s${off.length ? ` · above the chart: ${off.join(", ")} m³/s` : ""}. Days 1–3 · 4–7 · 8–15 split by lines.</div></div>`;
 }
 function showRiverCard(p) {        // docked card on the right, like a hospital's: the chart needs the room
-  cardHosp = null; clearNetwork();
+  cardHosp = null; profSeq++; clearNetwork(); clearFootprint();
   document.getElementById("ic-title").innerHTML = `${p.wn ? esc(p.wn) : "River"}<small>River flow forecast · GloFAS, 51-member ensemble</small>`;
   document.getElementById("ic-body").innerHTML = riverBody(p);
   const c = document.getElementById("infocard"); c.hidden = false; c.classList.remove("collapsed");
@@ -2545,6 +2545,62 @@ function forecastChart(hs) {
     <div class="cap">Days 1–3 · 4–7 · 8–15 split by solid lines. Raw WeatherNext 3 ensemble, which runs low on amounts. Last 10 days observed (PARDIG): ${hs.obs10} mm.</div>
     ${hs.pn >= 0 || hs.po >= 0 ? `<div class="netnote" style="margin-top:6px">Compared with normal (CHIRPS 1991–2020) here: next 15 days ${hs.pn >= 0 ? `<b>${hs.pn}%</b>` : "n/a"}, last 10 days ${hs.po >= 0 ? `<b>${hs.po}%</b>` : "n/a"}.</div>` : ""}</div>`;
 }
+
+// ---- hospital network population profile (networks.json, woredas.json; loaded on first hospital click) ----
+let NETS = null, WOREDA_LINES = null, profSeq = 0;
+async function loadNets() {
+  if (!NETS) NETS = await getJSON("data/networks.json").catch(() => ({}));
+  return NETS;
+}
+async function ensureFootprintLayers() {
+  if (map.getSource("net-hull")) return;
+  map.addSource("net-hull", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+  map.addSource("net-wd", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+  const before = map.getLayer("hf-hp") ? "hf-hp" : undefined;
+  map.addLayer({ id: "net-wd", type: "line", source: "net-wd", paint: { "line-color": css("--ink2"), "line-width": 0.8, "line-opacity": 0.7, "line-dasharray": [2, 1.5] } }, before);
+  map.addLayer({ id: "net-hull-fill", type: "fill", source: "net-hull", paint: { "fill-color": css("--fl2"), "fill-opacity": 0.07 } }, before);
+  map.addLayer({ id: "net-hull", type: "line", source: "net-hull", paint: { "line-color": css("--ink"), "line-width": 1.8, "line-opacity": 0.85 } }, before);
+}
+function clearFootprint() {
+  if (!map) return;
+  ["net-hull", "net-wd"].forEach(id => { const src = map.getSource(id); if (src) src.setData({ type: "FeatureCollection", features: [] }); });
+}
+async function addProfile(hp) {
+  const seq = ++profSeq;
+  const N = await loadNets(); if (seq !== profSeq || !cardHosp) return;
+  const key = state.model === "fric" ? "fhid" : "hid";
+  const net = N.nets && N.nets[key] && N.nets[key][String(+hp.id)];
+  const body = document.getElementById("ic-body"); if (!body) return;
+  let el = document.getElementById("ic-profile"); if (!el) { el = document.createElement("div"); el.id = "ic-profile"; body.appendChild(el); }
+  if (!net) { el.innerHTML = `<div class="netnote" style="margin-top:10px">No linked facilities, so no network footprint to profile.</div>`; clearFootprint(); return; }
+  const W = N.woredas, wd = net.wd.map(([i, f]) => ({ w: W[i], f, i }));
+  const totP = wd.reduce((a, d) => a + d.w[3], 0), totU = wd.reduce((a, d) => a + d.w[4], 0);
+  const inP = wd.reduce((a, d) => a + d.w[3] * d.f, 0), inU = wd.reduce((a, d) => a + d.w[4] * d.f, 0);
+  const wi = state.win ? [state.win - 1] : [0, 1, 2];
+  const fk = Math.max(...wi.map(i => net.fk[i])), fx = Math.max(...wi.map(i => net.fx[i]));
+  const affected = fk > 0 || fx > 0;
+  const k = n => n >= 1e6 ? `${(n / 1e6).toFixed(n >= 1e7 ? 0 : 1)}M` : n >= 1e3 ? `${Math.round(n / 1e3)}k` : `${Math.round(n)}`;
+  const nl = net.n ?? HF_ALL.filter(f => f.properties[key] === +hp.id && f.properties.ty !== 2).length;
+  const rows = wd.slice(0, 10).map(d => `<span class="k" title="${esc(d.w[1])}, ${esc(d.w[2])}">${esc(d.w[0])}</span><span class="v">${Math.round(100 * d.f)}% inside · ${k(d.w[3])} people · ${k(d.w[4])} under 5</span><span class="s"></span>`).join("");
+  el.innerHTML = `<div class="subh" style="margin:12px 0 4px">Population profile of this network</div>
+    <div class="netnote">${affected ? `<b>Flood-affected network</b> (${WIN_TXT()}): ${fk ? `${fk} km of low-lying road flagged` : ""}${fk && fx ? " and " : ""}${fx ? `${fx} river crossing${fx > 1 ? "s" : ""} at flood risk` : ""} inside the footprint.` : `No flood flags inside the footprint (${WIN_TXT()}).`}
+    Footprint: the area around the hospital and its ${fmt(nl)} linked facilities, plus about 2 km (outlined on the map). It overlaps ${wd.length} woreda${wd.length > 1 ? "s" : ""}.</div>
+    <div class="pp-grid" style="margin-top:6px">
+      <span class="k">Woredas overlapped</span><span class="v"><b>${fmt(totP)}</b> people · <b>${fmt(totU)}</b> under 5</span><span class="s"></span>
+      <span class="k">Inside footprint</span><span class="v">≈ ${fmt(inP)} people · ≈ ${fmt(inU)} under 5 <span style="color:var(--muted)">(by area share)</span></span><span class="s"></span>
+    </div>
+    <div class="pp-grid" style="margin-top:6px">${rows}</div>
+    ${wd.length > 10 ? `<div class="netnote">and ${wd.length - 10} more woredas with smaller overlaps.</div>` : ""}
+    <div class="cap" style="margin-top:4px">${esc(N.src || "")}. Woreda figures are whole-woreda totals; "inside" scales each by the share of its area in the footprint, assuming people are spread evenly. WorldPop 2020 constrained counts are not adjusted to UN totals and run below them.</div>`;
+  // draw the footprint and the woredas it overlaps
+  await ensureFootprintLayers(); if (seq !== profSeq || !cardHosp) return;
+  const r = net.r, ring = []; for (let j = 0; j < r.length; j += 2) ring.push([r[j] / 1e4, r[j + 1] / 1e4]);
+  map.getSource("net-hull").setData({ type: "FeatureCollection", features: [{ type: "Feature", properties: {}, geometry: { type: "Polygon", coordinates: [ring] } }] });
+  if (!WOREDA_LINES) { const d = await getJSON("data/woredas.json").catch(() => null); WOREDA_LINES = d && d.f ? decode(d) : []; }
+  if (seq !== profSeq || !cardHosp) return;
+  const want = new Set(wd.map(d => d.i));
+  map.getSource("net-wd").setData({ type: "FeatureCollection", features: WOREDA_LINES.filter(f => want.has(f.properties.i)) });
+}
 // ---- docked hospital card (keeps the hospital and its network visible) ----
 let cardHosp = null;
 function showCard(p) {
@@ -2552,10 +2608,11 @@ function showCard(p) {
   const fr = state.model === "fric";
   document.getElementById("ic-title").innerHTML = `${esc(p.n)}<small>${esc(p.a3)}, ${esc(p.a2)} · ${fr ? "MAP friction surface" : "road + slope model"}</small>`;
   document.getElementById("ic-body").innerHTML = facilityHTML(p);
+  if (p.ty === 2 || +p.ty === 2) addProfile(p);
   const c = document.getElementById("infocard"); c.hidden = false; c.classList.remove("collapsed");
   document.getElementById("ic-collapse").setAttribute("aria-expanded", "true"); document.getElementById("ic-collapse").textContent = "▾";
 }
-function hideCard() { cardHosp = null; document.getElementById("infocard").hidden = true; clearNetwork(); }
+function hideCard() { cardHosp = null; profSeq++; document.getElementById("infocard").hidden = true; clearNetwork(); clearFootprint(); }
 document.getElementById("ic-close").addEventListener("click", hideCard);
 document.getElementById("ic-collapse").addEventListener("click", e => {
   const c = document.getElementById("infocard"), col = c.classList.toggle("collapsed");
@@ -2585,6 +2642,7 @@ function legendItems() {
     ...[["--d0", "< 5"], ["--d1", "5–15"], ["--d2", "15–30"], ["--d3", "30–60"], ["--d4", "60+"]].map(([t, l]) => ({ dot: css(t), l: l + " min" })),
     ...(state.trip === "hc" ? [{ dot: css("--panel"), ring: css("--ink"), l: "Health centre (destination)" }] : []),
     { sq: true, ring: css("--hosp"), l: "Hospital" });
+  if (cardHosp) L.push({ line: css("--ink"), w: 2, l: "Network footprint (population profile)" }, { line: css("--ink2"), w: 1, dash: [4, 3], l: "Woredas overlapped" });
   if (cardHosp) L.push({ h: "Selected network" }, { dot: css("--d2"), ring: css("--ink"), l: `Linked to ${cardHosp.n}` }, { dot: css("--d0"), fade: true, l: "Other facilities (faded)" });
   return L;
 }

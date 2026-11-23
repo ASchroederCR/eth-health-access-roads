@@ -436,6 +436,58 @@ if __name__ == "__main__":
                     "flood_km": round(float(tab[f"flood_km_w{w_}"].sum())) if f"flood_km_w{w_}" in tab.columns else None,
                     "flood_x": int(tab[f"flood_xings_w{w_}"].sum()) if f"flood_xings_w{w_}" in tab.columns else None,
                     "intense_share": round(float(np.mean(WH["I"][w_ - 1][z["mask"]] >= 1)), 3)})
+    # --- hospital network population profiles (40_ woredas + WorldPop) -------------------------------
+    # footprint = hull around a hospital and the facilities linked to it, + ~2 km; woredas it overlaps (share of each
+    # woreda's area inside), and the flood flags inside it per window. Woreda outlines go to a separate file, loaded on demand.
+    WGP = os.path.join(ROOT, "data", "raw", "boundaries", "eth_woredas.parquet")
+    if os.path.exists(WGP):
+        WD = gpd.read_parquet(WGP).reset_index(drop=True)
+        wtree = shapely.STRtree(WD.geometry.values)
+        warea = shapely.area(WD.geometry.values)
+        fpp_ = os.path.join(ROOT, "data", "processed", "roads", f"eth_flood_pieces_{tag}.parquet")
+        fxp_ = os.path.join(ROOT, "data", "processed", "roads", f"eth_flood_xings_{tag}.parquet")
+        FPc = gpd.read_parquet(fpp_) if os.path.exists(fpp_) else None
+        FXc = gpd.read_parquet(fxp_) if os.path.exists(fxp_) else None
+        if FPc is not None: FPc["mid"] = shapely.line_interpolate_point(FPc.geometry.values, 0.5, normalized=True)
+        H_ = hfa[hfa.Type == "Hospital"].set_index("Id")
+        nets = {}
+        for key_, col_ in (("hid", "nearest_hospital_id"), ("fhid", "fr_nearest_hospital_id")):
+            if col_ not in hfa.columns: continue
+            nk = {}
+            mem = hfa[hfa[col_].notna() & (hfa.Type != "Hospital") & ~hfa.off_network.fillna(False).astype(bool)]   # as 17_'s linked facilities
+            for hid_, grp in mem.groupby(mem[col_].astype(int)):
+                if hid_ not in H_.index: continue
+                pts_ = np.vstack([[H_.loc[hid_, "Longitude"], H_.loc[hid_, "Latitude"]], grp[["Longitude", "Latitude"]].to_numpy()])
+                hull = shapely.convex_hull(shapely.multipoints(pts_)).buffer(0.02)
+                ii = wtree.query(hull, predicate="intersects")
+                fr_ = shapely.area(shapely.intersection(WD.geometry.values[ii], hull)) / warea[ii]
+                keep = fr_ >= 0.005
+                wd_ = sorted([[int(i), round(float(f), 3)] for i, f in zip(ii[keep], fr_[keep])], key=lambda v: -v[1])
+                fk, fx = [0.0, 0.0, 0.0], [0, 0, 0]
+                if FPc is not None and len(FPc):
+                    inn = shapely.contains(hull, FPc.mid.values)
+                    fk = [round(float(FPc.km.values[inn & FPc[f"w{w_}"].values.astype(bool)].sum()), 1) for w_ in (1, 2, 3)]
+                if FXc is not None and len(FXc):
+                    inx = shapely.contains(hull, FXc.geometry.values)
+                    fx = [int((inx & FXc[f"w{w_}"].values.astype(bool)).sum()) for w_ in (1, 2, 3)]
+                ring = np.rint(shapely.get_coordinates(shapely.simplify(hull, 0.004).exterior) * 1e4).astype(int).ravel().tolist()
+                nk[str(int(hid_))] = {"r": ring, "wd": wd_, "fk": fk, "fx": fx, "n": int(len(grp))}
+            nets[key_] = nk
+        rows_ = [[str(r.woreda), str(r.zone), str(r.region), int(r.population), int(r.under5)] for r in WD.itertuples()]
+        with open(os.path.join(OUT, "networks.json"), "w", encoding="utf-8") as f_:
+            json.dump({"woredas": rows_, "nets": nets, "src": "WorldPop 2020 (constrained, 100 m); woredas: OCHA COD-AB 2025"},
+                      f_, separators=(",", ":"), ensure_ascii=False)
+        WL = WD[["geometry"]].copy(); WL["i"] = np.arange(len(WD))
+        WL["geometry"] = shapely.boundary(shapely.simplify(WL.geometry.values, 0.002))
+        WL = WL.explode(index_parts=False).reset_index(drop=True)
+        n_, mb_ = dump(os.path.join(OUT, "woredas.json"), WL, {"i": "i"})
+        print(f"networks: {sum(len(v) for v in nets.values())} hospital networks, "
+              f"{os.path.getsize(os.path.join(OUT, 'networks.json')) / 1e6:.2f} MB; woreda outlines {n_} lines, {mb_:.1f} MB")
+    else:
+        print("no woreda population (40_woreda_population.py) - hospital population profiles left out")
+        for f_ in ("networks.json", "woredas.json"):
+            with open(os.path.join(OUT, f_), "w") as fh: json.dump({}, fh)
+
     summ = {"init": f"{init:%d %b %Y}", "start": f"{days[0]:%d %b}", "end": f"{days[-1]:%d %b %Y}",
             "total_km": round(float(tab[TIERS].sum().sum())),
             "tiers": {t: round(float(tab[t].sum())) for t in TIERS},
