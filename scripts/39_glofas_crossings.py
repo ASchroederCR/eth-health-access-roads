@@ -20,6 +20,8 @@ Outputs
   data/raw/glofas/glofas_static_eth.npz                       thresholds and upstream area, clipped (once)
   data/raw/glofas/glofas_xings_<YYYYMMDD>.npz                 forecast at the matched cells (cache)
   data/processed/roads/eth_glofas_xings_<init>.parquet        per crossing: cell, areas, p2/p5/p20 per window, peak Q
+  data/processed/roads/eth_glofas_cells_<init>.npz            per river cell: ensemble 10th/50th/90th percentile by lead day,
+                                                              flood levels, upstream area (web map hydrographs)
 
     python scripts\\39_glofas_crossings.py --init 2026-11-23
 """
@@ -174,6 +176,11 @@ if __name__ == "__main__":
             R[f"p{r}_w{w}"] = np.round(p, 2)
         med = np.full(len(X), np.nan); med[ok] = np.median(qq[:, :, ci[ok]], 0).max(0); R[f"qmed_w{w}"] = np.round(med, 1)
     R["glofas_date"] = f"{used:%Y-%m-%d}"
+    # forecast spread per river cell for the web map's hydrographs: 10th / 50th / 90th percentile of the members by lead day
+    qs = np.quantile(q, [0.1, 0.5, 0.9], axis=0).astype("float32")              # [3, lead, cell]
+    np.savez_compressed(os.path.join(ROOT, "data", "processed", "roads", f"eth_glofas_cells_{tag}.npz"),
+                        cells=cells, qs=qs, off=off, date=f"{used:%Y-%m-%d}",
+                        upa=S["upa_km2"][cells[:, 0], cells[:, 1]], **{f"rl{r}": S[f"rl{r}"][cells[:, 0], cells[:, 1]] for r in RP})
     out = os.path.join(ROOT, "data", "processed", "roads", f"eth_glofas_xings_{tag}.parquet")
     pd.DataFrame(R).to_parquet(out)
     for w in (1, 2, 3):

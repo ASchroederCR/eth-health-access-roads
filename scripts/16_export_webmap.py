@@ -133,11 +133,33 @@ if __name__ == "__main__":
         n, mb = dump(os.path.join(OUT, "flood.json"), fp, {"km": "km", "w1": "w1", "w2": "w2", "w3": "w3"})
         X = gpd.read_parquet(fxp); X = X[X[["w1", "w2", "w3"]].any(axis=1)].reset_index(drop=True)
         SRC = ["osm", "merit"]
+        # GloFAS river cells (39_): hydrograph series, and one clickable point per crossing on a GloFAS river
+        gcp = os.path.join(ROOT, "data", "processed", "roads", f"eth_glofas_cells_{tag}.npz")
+        gxp = os.path.join(ROOT, "data", "processed", "roads", f"eth_glofas_xings_{tag}.parquet")
+        CELL = {}
+        if os.path.exists(gcp) and os.path.exists(gxp):
+            Z = np.load(gcp); off = int(Z["off"]); qs = Z["qs"][:, off:off + len(days), :]       # forecast days 1..15
+            CELL = {(int(a), int(b)): i for i, (a, b) in enumerate(Z["cells"])}
+            rv = lambda v: round(float(v), 1) if v < 100 else int(round(float(v)))
+            cel = [[int(round(float(Z["upa"][i]))), rv(Z["rl2"][i]), rv(Z["rl5"][i]), rv(Z["rl20"][i])]
+                   + [[rv(v) for v in qs[k, :, i]] for k in range(3)] for i in range(len(Z["cells"]))]
+            G_ = pd.read_parquet(gxp); XA = gpd.read_parquet(os.path.join(ROOT, "data", "processed", "roads", "eth_flood_crossings.parquet")).reset_index(drop=True)
+            STA = ["ford", "none", "culvert", "bridge", "assumed bridge"]
+            pts = [[CELL[(int(g_.g_row), int(g_.g_col))], STA.index(xa.structure) if xa.structure in STA else 1,
+                    "" if xa.waterway_name is None or (isinstance(xa.waterway_name, float) and np.isnan(xa.waterway_name)) else str(xa.waterway_name),
+                    int(round(xa.geometry.x * 1e4)), int(round(xa.geometry.y * 1e4))]
+                   for g_, xa in zip(G_.itertuples(), XA.itertuples()) if g_.g_row >= 0 and (int(g_.g_row), int(g_.g_col)) in CELL]
+            with open(os.path.join(OUT, "rivers.json"), "w", encoding="utf-8") as f_:
+                json.dump({"date": str(Z["date"]), "start": f"{days[0]:%Y-%m-%d}", "cells": cel,
+                           "cols": ["gc", "st", "wn"], "lut": {"st": STA}, "f": pts}, f_, separators=(",", ":"), ensure_ascii=False)
+            print(f"river forecast: {len(cel)} GloFAS cells, {len(pts)} crossing points, {os.path.getsize(os.path.join(OUT, 'rivers.json')) / 1e6:.2f} MB")
+        else:
+            with open(os.path.join(OUT, "rivers.json"), "w") as f_: json.dump({"cells": [], "cols": [], "lut": {}, "f": []}, f_)
         clean = lambda v: "" if v is None or (isinstance(v, float) and np.isnan(v)) else str(v)
         ST = ["ford", "none", "culvert", "bridge", "assumed bridge"]; BY = ["", "river", "flash"]
         pc = lambda v: -1 if v is None or not np.isfinite(v) else int(round(100 * float(v)))
         cols = ["st", "src", "up", "w1", "w2", "w3", "lv1", "lv2", "lv3", "by1", "by2", "by3"] + \
-               [f"p{rp}_{w_}" for w_ in (1, 2, 3) for rp in (2, 5, 20)] + ["rd", "wn"]
+               [f"p{rp}_{w_}" for w_ in (1, 2, 3) for rp in (2, 5, 20)] + ["gc", "rd", "wn"]
         rows = []
         for r in X.itertuples():
             d_ = r._asdict()
@@ -145,6 +167,8 @@ if __name__ == "__main__":
                          int(r.w1), int(r.w2), int(r.w3), int(r.lv1), int(r.lv2), int(r.lv3),
                          BY.index(r.by1), BY.index(r.by2), BY.index(r.by3)]
                         + [pc(d_.get(f"p{rp}_w{w_}")) for w_ in (1, 2, 3) for rp in (2, 5, 20)]
+                        + [CELL.get((int(d_.get("g_row", -1) if np.isfinite(d_.get("g_row", -1)) else -1),
+                                     int(d_.get("g_col", -1) if np.isfinite(d_.get("g_col", -1)) else -1)), -1)]
                         + [clean(r.road), clean(r.waterway_name), int(round(r.geometry.x * 1e4)), int(round(r.geometry.y * 1e4))])
         with open(os.path.join(OUT, "xings.json"), "w", encoding="utf-8") as f_:
             json.dump({"cols": cols, "lut": {"st": ST, "src": SRC, "by1": BY, "by2": BY, "by3": BY}, "f": rows,
@@ -152,7 +176,7 @@ if __name__ == "__main__":
                       f_, separators=(",", ":"), ensure_ascii=False)
         print(f"flood stretches: {n}, {mb:.1f} MB; crossings flagged: {len(rows)}")
     else:
-        for f_ in ("flood.json", "xings.json"):
+        for f_ in ("flood.json", "xings.json", "rivers.json"):
             with open(os.path.join(OUT, f_), "w") as fh: json.dump({"cols": [], "lut": {}, "f": []}, fh)
 
     # --- outside-Ethiopia mask -------------------------------------------------------------------

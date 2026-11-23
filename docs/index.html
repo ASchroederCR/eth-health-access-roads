@@ -232,6 +232,7 @@ section { display: flex; flex-direction: column; gap: 6px; }
         <div class="subh">Roads</div>
         <label class="sw-row" for="opt-terrain"><span>Include terrain in the score<small>Off shows rain and surface only</small></span><input type="checkbox" class="toggle" id="opt-terrain" checked></label>
         <label class="sw-row" for="opt-slip"><span>Slip / rock-fall exposure<small>Exposed stretches: moderate+ rain on steep, landslide-prone ground</small></span><input type="checkbox" class="toggle" id="opt-slip" checked></label>
+        <label class="sw-row" for="opt-river"><span>River flow forecast<small>GloFAS hydrographs: click a ring where a road crosses a river GloFAS covers</small></span><input type="checkbox" class="toggle" id="opt-river"></label>
         <label class="sw-row" for="opt-flood"><span>Flood risk<small>Low-lying stretches under heavy rain; river crossings where GloFAS forecasts a flood or a flash flood is likely</small></span><input type="checkbox" class="toggle" id="opt-flood" checked></label>
         <label class="sw-row" for="opt-ctx"><span>Road network<small>Trunk to tertiary roads; drawn darker when slowdown tiers are off</small></span><input type="checkbox" class="toggle" id="opt-ctx" checked></label>
         <div class="subh">Other layers</div>
@@ -286,6 +287,7 @@ section { display: flex; flex-direction: column; gap: 6px; }
       <div id="leg-pnnote" hidden style="font-size:11px;color:var(--muted)">blank: dry season, not compared</div>
       <div class="slip" id="leg-slip"><i></i>slip / rock-fall exposure</div>
       <div class="slip" id="leg-flood"><i style="border-top:2.5px solid var(--flood)"></i>flood-prone stretch </div>
+      <div class="dots" id="leg-river" hidden><span><i style="background:var(--panel);box-shadow:inset 0 0 0 1.5px var(--fl2)"></i>river flow forecast (click for GloFAS hydrograph)</span></div>
       <div class="dots" id="leg-flood2"><span style="color:var(--muted)">crossing flood risk:</span><span><i style="background:var(--fl1);border-radius:0;clip-path:polygon(50% 0,100% 100%,0 100%)"></i>2-yr / flash</span><span><i style="background:var(--fl2);border-radius:0;clip-path:polygon(50% 0,100% 100%,0 100%)"></i>5-yr</span><span><i style="background:var(--fl3);border-radius:0;clip-path:polygon(50% 0,100% 100%,0 100%)"></i>20-yr</span></div>
       <div id="leg-fric" hidden>MAP travel speed, km/h</div>
       <div class="dots" id="leg-fric2" hidden><span><i style="background:#a8320f;border-radius:2px"></i>&lt;3</span><span><i style="background:#e0701f;border-radius:2px"></i>3–10</span><span><i style="background:#f2b33d;border-radius:2px"></i>10–30</span><span><i style="background:#c9c8c2;border-radius:2px"></i>30+</span></div>
@@ -2115,7 +2117,7 @@ function decode(d) {
   return feats;
 }
 // data files keep fixed names, so tag each request with this build's version: browsers then never mix a new page with old data
-const DATA_VERSION = "202611231412-d40693";
+const DATA_VERSION = "202611231422-d40693";
 const dv = u => `${u}?v=${DATA_VERSION}`;
 const getJSON = u => fetch(dv(u), { cache: "no-cache" }).then(r => { if (!r.ok) throw new Error(u + " " + r.status); return r.json(); });
 
@@ -2182,6 +2184,7 @@ function applyTheme() {
   if (has("slip")) map.setPaintProperty("slip", "line-color", css("--slip"));
   if (has("flood")) map.setPaintProperty("flood", "line-color", css("--flood"));
   if (has("xings")) xingImages();
+  if (has("rivers")) { map.setPaintProperty("rivers", "circle-color", css("--panel")); map.setPaintProperty("rivers", "circle-stroke-color", css("--fl2")); }
   if (has("roads")) map.setPaintProperty("roads", "line-color", tierColor());
   ["hf-hp", "hf-main"].forEach(id => { if (has(id)) { map.setPaintProperty(id, "circle-color", hfColor(id));
     map.setPaintProperty(id, "circle-stroke-color", hfRing(id)); } });
@@ -2253,6 +2256,11 @@ function init() {
     map.addSource("flood", { type: "geojson", data: { type: "FeatureCollection", features: floodD && floodD.f.length ? decode(floodD) : [] } });
     map.addLayer({ id: "flood", type: "line", source: "flood", layout: { "line-cap": "round" },
       paint: { "line-color": css("--flood"), "line-width": ["interpolate", ["linear"], ["zoom"], 5, 1, 8, 2, 11, 3.5] } });
+    RIVERS = await getJSON("data/rivers.json").catch(() => null);
+    map.addSource("rivers", { type: "geojson", data: { type: "FeatureCollection", features: RIVERS && RIVERS.f.length ? decodePoints(RIVERS) : [] } });
+    map.addLayer({ id: "rivers", type: "circle", source: "rivers", layout: { visibility: "none" },
+      paint: { "circle-color": css("--panel"), "circle-stroke-color": css("--fl2"), "circle-stroke-width": 1.4,
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 5, 1.8, 10, 4.5] } });
     const xD = await getJSON("data/xings.json").catch(() => null);
     XINGS_META = { glofas: xD && xD.glofas };
     map.addSource("xings", { type: "geojson", data: { type: "FeatureCollection", features: xD ? decodePoints(xD) : [] } });
@@ -2310,6 +2318,7 @@ function sync() {
   document.getElementById("leg-hf").hidden = !hfOn; document.getElementById("leg-hf2").hidden = !hfOn;
   document.getElementById("leg-slip").hidden = !document.getElementById("opt-slip").checked;
   const flOn = document.getElementById("opt-flood").checked;
+  const rvOn = document.getElementById("opt-river").checked; vis("rivers", rvOn); document.getElementById("leg-river").hidden = !rvOn;
   vis("flood", flOn); vis("xings", flOn); document.getElementById("leg-flood").hidden = !flOn; document.getElementById("leg-flood2").hidden = !flOn;
   ctxPaint();
 }
@@ -2319,7 +2328,7 @@ function ctxPaint() {                                // slowdown tiers off: the 
   map.setPaintProperty("ctx", "line-color", tiersOn ? css("--ctx") : css("--ink2"));
   map.setPaintProperty("ctx", "line-opacity", tiersOn ? 0.8 : 0.95);
 }
-["opt-roads", "opt-int", "opt-rain", "opt-hs", "opt-ctx", "opt-slip", "opt-flood", "opt-hf", "opt-fric"].forEach(id => document.getElementById(id).addEventListener("change", sync));
+["opt-roads", "opt-int", "opt-rain", "opt-hs", "opt-ctx", "opt-slip", "opt-flood", "opt-river", "opt-hf", "opt-fric"].forEach(id => document.getElementById(id).addEventListener("change", sync));
 document.getElementById("opt-terrain").addEventListener("change", e => { state.terrain = e.target.checked; applyFilter(); });
 
 const TIER_NAME = ["Normal", "Minor", "Elevated", "Severe"], TIER_TOK = ["--ctx", "--minor", "--elev", "--sev"];
@@ -2345,9 +2354,43 @@ function xingHTML(p) {
       <span class="k">Catchment</span><span class="v">${p.up >= 65534 ? "65,000+" : fmt(p.up)} km² drains to this point</span><span class="s"></span>
       ${rows}
     </div>
+    ${+p.gc >= 0 ? riverChart(+p.gc) : ""}
     <div class="pp-foot">${gd}${p.st === "none" ? "No bridge or culvert is mapped here; one may exist." : p.st === "ford" ? "Mapped as a ford: the road crosses the riverbed." : p.st === "culvert" ? "Culvert under a large catchment: can overtop." : "Bridges are shown only for a 20-year flood, which can overtop a bridge or wash out its approaches."}</div>`;
 }
 let XINGS_META = {};
+// ---- GloFAS river-flow hydrograph (rivers.json) ----
+let RIVERS = null;
+function riverChart(gc) {
+  const R = RIVERS; if (!R || gc == null || gc < 0 || !R.cells[gc]) return "";
+  const [up, r2, r5, r20, lo, md, hi] = R.cells[gc];
+  const n = md.length, W = 310, H = 132, pL = 30, pR = 42, pT = 10, pB = 18, st = (W - pL - pR) / Math.max(n - 1, 1);
+  const vmax = Math.max(Math.max(...hi) * 1.15, r2 * 1.12, 1);
+  const x = i => pL + i * st, y = v => pT + (H - pT - pB) * (1 - Math.min(v, vmax) / vmax);
+  const t0 = new Date(R.start + "T00:00:00Z"), dl = i => new Date(t0.getTime() + i * 864e5).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
+  const num = v => v >= 100 ? fmt(v) : v.toFixed(v >= 10 ? 0 : 1);
+  let g = "";
+  [2.5, 6.5].forEach(d => g += `<line x1="${x(d)}" x2="${x(d)}" y1="${pT}" y2="${H - pB}" stroke="var(--rule)" stroke-width="1.2"/>`);
+  g += `<path d="M${hi.map((v, i) => `${x(i)},${y(v)}`).join(" L")} L${lo.map((v, i) => `${x(n - 1 - i)},${y(lo[n - 1 - i])}`).join(" L")} Z" fill="var(--fl1)" opacity=".5"><title>middle 80% of the ensemble</title></path>`;
+  g += `<polyline fill="none" stroke="var(--fl3)" stroke-width="1.8" points="${md.map((v, i) => `${x(i)},${y(v)}`).join(" ")}"><title>ensemble median</title></polyline>`;
+  const off = [];
+  [[r2, "2-yr"], [r5, "5-yr"], [r20, "20-yr"]].forEach(([v, l]) => {
+    if (v > vmax) { off.push(`${l} ${num(v)}`); return; }
+    g += `<line x1="${pL}" x2="${W - pR}" y1="${y(v)}" y2="${y(v)}" stroke="var(--ink2)" stroke-width=".9" stroke-dasharray="4 3"><title>${l} flood: ${num(v)} m³/s</title></line>`
+      + `<text x="${W - pR + 3}" y="${y(v) + 3}" font-size="9" fill="var(--ink2)">${l}</text>`; });
+  g += `<line x1="${pL}" x2="${W - pR}" y1="${H - pB}" y2="${H - pB}" stroke="var(--ink2)" stroke-width=".6"/>`;
+  g += `<text x="${pL - 3}" y="${pT + 7}" text-anchor="end" font-size="9" fill="var(--muted)">${num(vmax)}</text><text x="${pL - 3}" y="${H - pB}" text-anchor="end" font-size="9" fill="var(--muted)">0</text>`;
+  g += `<text x="${pL + 3}" y="${pT + 7}" font-size="9" fill="var(--muted)">m³/s</text>`;
+  [[0, "start"], [7, "middle"], [n - 1, "end"]].forEach(([i, an]) => g += `<text x="${x(i)}" y="${H - 5}" text-anchor="${an}" font-size="9" fill="var(--muted)">${dl(i)}</text>`);
+  const pk = md.indexOf(Math.max(...md));
+  return `<div class="rchart" style="margin-top:6px"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="GloFAS river-flow forecast with flood levels">${g}</svg>
+    <div class="cap"><span><i style="background:var(--fl3);height:2px;border-radius:0"></i>median</span><span><i style="background:var(--fl1)"></i>middle 80% of 51 members</span><span>- - flood levels</span></div>
+    <div class="cap">GloFAS river flow forecast of ${esc(R.date)} for a river draining ${fmt(up)} km² · median peak ${num(md[pk])} m³/s on ${dl(pk)} · 2-year flood ${num(r2)} m³/s${off.length ? ` · above the chart: ${off.join(", ")} m³/s` : ""}. Days 1–3 · 4–7 · 8–15 split by lines.</div></div>`;
+}
+function riverHTML(p) {
+  return `<div class="pp-h">River flow forecast</div>
+    <div class="pp-sub">${p.wn ? esc(p.wn) : "Unnamed river"} · road crossing: ${XING_TXT[p.st] || esc(p.st)}</div>${riverChart(+p.gc)}`;
+}
+
 function popupHTML(p) {
   const t = state.terrain ? p.t : p.tw;
   const cond = p.cond ? `, mapped as ${esc(p.cond.replace("_", " "))}` : "";
@@ -2506,6 +2549,7 @@ function legendItems() {
   if (on("opt-roads")) L.push({ h: `Road slowdown tier · ${W}` }, ...[[3, "Severe (~50% slower)"], [2, "Elevated (~25% slower)"], [1, "Minor (~10% slower)"]]
     .filter(([t]) => state.on[t]).map(([t, l]) => ({ line: css(TIER_TOK[t]), w: 4, l })));
   if (on("opt-slip")) L.push({ line: css("--slip"), w: 2, dash: [4, 3], l: "Slip / rock-fall exposed stretch" });
+  if (on("opt-river")) L.push({ dot: css("--panel"), ring: css("--fl2"), l: "River flow forecast point (GloFAS)" });
   if (on("opt-flood")) L.push({ line: css("--flood"), w: 3, l: "Flood-prone stretch, heavy rain forecast" }, { tri: css("--fl1"), l: "Crossing: 2-year flood or flash flood likely" }, { tri: css("--fl2"), l: "Crossing: 5-year flood likely" }, { tri: css("--fl3"), l: "Crossing: 20-year flood likely" });
   if (on("opt-ctx")) L.push({ line: css("--ctx"), w: 2, l: "Main road network" });
   if (on("opt-int")) L.push({ h: `Intense rain possible · ${W}` }, { box: css("--int1"), l: "≈ 10 mm in an hour (as observed)" }, { box: css("--int2"), l: "≈ 20 mm in an hour (as observed)" });
@@ -2686,6 +2730,9 @@ function wirePopup() {
     const xl = ["xings"].filter(id => map.getLayer(id) && map.getLayoutProperty(id, "visibility") !== "none");
     const x = xl.length ? map.queryRenderedFeatures(box(e), { layers: xl })[0] : null;
     if (x) return { html: xingHTML(x.properties) };
+    const rl_ = ["rivers"].filter(id => map.getLayer(id) && map.getLayoutProperty(id, "visibility") !== "none");
+    const rv = rl_.length ? map.queryRenderedFeatures(box(e), { layers: rl_ })[0] : null;
+    if (rv) return { html: riverHTML(rv.properties) };
     const rl = ["roads"].filter(id => map.getLayer(id) && map.getLayoutProperty(id, "visibility") !== "none");
     const r = rl.length ? map.queryRenderedFeatures(box(e), { layers: rl }).sort((a, b) => b.properties.t - a.properties.t)[0] : null;
     return r ? { html: popupHTML(r.properties) } : null;
@@ -2698,7 +2745,7 @@ function wirePopup() {
     else { hideCard(); pinned = true; pop.setLngLat([x, y]).setHTML(facilityHTML(f.properties)).addTo(map); }
   };
   map.on("mousemove", e => {                         // hover only changes the cursor; details open on click
-    const q = map.queryRenderedFeatures(box(e), { layers: hfLayers().concat(["roads", "xings"].filter(id => map.getLayer(id) && map.getLayoutProperty(id, "visibility") !== "none")) });
+    const q = map.queryRenderedFeatures(box(e), { layers: hfLayers().concat(["roads", "xings", "rivers"].filter(id => map.getLayer(id) && map.getLayoutProperty(id, "visibility") !== "none")) });
     map.getCanvas().style.cursor = q.length ? "pointer" : "";
   });
   map.on("click", e => {

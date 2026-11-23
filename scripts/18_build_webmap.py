@@ -15,7 +15,7 @@ WEB = os.path.join(ROOT, "webmap")
 CSS_URL = "https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css"
 DATA = ["roads_severe.json", "roads_elevated.json", "roads_minor.json", "roads_context.json", "rain.geojson",
         "adm1.geojson", "facilities.geojson", "hillshade.png", "slip.json", "mask.geojson", "friction.png",
-        "flood.json", "xings.json"]
+        "flood.json", "xings.json", "rivers.json"]
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(); ap.add_argument("--pages-dir", default=os.path.join(ROOT, "docs")); a = ap.parse_args()

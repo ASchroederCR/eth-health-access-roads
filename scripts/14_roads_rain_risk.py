@@ -339,6 +339,7 @@ def flood_crossings(osm_ids, flash, glofas_path):
         matched = (G.g_row.values >= 0)
         X["glofas_date"] = G.glofas_date.values
         X["g_upa_km2"] = G.g_upa_km2.values
+        X["g_row"], X["g_col"] = G.g_row.values, G.g_col.values
     else:
         G, matched = None, np.zeros(len(X), bool)
     r, c = to_cell(shapely.get_x(X.geometry.values), shapely.get_y(X.geometry.values))
