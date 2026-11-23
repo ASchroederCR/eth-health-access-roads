@@ -1,5 +1,5 @@
 <meta charset="utf-8">
-<title>Ethiopia Roads Under Rain</title>
+<title>Ethiopia Rain, Flooding and Healthcare Access Forecast</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,7 +12,7 @@
 :root {
   --bg: #f3f4f1; --panel: #fbfbf9; --ink: #1d211f; --ink2: #4a504c; --muted: #737a75; --rule: #dcdfd9;
   --mapbg: #e6e8e3; --chip: #eceee9;
-  --minor: #f2b33d; --elev: #e0701f; --sev: #a8320f; --slip: #1d211f; --flood: #1f5fbf; --ctx: #8e9590; --adm: #5d635f;
+  --minor: #f2b33d; --elev: #e0701f; --sev: #a8320f; --slip: #1d211f; --flood: #1f5fbf; --fl1: #8fb4ee; --fl2: #2f6fd0; --fl3: #0b2f66; --ctx: #8e9590; --adm: #5d635f;
   --r1: #e6effa; --r2: #cde2fb; --r3: #9ec5f4; --r4: #6da7ec; --r5: #3987e5; --r6: #256abf;
   --hs-min: 0; --focus: #2a6fb8;
   --outside: #ffffff; --int1: #cdb7e6; --int2: #8656bd;
@@ -27,7 +27,7 @@
   :root:not([data-theme="light"]) {
     --bg: #141716; --panel: #1a1e1c; --ink: #e8ebe7; --ink2: #b8beb9; --muted: #8b928d; --rule: #2d3330;
     --mapbg: #1f2321; --chip: #232826;
-    --minor: #e3a83f; --elev: #f2812f; --sev: #ff5a3c; --slip: #f4f6f3; --flood: #6aa8ff; --ctx: #66706a; --adm: #a2aaa4;
+    --minor: #e3a83f; --elev: #f2812f; --sev: #ff5a3c; --slip: #f4f6f3; --flood: #6aa8ff; --fl1: #3f6db0; --fl2: #7fb2ff; --fl3: #d4e6ff; --ctx: #66706a; --adm: #a2aaa4;
     --r1: #1d2a37; --r2: #213651; --r3: #24456d; --r4: #285b93; --r5: #2f74bd; --r6: #4691dc;
     --pn1: #e0a458; --pn2: #8a6630; --pn3: #3a3f3c; --pn4: #2f6aa8; --pn5: #6aa8ec; --rain-op: 0.8; --pn-op: 0.85; --ctrl-icon: invert(1); --hosp: #f4f6f3; --hs-min: 0.32; --outside: #141716; --int1: #5d4a78; --int2: #b38be0; --d0: #4d5450; --d1: #6e5a24; --d2: #a8661f; --d3: #e27b33; --d4: #ffb07a; --hfring: #141716; --focus: #6aa8ec; color-scheme: dark;
   }
@@ -35,7 +35,7 @@
 :root[data-theme="dark"] {
   --bg: #141716; --panel: #1a1e1c; --ink: #e8ebe7; --ink2: #b8beb9; --muted: #8b928d; --rule: #2d3330;
   --mapbg: #1f2321; --chip: #232826;
-  --minor: #e3a83f; --elev: #f2812f; --sev: #ff5a3c; --slip: #f4f6f3; --flood: #6aa8ff; --ctx: #66706a; --adm: #a2aaa4;
+  --minor: #e3a83f; --elev: #f2812f; --sev: #ff5a3c; --slip: #f4f6f3; --flood: #6aa8ff; --fl1: #3f6db0; --fl2: #7fb2ff; --fl3: #d4e6ff; --ctx: #66706a; --adm: #a2aaa4;
   --r1: #1d2a37; --r2: #213651; --r3: #24456d; --r4: #285b93; --r5: #2f74bd; --r6: #4691dc;
   --pn1: #e0a458; --pn2: #8a6630; --pn3: #3a3f3c; --pn4: #2f6aa8; --pn5: #6aa8ec; --rain-op: 0.8; --pn-op: 0.85; --ctrl-icon: invert(1); --hosp: #f4f6f3; --hs-min: 0.32; --outside: #141716; --int1: #5d4a78; --int2: #b38be0; --d0: #4d5450; --d1: #6e5a24; --d2: #a8661f; --d3: #e27b33; --d4: #ffb07a; --hfring: #141716; --focus: #6aa8ec; color-scheme: dark;
 }
@@ -182,7 +182,7 @@ section { display: flex; flex-direction: column; gap: 6px; }
   <aside class="panel" aria-label="Summary and filters">
     <header>
       <div class="eyebrow" id="runline">WeatherNext 3 · run 17 Nov 2026 00Z</div>
-      <h1>Ethiopia roads under the next 15 days of rain</h1>
+      <h1>Ethiopia rain, flooding and healthcare access forecast</h1>
       <p class="lede" id="lede">Each road segment is scored on forecast rain, road surface and how steep the ground is, and each health facility on how much longer its referral trip takes. Click or tap a road or facility for details.</p>
     </header>
 
@@ -227,7 +227,7 @@ section { display: flex; flex-direction: column; gap: 6px; }
         <div class="subh">Roads</div>
         <label class="sw-row" for="opt-terrain"><span>Include terrain in the score<small>Off shows rain and surface only</small></span><input type="checkbox" class="toggle" id="opt-terrain" checked></label>
         <label class="sw-row" for="opt-slip"><span>Slip / rock-fall exposure<small>Exposed stretches: moderate+ rain on steep, landslide-prone ground</small></span><input type="checkbox" class="toggle" id="opt-slip" checked></label>
-        <label class="sw-row" for="opt-flood"><span>Flood exposure<small>Low-lying stretches and unbridged river crossings under heavy rain</small></span><input type="checkbox" class="toggle" id="opt-flood" checked></label>
+        <label class="sw-row" for="opt-flood"><span>Flood risk<small>Low-lying stretches under heavy rain; river crossings where GloFAS forecasts a flood or a flash flood is likely</small></span><input type="checkbox" class="toggle" id="opt-flood" checked></label>
         <label class="sw-row" for="opt-ctx"><span>Road network<small>Trunk to tertiary roads; drawn darker when slowdown tiers are off</small></span><input type="checkbox" class="toggle" id="opt-ctx" checked></label>
         <div class="subh">Other layers</div>
         <label class="sw-row" for="opt-int"><span>Intense rain possible<small>Downpours like those observed at ≥ 10 / 20 mm in an hour; follows the forecast window</small></span><input type="checkbox" class="toggle" id="opt-int" checked></label>
@@ -257,7 +257,7 @@ section { display: flex; flex-direction: column; gap: 6px; }
       <p class="note">Slip / rock-fall exposure needs intense rain or high accumulation on ground ≥ 26.6° that NASA rates moderately or more landslide-prone, or very high susceptibility on ground ≥ 14°. Rain amounts shown use a year-round monthly bias correction; hazard classes use a stronger correction that caught the most observed hazard in tests.</p>
       <p class="note">Health access: two trips are timed separately. Every health centre and health post is timed to its nearest hospital; health posts are also timed to their nearest health centre. The map colours one trip at a time (choose under Health facility access). Each trip is the shortest road travel time at normal speeds by road class (trunk 70 … track 15 km/h, unpaved × 0.7, track grade 5 or sand / mud a further × 0.6), then to that same facility with each road slowed by its tier. A hospital's linked facilities are the health centres and posts for which it is the nearest hospital by road; this is a road-network grouping, not a population catchment or the official referral pathway. Facilities are approved hospitals, health centres and health posts from the Ethiopian health facility register.</p>
       <p class="note">Travel model: the road + slope model routes over the mapped road network with class speeds and walking to the road. The MAP friction surface (Malaria Atlas Project 2019 motorized, ~1 km) routes cell to cell using MAP's road, land-cover and off-road speeds, with cells crossed by a scored road slowed by the same tier factors. Both use the same facilities and the same nearest-hospital rule. MAP's journeys come out about 3–4 times shorter, so the two models usually agree on which facilities are worst hit but not on how many minutes are added.</p>
-      <p class="note">Flood exposure (first-guess thresholds, not yet checked against observed road floods; not used in travel times): a ~110 m piece of road is low-lying if it is no more than 3 m above the nearest drainage with a river draining 100 km² or more within 1 km (MERIT Hydro), or on ground that satellites saw under water at least 10% of the time (JRC, 1984–2021) and no more than 5 m above drainage; it is flagged when the window's 10-day running rain reaches 50 mm or very intense rain is possible. River crossings come from OpenStreetMap waterways and, where OSM maps none, MERIT Hydro channels draining 50 km² or more. Fords, minor-road crossings with no bridge mapped and culverts under large catchments are flagged when intense rain is possible or the 10-day rain reaches 50 mm; trunk, primary and secondary roads are assumed bridged. Rain upstream of a crossing is not yet counted.</p>
+      <p class="note">Flood exposure (first-guess thresholds, not yet checked against observed road floods; not used in travel times): a ~110 m piece of road is low-lying if it is no more than 3 m above the nearest drainage with a river draining 100 km² or more within 1 km (MERIT Hydro), or on ground that satellites saw under water at least 10% of the time (JRC, 1984–2021) and no more than 5 m above drainage; it is flagged when the window's 10-day running rain reaches 50 mm or very intense rain is possible. River crossings come from OpenStreetMap waterways and, where OSM maps none, MERIT Hydro channels draining 50 km² or more. On rivers GloFAS resolves (about 250 km² and up), a crossing is shown when at least 30% of the GloFAS 51-member river-flow forecast exceeds the 2-, 5- or 20-year flood on any day of the window, which counts rain falling anywhere upstream: fords, crossings with no bridge mapped and culverts from the 2-year level; bridges, including those assumed on trunk, primary and secondary roads, only at the 20-year level. On smaller streams only fords and unbridged crossings are shown, and only where very intense rain is possible and the 10-day rain reaches 100 mm (flash floods).</p>
       <p class="note">Slip / rock-fall exposure is judged on each ~110 m piece of road: moderate or high forecast rain over that piece, and either ground ≥ 26.6° where NASA's global landslide susceptibility map rates it moderate or higher, or very high susceptibility on ground ≥ 14°. Only the exposed stretches are drawn and counted.</p>
       <p class="note">Surface is mapped (OSM tag or Mapillary image model) for about a fifth of road length; the rest is inferred from road class. The road network is the current OpenStreetMap extract (Geofabrik); roads tagged under construction, no access or impassable are left out. Road grades come from a ~110 m elevation grid and run high where roads cut across hillsides.</p>
     </section>
@@ -280,7 +280,8 @@ section { display: flex; flex-direction: column; gap: 6px; }
       <div class="ticks" id="rticks"><span>5</span><span>10</span><span>25</span><span>50</span><span>100</span><span>150</span></div>
       <div id="leg-pnnote" hidden style="font-size:11px;color:var(--muted)">blank: dry season, not compared</div>
       <div class="slip" id="leg-slip"><i></i>slip / rock-fall exposure</div>
-      <div class="slip" id="leg-flood"><i style="border-top:2.5px solid var(--flood)"></i>flood-prone stretch <i style="width:8px;height:8px;border:0;border-radius:50%;background:var(--flood);margin-left:8px"></i>river crossing</div>
+      <div class="slip" id="leg-flood"><i style="border-top:2.5px solid var(--flood)"></i>flood-prone stretch </div>
+      <div class="dots" id="leg-flood2"><span style="color:var(--muted)">crossing flood risk:</span><span><i style="background:var(--fl1)"></i>2-yr / flash</span><span><i style="background:var(--fl2)"></i>5-yr</span><span><i style="background:var(--fl3)"></i>20-yr</span></div>
       <div id="leg-fric" hidden>MAP travel speed, km/h</div>
       <div class="dots" id="leg-fric2" hidden><span><i style="background:#a8320f;border-radius:2px"></i>&lt;3</span><span><i style="background:#e0701f;border-radius:2px"></i>3–10</span><span><i style="background:#f2b33d;border-radius:2px"></i>10–30</span><span><i style="background:#c9c8c2;border-radius:2px"></i>30+</span></div>
       <div id="leg-fric3" hidden></div>
@@ -455,6 +456,8 @@ rainLegend();
 const status = document.getElementById("status");
 let map = null;
 let HF_ALL = [];
+const xingLv = () => state.win ? ["get", `lv${state.win}`] : ["max", ["get", "lv1"], ["get", "lv2"], ["get", "lv3"]];
+const xingColor = () => ["match", xingLv(), 3, css("--fl3"), 2, css("--fl2"), css("--fl1")];
 function decodePoints(d) {  // {"cols", "lut", "f": [[values..., x*1e4, y*1e4]]} -> point features
   const C = d.cols, L = d.lut || {};
   return (d.f || []).map(r => { const p = {}; C.forEach((c, i) => p[c] = L[c] ? L[c][r[i]] : r[i]);
@@ -518,6 +521,8 @@ function applyFilter() {
   map.setLayoutProperty("roads", "line-sort-key", ["coalesce", ["get", prop], 0]);
   if (map.getLayer("slip")) map.setFilter("slip", state.win ? ["==", ["get", `w${state.win}`], 1] : null);
   ["flood", "xings"].forEach(id => { if (map.getLayer(id)) map.setFilter(id, state.win ? ["==", ["get", `w${state.win}`], 1] : null); });
+  if (map.getLayer("xings")) { map.setPaintProperty("xings", "circle-color", xingColor());
+    map.setPaintProperty("xings", "circle-radius", ["interpolate", ["linear"], ["zoom"], 5, ["match", xingLv(), 3, 4, 2, 3, 2], 10, ["match", xingLv(), 3, 8, 2, 6, 4.5]]); }
   if (map.getLayer("intense")) {
     const lvl = state.win ? ["get", `i${state.win}`] : ["max", ["get", "i1"], ["get", "i2"], ["get", "i3"]];
     map.setFilter("intense", [">=", lvl, 1]);
@@ -536,7 +541,7 @@ function applyTheme() {
   if (has("mask")) map.setPaintProperty("mask", "fill-color", css("--outside"));
   if (has("slip")) map.setPaintProperty("slip", "line-color", css("--slip"));
   if (has("flood")) map.setPaintProperty("flood", "line-color", css("--flood"));
-  if (has("xings")) { map.setPaintProperty("xings", "circle-color", css("--flood")); map.setPaintProperty("xings", "circle-stroke-color", css("--panel")); }
+  if (has("xings")) map.setPaintProperty("xings", "circle-stroke-color", css("--panel"));
   if (has("roads")) map.setPaintProperty("roads", "line-color", tierColor());
   ["hf-hp", "hf-main"].forEach(id => { if (has(id)) { map.setPaintProperty(id, "circle-color", hfColor(id));
     map.setPaintProperty(id, "circle-stroke-color", hfRing(id)); } });
@@ -609,10 +614,11 @@ function init() {
     map.addLayer({ id: "flood", type: "line", source: "flood", layout: { "line-cap": "round" },
       paint: { "line-color": css("--flood"), "line-width": ["interpolate", ["linear"], ["zoom"], 5, 1, 8, 2, 11, 3.5] } });
     const xD = await getJSON("data/xings.json").catch(() => null);
+    XINGS_META = { glofas: xD && xD.glofas };
     map.addSource("xings", { type: "geojson", data: { type: "FeatureCollection", features: xD ? decodePoints(xD) : [] } });
     map.addLayer({ id: "xings", type: "circle", source: "xings",
-      paint: { "circle-color": css("--flood"), "circle-stroke-color": css("--panel"), "circle-stroke-width": 0.8,
-        "circle-radius": ["interpolate", ["linear"], ["zoom"], 5, ["case", [">=", ["get", "up"], 1000], 3, 1.6], 10, ["case", [">=", ["get", "up"], 1000], 6.5, 4.5]] } });
+      paint: { "circle-color": xingColor(), "circle-stroke-color": css("--panel"), "circle-stroke-width": 0.8,
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 5, ["match", xingLv(), 3, 4, 2, 3, 2], 10, ["match", xingLv(), 3, 8, 2, 6, 4.5]] } });
     if (map.getLayer("ctx")) map.moveLayer("ctx", "roads");
     if (map.getLayer("mask")) { map.moveLayer("mask"); map.moveLayer("adm"); }
     try {
@@ -663,7 +669,7 @@ function sync() {
   document.getElementById("leg-hf").hidden = !hfOn; document.getElementById("leg-hf2").hidden = !hfOn;
   document.getElementById("leg-slip").hidden = !document.getElementById("opt-slip").checked;
   const flOn = document.getElementById("opt-flood").checked;
-  vis("flood", flOn); vis("xings", flOn); document.getElementById("leg-flood").hidden = !flOn;
+  vis("flood", flOn); vis("xings", flOn); document.getElementById("leg-flood").hidden = !flOn; document.getElementById("leg-flood2").hidden = !flOn;
   ctxPaint();
 }
 function ctxPaint() {                                // slowdown tiers off: the plain road network, drawn darker
@@ -678,19 +684,29 @@ document.getElementById("opt-terrain").addEventListener("change", e => { state.t
 const TIER_NAME = ["Normal", "Minor", "Elevated", "Severe"], TIER_TOK = ["--ctx", "--minor", "--elev", "--sev"];
 const HW = { trunk: "Trunk road", trunk_link: "Trunk link", primary: "Primary road", primary_link: "Primary link", secondary: "Secondary road", secondary_link: "Secondary link",
   tertiary: "Tertiary road", tertiary_link: "Tertiary link", unclassified: "Minor road", residential: "Residential street", track: "Track", service: "Service road", road: "Road", living_street: "Living street", motorway: "Motorway" };
-const XING_TXT = { ford: "Ford", none: "No bridge mapped", culvert: "Culvert" };
+const XING_TXT = { ford: "Ford", none: "No bridge mapped", culvert: "Culvert", bridge: "Bridge", "assumed bridge": "Main road, bridge assumed" };
+const WIN_NAME = ["", "Days 1–3", "Days 4–7", "Days 8–15"], LV_TXT = ["", "2-year flood", "5-year flood", "20-year flood"];
 function xingHTML(p) {
-  const wins = [1, 2, 3].filter(w => +p["w" + w] === 1).map(w => ["", "days 1–3", "days 4–7", "days 8–15"][w]);
   const wtr = p.wn ? esc(p.wn) : p.src === "merit" ? "river channel from MERIT Hydro (not mapped in OpenStreetMap)" : "unnamed waterway";
+  const pct = v => v < 0 ? "–" : `${v}%`;
+  const rows = [1, 2, 3].map(w => {
+    const by = p["by" + w], lv = +p["lv" + w];
+    const what = by === "river" ? `<b>${LV_TXT[lv]} likely</b>` : by === "flash" ? "<b>flash flood possible</b> (very intense rain, 10-day rain ≥ 100 mm)" : "no flood signal";
+    const pr = p["p2_" + w] >= 0 ? ` · chance above 2 / 5 / 20-yr: ${pct(p["p2_" + w])} / ${pct(p["p5_" + w])} / ${pct(p["p20_" + w])}` : "";
+    return `<span class="k">${WIN_NAME[w]}</span><span class="v">${what}${pr}</span><span class="s"></span>`; }).join("");
+  const byRiver = [1, 2, 3].some(w => p["by" + w] === "river");
+  const gd = byRiver && XINGS_META.glofas ? `GloFAS forecast of ${XINGS_META.glofas}: share of its 51 ensemble members above each flood level on the worst day of the window. `
+    : "Too small a stream (or too seldom flowing) for GloFAS's river forecast, so only a flash-flood setup is flagged here. ";
   return `<div class="pp-h">River crossing · ${XING_TXT[p.st] || esc(p.st)}</div>
     <div class="pp-sub">${esc(p.rd || "unnamed road")}</div>
     <div class="pp-grid">
       <span class="k">Waterway</span><span class="v">${wtr}</span><span class="s"></span>
       <span class="k">Catchment</span><span class="v">${p.up >= 65534 ? "65,000+" : fmt(p.up)} km² drains to this point</span><span class="s"></span>
-      <span class="k">Flagged</span><span class="v">${wins.join(", ")}: intense rain possible or 10-day rain ≥ 50 mm here</span><span class="s"></span>
+      ${rows}
     </div>
-    <div class="pp-foot">${p.st === "none" ? "No bridge or culvert is mapped here; one may exist. " : p.st === "ford" ? "Mapped as a ford: the road crosses the riverbed. " : "Culvert under a large catchment: can overtop. "}Rain upstream is not counted.</div>`;
+    <div class="pp-foot">${gd}${p.st === "none" ? "No bridge or culvert is mapped here; one may exist." : p.st === "ford" ? "Mapped as a ford: the road crosses the riverbed." : p.st === "culvert" ? "Culvert under a large catchment: can overtop." : "Bridges are shown only for a 20-year flood, which can overtop a bridge or wash out its approaches."}</div>`;
 }
+let XINGS_META = {};
 function popupHTML(p) {
   const t = state.terrain ? p.t : p.tw;
   const cond = p.cond ? `, mapped as ${esc(p.cond.replace("_", " "))}` : "";
@@ -849,7 +865,7 @@ function legendItems() {
   if (on("opt-roads")) L.push({ h: `Road slowdown tier · ${W}` }, ...[[3, "Severe (~50% slower)"], [2, "Elevated (~25% slower)"], [1, "Minor (~10% slower)"]]
     .filter(([t]) => state.on[t]).map(([t, l]) => ({ line: css(TIER_TOK[t]), w: 4, l })));
   if (on("opt-slip")) L.push({ line: css("--slip"), w: 2, dash: [4, 3], l: "Slip / rock-fall exposed stretch" });
-  if (on("opt-flood")) L.push({ line: css("--flood"), w: 3, l: "Flood-prone stretch, heavy rain forecast" }, { box: css("--flood"), l: "River crossing (ford or no bridge mapped)" });
+  if (on("opt-flood")) L.push({ line: css("--flood"), w: 3, l: "Flood-prone stretch, heavy rain forecast" }, { box: css("--fl1"), l: "Crossing: 2-year flood or flash flood likely" }, { box: css("--fl2"), l: "Crossing: 5-year flood likely" }, { box: css("--fl3"), l: "Crossing: 20-year flood likely" });
   if (on("opt-ctx")) L.push({ line: css("--ctx"), w: 2, l: "Main road network" });
   if (on("opt-int")) L.push({ h: `Intense rain possible · ${W}` }, { box: css("--int1"), l: "≈ 10 mm in an hour (as observed)" }, { box: css("--int2"), l: "≈ 20 mm in an hour (as observed)" });
   if (on("opt-rain")) L.push(...(state.rain === "pn"
@@ -969,7 +985,7 @@ async function exportPNG() {
     const font = (w, px, fam) => `${w} ${S(px)}px ${fam}`;
     g.textBaseline = "alphabetic";
     g.fillStyle = ink; g.font = font(700, 22, ROBOTO);
-    g.fillText("Ethiopia roads under the next 15 days of rain", pad, S(30));
+    g.fillText("Ethiopia rain, flooding and healthcare access forecast", pad, S(30));
     g.fillStyle = ink2; g.font = font(400, 12.5, ROBOTO);
     const c = map.getCenter();
     g.fillText(`WeatherNext 3 run ${SUMMARY.init} 00Z · ${SUMMARY.start} – ${SUMMARY.end} · ${state.win ? ["", "days 1–3", "days 4–7", "days 8–15"][state.win] : "all 15 days"} · view centred ${c.lat.toFixed(2)}°N ${c.lng.toFixed(2)}°E, zoom ${map.getZoom().toFixed(1)}`, pad, S(52));

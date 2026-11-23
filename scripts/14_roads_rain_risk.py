@@ -73,9 +73,9 @@ Outputs (<init> = run date)
     low-lying stretch: ~110 m piece <= 3 m above a drainage with a >= 100 km2 river within 1 km (MERIT Hydro), or ground
       JRC saw under water >= 10% of the time and <= 5 m above drainage; flagged when the window's 10-day running rain is
       moderate or high (>= 50 mm) or very intense rain is possible there.
-    river crossing: a ford, or a crossing with no bridge mapped on a minor road (catchment >= 10 km2, or >= 50 km2 for
-      MERIT channels OSM does not map), or a culvert under >= 100 km2; flagged when intense rain is possible or the 10-day
-      running rain is moderate or high at the crossing.
+    river crossing (with 39_ GloFAS river-flow forecasts): on rivers GloFAS resolves, flagged when >= 30% of its ensemble
+      exceeds the 2-year flood (fords, unbridged crossings, culverts) or the 20-year flood (bridges) in the window; on
+      smaller streams, fords and unbridged crossings only where very intense rain is possible and 10-day rain >= 100 mm.
   data/processed/tables/eth_roads_rain_risk_adm1_<init>.csv
 
     python scripts\\14_roads_rain_risk.py [--init 2026-11-17]
@@ -320,14 +320,44 @@ def flood_module():
     m = importlib.util.module_from_spec(sp); sp.loader.exec_module(m); return m
 
 
-def flood_crossings(osm_ids, triggers):
-    """Exposed crossings (38_) on the scored network, flagged per window by the rain at the crossing."""
-    X = gpd.read_parquet(FLOOD_X); X = X[X.exposed].copy()
+P_FLAG = 0.30                                               # share of GloFAS members above a flood level (39_)
+
+
+def flood_crossings(osm_ids, flash, glofas_path):
+    """River crossings (38_) with a flood risk in each window.
+    Rivers GloFAS resolves (39_ matched a cell): level 1 / 2 / 3 when >= 30% of the ensemble exceeds the 2- / 5- / 20-year
+      flood on any day of the window. Fords, unbridged crossings and culverts are flagged from level 1; bridges (mapped or
+      assumed) only at level 3, when a major flood could overtop the bridge or wash out its approaches.
+    Smaller streams: exposed crossings flagged only in a flash-flood setup (flash grid: very intense rain possible and
+      10-day rain >= 100 mm at the crossing).
+    Without a GloFAS file every exposed crossing falls back to the flash-flood rule."""
+    X = gpd.read_parquet(FLOOD_X).reset_index(drop=True)
+    has_g = glofas_path is not None and os.path.exists(glofas_path)
+    if has_g:
+        G = pd.read_parquet(glofas_path)
+        assert len(G) == len(X) and (G.osm_id.values == X.osm_id.values).all(), "GloFAS crossings out of step with 38_"
+        matched = (G.g_row.values >= 0)
+        X["glofas_date"] = G.glofas_date.values
+        X["g_upa_km2"] = G.g_upa_km2.values
+    else:
+        G, matched = None, np.zeros(len(X), bool)
+    r, c = to_cell(shapely.get_x(X.geometry.values), shapely.get_y(X.geometry.values))
+    bridge = X.structure.isin(["bridge", "assumed bridge"]).values
+    for w, fl in enumerate(flash, start=1):
+        lv = np.zeros(len(X), int)
+        if has_g:
+            for k, rp in enumerate((2, 5, 20), start=1):
+                lv[np.nan_to_num(G[f"p{rp}_w{w}"].values) >= P_FLAG] = k
+            X[f"p2_w{w}"], X[f"p5_w{w}"], X[f"p20_w{w}"] = G[f"p2_w{w}"].values, G[f"p5_w{w}"].values, G[f"p20_w{w}"].values
+        river = matched & np.where(bridge, lv >= 3, X.exposed.values & (lv >= 1))
+        flash_ = ~matched & X.exposed.values & fl[r, c]
+        X[f"w{w}"] = river | flash_
+        X[f"lv{w}"] = np.where(river, lv, np.where(flash_, 1, 0))      # 1-3 flood level; flash floods count as 1
+        X[f"by{w}"] = np.where(river, "river", np.where(flash_, "flash", ""))
     pos = pd.Series(np.arange(len(osm_ids)), index=osm_ids)
     X = X[X.osm_id.isin(pos.index)].copy(); X["seg"] = pos.reindex(X.osm_id).values
-    r, c = to_cell(shapely.get_x(X.geometry.values), shapely.get_y(X.geometry.values))
-    for w, tg in enumerate(triggers): X[f"w{w + 1}"] = tg[r, c]
-    return X.reset_index(drop=True)
+    X = X[X[["w1", "w2", "w3"]].any(axis=1)].reset_index(drop=True)
+    return X, has_g
 
 
 WINDOWS = [(1, 3), (4, 7), (8, 15)]
@@ -426,8 +456,9 @@ if __name__ == "__main__":
         LOW = FE.lowland(np.nan_to_num(fs["hnd_m"], nan=1e9), fs["upa_near"], fs["gsw_occ"])
         FTRIG = [(WH["A"][w] >= 2) | (WH["I"][w] >= 2) for w in range(3)]
         flood_km, flood_w, FPIECES = exposed_pieces(SMP, LOW, FTRIG, g.osm_length.values)
-        XTRIG = [(WH["I"][w] >= 1) | (WH["A"][w] >= 2) for w in range(3)]
-        XINGS = flood_crossings(g.osm_id.values, XTRIG)
+        FLASH = [(WH["I"][w] >= 2) & (WH["A"][w] >= 3) for w in range(3)]
+        XINGS, HAS_GLOFAS = flood_crossings(g.osm_id.values, FLASH, os.path.join(PROC, f"eth_glofas_xings_{tag}.parquet"))
+        if not HAS_GLOFAS: print("WARNING: no GloFAS river forecast for this run (39_) - crossings flagged by the flash-flood rule only")
         xing_w = [np.bincount(XINGS.seg[XINGS[f"w{w + 1}"]], minlength=len(g)) for w in range(3)]
         xing_any = np.bincount(XINGS.seg[XINGS[["w1", "w2", "w3"]].any(axis=1)], minlength=len(g))
     else:
@@ -504,8 +535,10 @@ if __name__ == "__main__":
         FPIECES.to_parquet(os.path.join(PROC, f"eth_flood_pieces_{tag}.parquet"))
         XINGS["region"] = g.region.values[XINGS.seg.values]; XINGS["road"] = g.name_en.fillna(g.name).fillna("").values[XINGS.seg.values]
         XINGS.to_parquet(os.path.join(PROC, f"eth_flood_xings_{tag}.parquet"))
-        print(f"flood: low-lying flagged {flood_km.sum():,.0f} km; crossings flagged {int(XINGS[['w1', 'w2', 'w3']].any(axis=1).sum()):,} "
-              f"of {len(XINGS):,} exposed; by window " + "; ".join(f"{WLAB[w]} {flood_w[w].sum():,.0f} km, {int(XINGS[f'w{w + 1}'].sum()):,} crossings" for w in range(3)))
+        print(f"flood: low-lying flagged {flood_km.sum():,.0f} km; crossings with a flood risk {len(XINGS):,} "
+              f"(GloFAS {'used' if HAS_GLOFAS else 'missing'}); by window " + "; ".join(
+              f"{WLAB[w]} {flood_w[w].sum():,.0f} km, {int(XINGS[f'w{w + 1}'].sum()):,} crossings "
+              f"({int((XINGS[f'by{w + 1}'] == 'river').sum())} river, {int((XINGS[f'by{w + 1}'] == 'flash').sum())} flash)" for w in range(3)))
     print("without terrain:", km.groupby(tier_flat).sum().round(0).to_dict())
 
     # --- map: national + hotspot zoom ---------------------------------------------------
@@ -639,29 +672,32 @@ if __name__ == "__main__":
             pw = FPIECES[FPIECES[f"w{w + 1}"]]
             if len(pw): lines(ax, pw, C_LOW, 1.3, 3)
             xw = XINGS[XINGS[f"w{w + 1}"]]
-            big = xw.upa_km2 >= 1000
-            ax.scatter(shapely.get_x(xw.geometry.values), shapely.get_y(xw.geometry.values), s=np.where(big, 14, 4), color=C_X,
-                       linewidths=0, zorder=4)
+            lvw = xw[f"lv{w + 1}"].values
+            ax.scatter(shapely.get_x(xw.geometry.values), shapely.get_y(xw.geometry.values), s=np.array([0, 9, 20, 36])[lvw],
+                       color=np.array(["#000", "#6f9be0", "#1f5fbf", "#0b2f66"])[lvw], edgecolors="white", linewidths=0.4, zorder=4)
             wn.draw_outline(ax); wn.mapax(ax)
             a_, b_ = WINDOWS[w]
             ax.set_title(f"{WLAB[w].capitalize()} · {days[a_ - 1]:%d %b}–{days[b_ - 1]:%d %b}", loc="left", fontsize=11.5, color=INK, pad=30)
-            ax.text(0, 1.01, f"low-lying road flagged {flood_w[w].sum():,.0f} km\n{int(xw.shape[0]):,} river crossings flagged "
-                    f"({int((xw.structure == 'ford').sum()):,} fords, {int(big.sum()):,} on rivers ≥ 1,000 km²)",
+            ax.text(0, 1.01, f"low-lying road flagged {flood_w[w].sum():,.0f} km\n{int(xw.shape[0]):,} crossings at risk: "
+                    f"{int((lvw >= 2).sum()):,} at 5-year flood or worse · {int((xw[f'by{w + 1}'] == 'flash').sum()):,} flash-flood",
                     transform=ax.transAxes, fontsize=8.5, color=INK2)
         hd = [Line2D([], [], color=C_LOW, lw=2.2, label="low-lying road, heavy rain forecast"),
-              Line2D([], [], marker="o", ls="", color=C_X, markersize=4, label="ford or unbridged crossing, rain forecast"),
-              Line2D([], [], marker="o", ls="", color=C_X, markersize=7, label="… on a river draining ≥ 1,000 km²"),
+              Line2D([], [], marker="o", ls="", color="#6f9be0", markersize=4, label="crossing: 2-year flood likely, or flash flood"),
+              Line2D([], [], marker="o", ls="", color="#1f5fbf", markersize=6, label="5-year flood likely"),
+              Line2D([], [], marker="o", ls="", color="#0b2f66", markersize=8, label="20-year flood likely"),
               Line2D([], [], color="#c9c8c2", lw=1.5, label="main roads")]
-        fig.legend(handles=hd, loc="lower center", ncol=4, frameon=False, fontsize=9, bbox_to_anchor=(0.5, -0.02))
+        fig.legend(handles=hd, loc="lower center", ncol=5, frameon=False, fontsize=9, bbox_to_anchor=(0.5, -0.02))
         fig.suptitle("Where roads could flood: low-lying stretches and river crossings by forecast window", x=0.01, ha="left",
                      fontsize=13.5, fontweight="bold", color=INK, y=1.02)
         fig.text(0.01, 0.95, f"WeatherNext 3 run {init:%d %b %Y} 00Z · terrain from MERIT Hydro (height above drainage, upstream area) and JRC "
-                 f"surface water · crossings from OpenStreetMap and MERIT river channels", fontsize=9.5, color=INK2)
+                 f"surface water · crossings from OpenStreetMap and MERIT river channels · river flow from GloFAS"
+                 f"{' (forecast of ' + str(XINGS.glofas_date.iloc[0]) + ')' if HAS_GLOFAS and len(XINGS) else ''}", fontsize=9.5, color=INK2)
         fig.text(0.01, -0.07, "Low-lying: ≤ 3 m above a drainage with a river draining ≥ 100 km² within 1 km, or ground under water ≥ 10% of the time (JRC, 1984–2021) "
                  "and ≤ 5 m above drainage; flagged where the window's 10-day running rain is ≥ 50 mm or very intense rain is possible.\n"
-                 "Crossings: fords, and minor-road crossings with no bridge mapped (catchment ≥ 10 km²; ≥ 50 km² where only MERIT shows the river), "
-                 "culverts under ≥ 100 km²; trunk, primary and secondary roads are assumed bridged. Flagged where intense rain is possible or "
-                 "the 10-day rain is ≥ 50 mm.\nFirst-guess thresholds, not calibrated against observed road floods; upstream rain is not counted. "
+                 "Crossings on rivers GloFAS resolves (≥ 250 km²): ≥ 30% of the 51-member GloFAS ensemble above the 2- / 5- / 20-year flood on any day "
+                 "of the window; fords, unbridged crossings and culverts from the 2-year level, bridges only at the 20-year level.\n"
+                 "Smaller streams: fords and unbridged crossings only where very intense rain is possible and the 10-day rain reaches 100 mm (flash floods). "
+                 "Low-lying thresholds are first guesses, not calibrated against observed road floods. "
                  "Lead-time skill falls after about day 7.", fontsize=8, color=MUTED, va="top")
         wn.save(fig, os.path.join(wn.OUT, "ETH_roads_flood_windows.png"))
 

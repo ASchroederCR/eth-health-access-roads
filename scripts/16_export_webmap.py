@@ -132,13 +132,23 @@ if __name__ == "__main__":
             fp = fp.explode(index_parts=False).reset_index(drop=True); fp["km"] = fp.km.round(2)
         n, mb = dump(os.path.join(OUT, "flood.json"), fp, {"km": "km", "w1": "w1", "w2": "w2", "w3": "w3"})
         X = gpd.read_parquet(fxp); X = X[X[["w1", "w2", "w3"]].any(axis=1)].reset_index(drop=True)
-        ST, SRC = ["ford", "none", "culvert"], ["osm", "merit"]
+        SRC = ["osm", "merit"]
         clean = lambda v: "" if v is None or (isinstance(v, float) and np.isnan(v)) else str(v)
-        rows = [[ST.index(r.structure) if r.structure in ST else 1, SRC.index(r.source), int(round(float(r.upa_km2))),
-                 int(r.w1), int(r.w2), int(r.w3), clean(r.road), clean(r.waterway_name),
-                 int(round(r.geometry.x * 1e4)), int(round(r.geometry.y * 1e4))] for r in X.itertuples()]
+        ST = ["ford", "none", "culvert", "bridge", "assumed bridge"]; BY = ["", "river", "flash"]
+        pc = lambda v: -1 if v is None or not np.isfinite(v) else int(round(100 * float(v)))
+        cols = ["st", "src", "up", "w1", "w2", "w3", "lv1", "lv2", "lv3", "by1", "by2", "by3"] + \
+               [f"p{rp}_{w_}" for w_ in (1, 2, 3) for rp in (2, 5, 20)] + ["rd", "wn"]
+        rows = []
+        for r in X.itertuples():
+            d_ = r._asdict()
+            rows.append([ST.index(r.structure) if r.structure in ST else 1, SRC.index(r.source), int(round(float(r.upa_km2))),
+                         int(r.w1), int(r.w2), int(r.w3), int(r.lv1), int(r.lv2), int(r.lv3),
+                         BY.index(r.by1), BY.index(r.by2), BY.index(r.by3)]
+                        + [pc(d_.get(f"p{rp}_w{w_}")) for w_ in (1, 2, 3) for rp in (2, 5, 20)]
+                        + [clean(r.road), clean(r.waterway_name), int(round(r.geometry.x * 1e4)), int(round(r.geometry.y * 1e4))])
         with open(os.path.join(OUT, "xings.json"), "w", encoding="utf-8") as f_:
-            json.dump({"cols": ["st", "src", "up", "w1", "w2", "w3", "rd", "wn"], "lut": {"st": ST, "src": SRC}, "f": rows},
+            json.dump({"cols": cols, "lut": {"st": ST, "src": SRC, "by1": BY, "by2": BY, "by3": BY}, "f": rows,
+                       "glofas": str(X.glofas_date.iloc[0]) if "glofas_date" in X.columns and len(X) else None},
                       f_, separators=(",", ":"), ensure_ascii=False)
         print(f"flood stretches: {n}, {mb:.1f} MB; crossings flagged: {len(rows)}")
     else:
