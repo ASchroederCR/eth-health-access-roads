@@ -2151,7 +2151,7 @@ function decode(d) {
   return feats;
 }
 // data files keep fixed names, so tag each request with this build's version: browsers then never mix a new page with old data
-const DATA_VERSION = "202611231740-d40693";
+const DATA_VERSION = "202611231746-d40693";
 const dv = u => `${u}?v=${DATA_VERSION}`;
 const getJSON = u => fetch(dv(u), { cache: "no-cache" }).then(r => { if (!r.ok) throw new Error(u + " " + r.status); return r.json(); });
 
@@ -2711,7 +2711,7 @@ async function drawSvg(g, svg, x, y, w, h) {
   g.textAlign = "left";
 }
 // the open hospital card, laid out for the export; returns its height (draw=false only measures)
-async function drawCard(g, x0, y0, w, S, draw) {
+async function drawCard(g, x0, y0, w, S, draw, maxH = Infinity) {   // -> {h, w}; flows into side-by-side columns past maxH
   const body = document.getElementById("ic-body"), pad = S(12), iw = w - 2 * pad;
   const ink = css("--ink"), ink2 = css("--ink2"), muted = css("--muted");
   const F = (wt, px) => `${wt} ${S(px)}px ${ROBOTO}`;
@@ -2719,6 +2719,16 @@ async function drawCard(g, x0, y0, w, S, draw) {
     for (const wd of String(t).replace(/\s+/g, " ").trim().split(" ")) { const tt = line ? line + " " + wd : wd; if (line && g.measureText(tt).width > maxW) { out.push(line); line = wd; } else line = tt; }
     if (line) out.push(line); return out; };
   const ops = []; let y = y0 + pad;
+  let col = 0, colTop = y0 + pad, colH = 0, keep = null;      // keep: a subhead held with the block after it
+  const opsPush = ops.push.bind(ops); ops.push = f => opsPush({ f, tx: col * w, ty: 0 });
+  const leaf = fn => {
+    const st = keep || { i: ops.length, y }; keep = null; fn();
+    if (y + pad - y0 > maxH && st.y > colTop + S(1)) {         // overflow: move this block to the top of a new column
+      const dy = st.y - colTop; colH = Math.max(colH, st.y - y0 + pad); col++;
+      for (let i = st.i; i < ops.length; i++) { ops[i].tx += w; ops[i].ty -= dy; }
+      y -= dy;
+    }
+  };
   const text = (t, wt, px, col, lh, indent = 0) => { g.font = F(wt, px);
     wrapT(t, iw - indent).forEach(l => { y += S(lh); const yy = y; ops.push(() => { g.font = F(wt, px); g.fillStyle = col; g.fillText(l, x0 + pad + indent, yy); }); }); };
   text(cardHosp.n, 500, 15, ink, 18);
@@ -2727,8 +2737,11 @@ async function drawCard(g, x0, y0, w, S, draw) {
   const block = el => {
     if (el.matches(".pp-h, .pp-sub")) return;
     if (el.id === "ic-profile") { y += S(6); [...el.children].forEach(block); return; }
-    if (el.matches(".subh")) { y += S(6); text(el.textContent.toUpperCase(), 500, 11, muted, 15); return; }
     if (el.matches(".rchart")) { [...el.children].forEach(block); return; }
+    if (el.matches(".subh")) { const st = { i: ops.length, y }; y += S(6); text(el.textContent.toUpperCase(), 500, 11, muted, 15); keep = st; return; }
+    leaf(() => leafBody(el));
+  };
+  const leafBody = el => {
     if (el.tagName.toLowerCase() === "svg") { const vb = el.viewBox.baseVal, h = vb.height * iw / vb.width, yy = y + S(6);
       ops.push(() => drawSvg(g, el, x0 + pad, yy, iw, h)); y += h + S(10); return; }
     if (el.matches(".cap") && el.querySelector("i")) {          // swatch legend row, wrapped
@@ -2773,13 +2786,15 @@ async function drawCard(g, x0, y0, w, S, draw) {
     if (el.matches(".pp-foot")) { y += S(4); text(el.textContent, 400, 10.5, muted, 14); return; }
   };
   [...body.children].forEach(block);
-  const h = y - y0 + pad;
+  const h = Math.max(colH, y - y0 + pad), W = w * (col + 1);
   if (draw) {
-    g.save(); g.globalAlpha = 0.94; g.fillStyle = css("--panel"); g.beginPath(); g.roundRect(x0, y0, w, h, S(8)); g.fill(); g.globalAlpha = 1;
-    g.strokeStyle = css("--rule"); g.lineWidth = S(1); g.stroke(); g.restore();
-    for (const op of ops) await op();
+    g.save(); g.globalAlpha = 0.94; g.fillStyle = css("--panel"); g.beginPath(); g.roundRect(x0, y0, W, h, S(8)); g.fill(); g.globalAlpha = 1;
+    g.strokeStyle = css("--rule"); g.lineWidth = S(1); g.stroke();
+    g.fillStyle = css("--rule"); for (let c = 1; c <= col; c++) g.fillRect(x0 + c * w, y0 + pad, S(1), h - 2 * pad);
+    g.restore();
+    for (const op of ops) { g.save(); g.translate(op.tx, op.ty); await op.f(); g.restore(); }
   }
-  return h;
+  return { h, w: W };
 }
 
 // overview inset for the PNG export: Ethiopia's regions, the exported view, and the selected network's footprint
@@ -2849,16 +2864,28 @@ async function exportPNG() {
     const cardW = S(340);
     let card = null;
     if (cardHosp && !document.getElementById("infocard").hidden) {
-      const ch = await drawCard(meas, 0, 0, cardW, S, false);
-      // inset in the first map corner that leaves the selected hospital visible; else its own column
-      const hp = HF_ALL.find(f => f.properties.id === +cardHosp.id), m = S(12), M = S(24);
+      // inset over the map, flowing into side-by-side columns when taller than the map, in the first corner that
+      // leaves the selected hospital visible; else its own column beside the legend
+      const m = S(12), M = S(24);
+      const one = await drawCard(meas, 0, 0, cardW, S, false);
+      let fit = await drawCard(meas, 0, 0, cardW, S, false, mc.height - 2 * m), limH = mc.height - 2 * m;
+      if (fit.w > cardW) {                                        // balance the columns: lowest height that keeps the same column count
+        for (let t = Math.ceil(one.h / Math.round(fit.w / cardW)); t < mc.height - 2 * m; t += S(16)) {
+          const tr = await drawCard(meas, 0, 0, cardW, S, false, t); if (tr.w <= fit.w) { fit = tr; limH = t; break; } } }
+      const ch = fit.h, cw = fit.w;
+      const hp = HF_ALL.find(f => f.properties.id === +cardHosp.id);
       const p = hp ? map.project(hp.geometry.coordinates) : null, px = p ? S(p.x) : -1, py = p ? S(p.y) : -1;
-      const spots = [[mc.width - cardW - m, m], [m, m], [mc.width - cardW - m, mc.height - ch - m]];   // lower left: overview map
-      const free = ([x, y]) => !(px > x - M && px < x + cardW + M && py > y - M && py < y + ch + M);
-      const spot = ch + 2 * m <= mc.height && mc.width >= cardW * 1.8 ? spots.find(free) : null;
-      card = { h: ch, inset: !!spot, x: spot ? spot[0] : 0, y: spot ? spot[1] : 0 };
+      const spots = [[mc.width - cw - m, m], [m, m], [mc.width - cw - m, mc.height - ch - m]];   // lower left: overview map
+      const free = ([x, y]) => !(px > x - M && px < x + cw + M && py > y - M && py < y + ch + M);
+      // prefer a corner clear of the whole network footprint, then one clear of the hospital
+      const fpd = map.getSource("net-hull") && map.getSource("net-hull")._data, fpf = fpd && fpd.features && fpd.features.find(f => f.geometry.type === "Polygon");
+      const fpb = fpf ? fpf.geometry.coordinates[0].map(c => map.project(c)).reduce((b, q) => [Math.min(b[0], S(q.x)), Math.min(b[1], S(q.y)), Math.max(b[2], S(q.x)), Math.max(b[3], S(q.y))], [1e9, 1e9, -1e9, -1e9]) : null;
+      const clear = ([x, y]) => !fpb || fpb[2] < x - S(6) || fpb[0] > x + cw + S(6) || fpb[3] < y - S(6) || fpb[1] > y + ch + S(6);
+      const ok = ch + 2 * m <= mc.height && mc.width - cw >= S(260);
+      const spot = ok ? (spots.find(q => free(q) && clear(q)) || spots.find(free)) : null;
+      card = spot ? { h: ch, w: cw, inset: true, x: spot[0], y: spot[1], maxH: limH } : { h: one.h, w: cardW, inset: false, x: 0, y: 0, maxH: Infinity };
     }
-    const extraW = card && !card.inset ? cardW + pad : 0;
+    const extraW = card && !card.inset ? card.w + pad : 0;
     const cv = document.createElement("canvas");
     const bodyH = Math.max(mc.height, card && !card.inset ? card.h + S(12) : 0);       // a tall card in its own column extends the image
     cv.width = mx + mc.width + legendW + extraW; cv.height = bodyH + headH + footH;
@@ -2909,7 +2936,7 @@ async function exportPNG() {
         wrap(g, it.l, legendW - 2 * pad).forEach((l, i) => { if (i) y += S(14); g.fillText(l, x, y); }); continue; }
       g.fillStyle = ink2; const ls = wrap(g, it.l, legendW - 2 * pad - S(32)); ls.forEach((l, i) => { if (i) y += S(14); g.fillText(l, x + S(32), y); });
     }
-    if (card) await drawCard(g, card.inset ? mx + card.x : mx + mc.width + legendW, headH + (card.inset ? card.y : S(12)), cardW, S, true);
+    if (card) await drawCard(g, card.inset ? mx + card.x : mx + mc.width + legendW, headH + (card.inset ? card.y : S(12)), cardW, S, true, card.maxH);
     // scale bar on the map image
     const mpp = 40075016.686 * Math.cos(c.lat * Math.PI / 180) / (512 * Math.pow(2, map.getZoom()));   // metres per CSS pixel
     const target = 110 * mpp, p10 = Math.pow(10, Math.floor(Math.log10(target))), nice = [1, 2, 5, 10].map(k => k * p10).filter(v => v <= target).pop();
