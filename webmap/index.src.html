@@ -948,23 +948,29 @@ async function addProfile(hp) {
   if (!net) { el.innerHTML = `<div class="netnote" style="margin-top:10px">No linked facilities, so no network footprint to profile.</div>`; clearFootprint(); return; }
   const W = N.woredas, wd = net.wd.map(([i, f]) => ({ w: W[i], f, i }));
   const totP = wd.reduce((a, d) => a + d.w[3], 0), totU = wd.reduce((a, d) => a + d.w[4], 0);
-  const inP = wd.reduce((a, d) => a + d.w[3] * d.f, 0), inU = wd.reduce((a, d) => a + d.w[4] * d.f, 0);
+  const wd2 = net.wd.map(([i, f, pin, uin]) => ({ pin, uin })), grid = wd2.every(d => d.pin >= 0);
+  wd.forEach((d, j) => { d.pin = wd2[j].pin; d.uin = wd2[j].uin; });
+  const inP = grid ? wd.reduce((a, d) => a + d.pin, 0) : wd.reduce((a, d) => a + d.w[3] * d.f, 0);
+  const inU = grid ? wd.reduce((a, d) => a + d.uin, 0) : wd.reduce((a, d) => a + d.w[4] * d.f, 0);
   const wi = state.win ? [state.win - 1] : [0, 1, 2];
   const fk = Math.max(...wi.map(i => net.fk[i])), fx = Math.max(...wi.map(i => net.fx[i]));
   const affected = fk > 0 || fx > 0;
   const k = n => n >= 1e6 ? `${(n / 1e6).toFixed(n >= 1e7 ? 0 : 1)}M` : n >= 1e3 ? `${Math.round(n / 1e3)}k` : `${Math.round(n)}`;
   const nl = net.n ?? HF_ALL.filter(f => f.properties[key] === +hp.id && f.properties.ty !== 2).length;
-  const rows = wd.slice(0, 10).map(d => `<span class="k" title="${esc(d.w[1])}, ${esc(d.w[2])}">${esc(d.w[0])}</span><span class="v">${Math.round(100 * d.f)}% inside · ${k(d.w[3])} people · ${k(d.w[4])} under 5</span><span class="s"></span>`).join("");
+  if (grid) wd.sort((a, b) => b.pin - a.pin);
+  const rows = wd.slice(0, 10).map(d => `<span class="k" title="${esc(d.w[1])}, ${esc(d.w[2])}">${esc(d.w[0])}</span><span class="v">${grid
+    ? `<b>${k(d.pin)}</b> people inside (${k(d.uin)} under 5) of ${k(d.w[3])}`
+    : `${Math.round(100 * d.f)}% of area inside · ${k(d.w[3])} people · ${k(d.w[4])} under 5`}</span><span class="s"></span>`).join("");
   el.innerHTML = `<div class="subh" style="margin:12px 0 4px">Population profile of this network</div>
     <div class="netnote">${affected ? `<b>Flood-affected network</b> (${WIN_TXT()}): ${fk ? `${fk} km of low-lying road flagged` : ""}${fk && fx ? " and " : ""}${fx ? `${fx} river crossing${fx > 1 ? "s" : ""} at flood risk` : ""} inside the footprint.` : `No flood flags inside the footprint (${WIN_TXT()}).`}
     Footprint: the area around the hospital and its ${fmt(nl)} linked facilities, plus about 2 km (outlined on the map). It overlaps ${wd.length} woreda${wd.length > 1 ? "s" : ""}.</div>
     <div class="pp-grid" style="margin-top:6px">
       <span class="k">Woredas overlapped</span><span class="v"><b>${fmt(totP)}</b> people · <b>${fmt(totU)}</b> under 5</span><span class="s"></span>
-      <span class="k">Inside footprint</span><span class="v">≈ ${fmt(inP)} people · ≈ ${fmt(inU)} under 5 <span style="color:var(--muted)">(by area share)</span></span><span class="s"></span>
+      <span class="k">Inside footprint</span><span class="v"><b>${fmt(inP)}</b> people · <b>${fmt(inU)}</b> under 5${grid ? "" : ` <span style="color:var(--muted)">(≈, by area share)</span>`}</span><span class="s"></span>
     </div>
     <div class="pp-grid" style="margin-top:6px">${rows}</div>
-    ${wd.length > 10 ? `<div class="netnote">and ${wd.length - 10} more woredas with smaller overlaps.</div>` : ""}
-    <div class="cap" style="margin-top:4px">${esc(N.src || "")}. Woreda figures are whole-woreda totals; "inside" scales each by the share of its area in the footprint, assuming people are spread evenly. WorldPop 2020 constrained counts are not adjusted to UN totals and run below them.</div>`;
+    ${wd.length > 10 ? `<div class="netnote">and ${wd.length - 10} more woredas with fewer people inside.</div>` : ""}
+    <div class="cap" style="margin-top:4px">${esc(N.src || "")}. ${grid ? "\"Inside\" sums WorldPop's 100 m cells within the footprint, split by woreda; woreda totals are for the whole woreda." : "Grid sums unavailable for this run: \"inside\" scales each woreda by the share of its area in the footprint, assuming people are spread evenly."} WorldPop 2020 constrained counts are not adjusted to UN totals and run below them.</div>`;
   // draw the footprint and the woredas it overlaps
   await ensureFootprintLayers(); if (seq !== profSeq || !cardHosp) return;
   const r = net.r, ring = []; for (let j = 0; j < r.length; j += 2) ring.push([r[j] / 1e4, r[j + 1] / 1e4]);

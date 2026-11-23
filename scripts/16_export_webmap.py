@@ -451,6 +451,11 @@ if __name__ == "__main__":
         if FPc is not None: FPc["mid"] = shapely.line_interpolate_point(FPc.geometry.values, 0.5, normalized=True)
         H_ = hfa[hfa.Type == "Hospital"].set_index("Id")
         nets = {}
+        # population inside each footprint, per woreda, from WorldPop's 100 m cells (Earth Engine); cached by footprint
+        import hashlib
+        CACHE_P = os.path.join(ROOT, "data", "processed", "tables", "eth_network_pop_cache.json")
+        pcache = json.load(open(CACHE_P)) if os.path.exists(CACHE_P) else {}
+        pending = []                                         # (cache key, piece polygon)
         for key_, col_ in (("hid", "nearest_hospital_id"), ("fhid", "fr_nearest_hospital_id")):
             if col_ not in hfa.columns: continue
             nk = {}
@@ -463,6 +468,10 @@ if __name__ == "__main__":
                 fr_ = shapely.area(shapely.intersection(WD.geometry.values[ii], hull)) / warea[ii]
                 keep = fr_ >= 0.005
                 wd_ = sorted([[int(i), round(float(f), 3)] for i, f in zip(ii[keep], fr_[keep])], key=lambda v: -v[1])
+                hk = hashlib.md5(shapely.to_wkb(shapely.set_precision(hull, 1e-5))).hexdigest()[:16]
+                for v in wd_:
+                    ck = f"{hk}:{WD.pcode.values[v[0]]}"; v.append(ck)
+                    if ck not in pcache: pending.append((ck, shapely.intersection(WD.geometry.values[v[0]], hull)))
                 fk, fx = [0.0, 0.0, 0.0], [0, 0, 0]
                 if FPc is not None and len(FPc):
                     inn = shapely.contains(hull, FPc.mid.values)
@@ -473,9 +482,27 @@ if __name__ == "__main__":
                 ring = np.rint(shapely.get_coordinates(shapely.simplify(hull, 0.004).exterior) * 1e4).astype(int).ravel().tolist()
                 nk[str(int(hid_))] = {"r": ring, "wd": wd_, "fk": fk, "fx": fx, "n": int(len(grp))}
             nets[key_] = nk
+        if pending:
+            uniq = dict(pending)
+            print(f"footprint population: {len(uniq)} footprint-woreda pieces to sum from the WorldPop grid", flush=True)
+            try:
+                sp40 = importlib.util.spec_from_file_location("wpop", os.path.join(ROOT, "scripts", "40_woreda_population.py"))
+                wpop = importlib.util.module_from_spec(sp40); sp40.loader.exec_module(wpop)
+                ks = list(uniq); pp_, uu_ = wpop.grid_sums([uniq[k_] for k_ in ks])
+                for k_, a_, b_ in zip(ks, pp_, uu_): pcache[k_] = [int(round(a_)), int(round(b_))]
+                json.dump(pcache, open(CACHE_P, "w"))
+            except Exception as e_:
+                print(f"WARNING: WorldPop grid sums failed ({str(e_)[:200]}) - footprint population falls back to area share")
+        grid_ok = True
+        for nk in nets.values():                              # [woreda, area share, people inside, under 5 inside] (-1: not summed)
+            for v_ in nk.values():
+                for v in v_["wd"]:
+                    ck = v.pop(); got = pcache.get(ck)
+                    if got is None: grid_ok = False
+                    v.extend(got if got is not None else [-1, -1])
         rows_ = [[str(r.woreda), str(r.zone), str(r.region), int(r.population), int(r.under5)] for r in WD.itertuples()]
         with open(os.path.join(OUT, "networks.json"), "w", encoding="utf-8") as f_:
-            json.dump({"woredas": rows_, "nets": nets, "src": "WorldPop 2020 (constrained, 100 m); woredas: OCHA COD-AB 2025"},
+            json.dump({"woredas": rows_, "nets": nets, "grid": grid_ok, "src": "WorldPop 2020 (constrained, 100 m); woredas: OCHA COD-AB 2025"},
                       f_, separators=(",", ":"), ensure_ascii=False)
         WL = WD[["geometry"]].copy(); WL["i"] = np.arange(len(WD))
         WL["geometry"] = shapely.boundary(shapely.simplify(WL.geometry.values, 0.002))

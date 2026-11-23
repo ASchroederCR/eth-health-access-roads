@@ -59,6 +59,27 @@ def worldpop(g):
     return pop, u5
 
 
+def grid_sums(polys, chunk=80):
+    """WorldPop 2020 population and under 5 summed over the 100 m cells inside each polygon (Earth Engine).
+    polys: list of shapely polygons (EPSG:4326). -> (pop, u5) float arrays."""
+    import ee
+    try: ee.Number(1).getInfo()
+    except Exception: ee.Initialize(project=os.environ.get("EE_PROJECT"))
+    img = ee.ImageCollection(WP).filter(ee.Filter.eq("country", "ETH")).first()
+    img = img.select("population").addBands(img.select(["M_0", "M_1", "F_0", "F_1"]).reduce(ee.Reducer.sum()).rename("u5"))
+    pop, u5 = np.zeros(len(polys)), np.zeros(len(polys))
+    simp = shapely.simplify(np.asarray(polys, dtype=object), 0.0005)
+    for k in range(0, len(polys), chunk):
+        feats = [ee.Feature(ee.Geometry(shapely.geometry.mapping(simp[i])), {"i": int(i)}) for i in range(k, min(k + chunk, len(polys)))
+                 if simp[i] is not None and not simp[i].is_empty]
+        if not feats: continue
+        res = img.reduceRegions(ee.FeatureCollection(feats), ee.Reducer.sum(), scale=100).getInfo()
+        for f in res["features"]:
+            i = f["properties"]["i"]; pop[i] = f["properties"].get("population") or 0; u5[i] = f["properties"].get("u5") or 0
+        print(f"  grid sums {min(k + chunk, len(polys))}/{len(polys)}", flush=True)
+    return pop, u5
+
+
 if __name__ == "__main__":
     g = woredas()
     g["area_km2"] = g.to_crs(32637).area / 1e6
