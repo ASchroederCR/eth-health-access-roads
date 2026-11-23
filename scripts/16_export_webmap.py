@@ -143,16 +143,28 @@ if __name__ == "__main__":
             rv = lambda v: round(float(v), 1) if v < 100 else int(round(float(v)))
             cel = [[int(round(float(Z["upa"][i]))), rv(Z["rl2"][i]), rv(Z["rl5"][i]), rv(Z["rl20"][i])]
                    + [[rv(v) for v in qs[k, :, i]] for k in range(3)] for i in range(len(Z["cells"]))]
-            G_ = pd.read_parquet(gxp); XA = gpd.read_parquet(os.path.join(ROOT, "data", "processed", "roads", "eth_flood_crossings.parquet")).reset_index(drop=True)
-            STA = ["ford", "none", "culvert", "bridge", "assumed bridge"]
-            pts = [[CELL[(int(g_.g_row), int(g_.g_col))], STA.index(xa.structure) if xa.structure in STA else 1,
-                    "" if xa.waterway_name is None or (isinstance(xa.waterway_name, float) and np.isnan(xa.waterway_name)) else str(xa.waterway_name),
-                    int(round(xa.geometry.x * 1e4)), int(round(xa.geometry.y * 1e4))]
-                   for g_, xa in zip(G_.itertuples(), XA.itertuples()) if g_.g_row >= 0 and (int(g_.g_row), int(g_.g_col)) in CELL]
+            # river forecast points: GloFAS cells along the larger rivers (39_), named from the nearest OSM river within ~3 km
+            P_ = Z["is_point"]
+            try:
+                pbf_ = sorted(glob.glob(os.path.join(ROOT, "data", "raw", "osm", "ethiopia-*.osm.pbf")))[-1]
+                import pyogrio
+                RW = pyogrio.read_dataframe(pbf_, layer="lines", columns=["name", "waterway"], where="waterway = 'river' AND name IS NOT NULL")
+                tr_ = shapely.STRtree(RW.geometry.values)
+                pp_ = shapely.points(Z["lon"][P_], Z["lat"][P_])
+                ia, ib = tr_.query_nearest(pp_, max_distance=0.03, all_matches=False)
+                NM = {int(a): str(RW.name.values[b]) for a, b in zip(ia, ib)}
+            except Exception as e_:
+                print(f"river names skipped: {e_}"); NM = {}
+            pct = lambda v: int(round(100 * float(v)))
+            def lvl(i_, w_):
+                return 3 if Z[f"p20_w{w_}"][i_] >= 0.3 else 2 if Z[f"p5_w{w_}"][i_] >= 0.3 else 1 if Z[f"p2_w{w_}"][i_] >= 0.3 else 0
+            pts = [[int(i_), *[lvl(i_, w_) for w_ in (1, 2, 3)], *[pct(Z[f"p{rp}_w{w_}"][i_]) for w_ in (1, 2, 3) for rp in (2, 5, 20)],
+                    NM.get(n_, ""), int(round(float(Z["lon"][i_]) * 1e4)), int(round(float(Z["lat"][i_]) * 1e4))] for n_, i_ in enumerate(P_)]
+            RCOLS = ["gc", "lv1", "lv2", "lv3"] + [f"p{rp}_{w_}" for w_ in (1, 2, 3) for rp in (2, 5, 20)] + ["wn"]
             with open(os.path.join(OUT, "rivers.json"), "w", encoding="utf-8") as f_:
                 json.dump({"date": str(Z["date"]), "start": f"{days[0]:%Y-%m-%d}", "cells": cel,
-                           "cols": ["gc", "st", "wn"], "lut": {"st": STA}, "f": pts}, f_, separators=(",", ":"), ensure_ascii=False)
-            print(f"river forecast: {len(cel)} GloFAS cells, {len(pts)} crossing points, {os.path.getsize(os.path.join(OUT, 'rivers.json')) / 1e6:.2f} MB")
+                           "cols": RCOLS, "lut": {}, "f": pts}, f_, separators=(",", ":"), ensure_ascii=False)
+            print(f"river forecast: {len(cel)} GloFAS cells, {len(pts)} river points ({sum(1 for p_ in pts if max(p_[1:4]) > 0)} with a flood signal), {os.path.getsize(os.path.join(OUT, 'rivers.json')) / 1e6:.2f} MB")
         else:
             with open(os.path.join(OUT, "rivers.json"), "w") as f_: json.dump({"cells": [], "cols": [], "lut": {}, "f": []}, f_)
         clean = lambda v: "" if v is None or (isinstance(v, float) and np.isnan(v)) else str(v)

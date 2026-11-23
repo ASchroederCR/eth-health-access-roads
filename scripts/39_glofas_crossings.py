@@ -39,6 +39,26 @@ MIN_UPA, MATCH_RAD, MATCH_RATIO = 250.0, 2, 2.0
 MIN_RL2 = 10.0                                   # m3/s: below this the 2-year "flood" is a trickle in a mostly dry bed
 WINDOWS = [(1, 3), (4, 7), (8, 15)]
 P_FLAG = 0.30                                    # share of members above a threshold that counts as a flood signal
+RIV_UPA, RIV_BLK = 2000.0, 5                     # river forecast points: rivers draining >= 2,000 km2, one per 5x5 cells (0.25 deg)
+
+
+def river_points(S):
+    """GloFAS cells for the web map's river forecast points: inside Ethiopia, upstream area >= 2,000 km2 and a 2-year
+    flood >= 10 m3/s; in each 0.25 deg block the cell on the largest river. -> int array [n, 2] (row, col)"""
+    import importlib.util, shapely
+    from shapely.ops import unary_union
+    spec = importlib.util.spec_from_file_location("wn", os.path.join(ROOT, "scripts", "11_weathernext_forecast.py"))
+    wn = importlib.util.module_from_spec(spec); spec.loader.exec_module(wn)
+    LON, LAT = np.meshgrid(S["lon"], S["lat"])
+    A = np.nan_to_num(S["upa_km2"])
+    m = shapely.contains_xy(unary_union(wn.GEOMS), LON, LAT) & (A >= RIV_UPA) & (np.nan_to_num(S["rl2"]) >= MIN_RL2)
+    out = []
+    for j in range(0, A.shape[0], RIV_BLK):
+        for k in range(0, A.shape[1], RIV_BLK):
+            b = np.where(m[j:j + RIV_BLK, k:k + RIV_BLK], A[j:j + RIV_BLK, k:k + RIV_BLK], -1)
+            if b.max() > 0:
+                jj, kk = np.unravel_index(b.argmax(), b.shape); out.append((j + jj, k + kk))
+    return np.array(out, int)
 
 
 def clip(path, var):
@@ -149,7 +169,10 @@ if __name__ == "__main__":
     rr[dry], cc[dry] = -1, -1
     ok = rr >= 0
     print(f"crossings {len(X):,}; on rivers >= {MIN_UPA:.0f} km2: {(X.upa_km2 >= MIN_UPA).sum():,}; matched to a GloFAS cell: {ok.sum():,}", flush=True)
-    cells, inv = np.unique(np.c_[rr[ok], cc[ok]], axis=0, return_inverse=True)
+    RPTS = river_points(S)
+    cells = np.unique(np.vstack([np.c_[rr[ok], cc[ok]], RPTS]), axis=0)
+    KEY = {(int(a), int(b)): i for i, (a, b) in enumerate(cells)}
+    print(f"river forecast points: {len(RPTS)}; GloFAS cells to read: {len(cells):,}", flush=True)
     q, used, err = None, None, None
     for back in (0, 1):                                         # today's forecast, else yesterday's
         day = init - pd.Timedelta(days=back)
@@ -164,23 +187,29 @@ if __name__ == "__main__":
     R["g_upa_km2"] = np.where(ok, S["upa_km2"][np.maximum(rr, 0), np.maximum(cc, 0)], np.nan).round(0)
     for r in RP:
         R[f"rl{r}"] = np.where(ok, S[f"rl{r}"][np.maximum(rr, 0), np.maximum(cc, 0)], np.nan).round(1)
-    ci = np.full(len(X), -1); ci[ok] = inv.ravel()
+    ci = np.full(len(X), -1); ci[ok] = [KEY[(int(a), int(b))] for a, b in zip(rr[ok], cc[ok])]
+    RL = {r: S[f"rl{r}"][cells[:, 0], cells[:, 1]] for r in RP}
+    PC = {}                                                     # per cell: share of members above each flood level, worst day of each window
     for w, (d0, d1) in enumerate(WINDOWS, start=1):
         leads = [d + off - 1 for d in range(d0, d1 + 1) if 0 <= d + off - 1 < q.shape[1]]
         qq = q[:, leads, :]                                     # [member, day, cell]
         for r in RP:
-            th = np.where(ok, R[f"rl{r}"].values, np.nan)
-            p = np.full(len(X), np.nan)
-            pc = (qq[:, :, ci[ok]] > th[ok][None, None, :]).mean(0).max(0)   # worst day in the window
-            p[ok] = pc
+            PC[f"p{r}_w{w}"] = (qq > RL[r][None, None, :]).mean(0).max(0).astype("float32")
+            p = np.full(len(X), np.nan); p[ok] = PC[f"p{r}_w{w}"][ci[ok]]
             R[f"p{r}_w{w}"] = np.round(p, 2)
-        med = np.full(len(X), np.nan); med[ok] = np.median(qq[:, :, ci[ok]], 0).max(0); R[f"qmed_w{w}"] = np.round(med, 1)
+        med = np.full(len(X), np.nan); med[ok] = np.median(qq, 0).max(0)[ci[ok]]; R[f"qmed_w{w}"] = np.round(med, 1)
     R["glofas_date"] = f"{used:%Y-%m-%d}"
     # forecast spread per river cell for the web map's hydrographs: 10th / 50th / 90th percentile of the members by lead day
     qs = np.quantile(q, [0.1, 0.5, 0.9], axis=0).astype("float32")              # [3, lead, cell]
     np.savez_compressed(os.path.join(ROOT, "data", "processed", "roads", f"eth_glofas_cells_{tag}.npz"),
                         cells=cells, qs=qs, off=off, date=f"{used:%Y-%m-%d}",
-                        upa=S["upa_km2"][cells[:, 0], cells[:, 1]], **{f"rl{r}": S[f"rl{r}"][cells[:, 0], cells[:, 1]] for r in RP})
+                        is_point=np.array([KEY[(int(a), int(b))] for a, b in RPTS], int),
+                        lon=S["lon"][cells[:, 1]], lat=S["lat"][cells[:, 0]],
+                        upa=S["upa_km2"][cells[:, 0], cells[:, 1]], **{f"rl{r}": RL[r] for r in RP}, **PC)
+    pt = np.array([KEY[(int(a), int(b))] for a, b in RPTS], int)
+    for w in (1, 2, 3):
+        print(f"  river points, window {w}: >= {P_FLAG:.0%} chance above 2-yr at {(PC[f'p2_w{w}'][pt] >= P_FLAG).sum()}, 5-yr "
+              f"{(PC[f'p5_w{w}'][pt] >= P_FLAG).sum()}, 20-yr {(PC[f'p20_w{w}'][pt] >= P_FLAG).sum()} of {len(pt)}", flush=True)
     out = os.path.join(ROOT, "data", "processed", "roads", f"eth_glofas_xings_{tag}.parquet")
     pd.DataFrame(R).to_parquet(out)
     for w in (1, 2, 3):
