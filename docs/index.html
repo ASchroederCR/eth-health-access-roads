@@ -2125,7 +2125,7 @@ function decode(d) {
   return feats;
 }
 // data files keep fixed names, so tag each request with this build's version: browsers then never mix a new page with old data
-const DATA_VERSION = "202611231718-d40693";
+const DATA_VERSION = "202611231723-d40693";
 const dv = u => `${u}?v=${DATA_VERSION}`;
 const getJSON = u => fetch(dv(u), { cache: "no-cache" }).then(r => { if (!r.ok) throw new Error(u + " " + r.status); return r.json(); });
 
@@ -2663,7 +2663,7 @@ function legendItems() {
     ...[["--d0", "< 5"], ["--d1", "5–15"], ["--d2", "15–30"], ["--d3", "30–60"], ["--d4", "60+"]].map(([t, l]) => ({ dot: css(t), l: l + " min" })),
     ...(state.trip === "hc" ? [{ dot: css("--panel"), ring: css("--ink"), l: "Health centre (destination)" }] : []),
     { sq: true, ring: css("--hosp"), l: "Hospital" });
-  L.push({ line: "#d1302b", w: 2, l: "Overview (lower left): this view's extent" });
+  L.push({ line: "#d1302b", w: 2, l: "Overview (lower left): this view's extent (dashed); yellow box: network footprint" });
   if (cardHosp) L.push({ line: css("--net"), w: 2, l: "Network footprint: mean centre (dot) ± 2 SD, population profile" }, { line: css("--ink2"), w: 1, dash: [4, 3], l: "Woredas overlapped" });
   if (cardHosp) L.push({ h: "Selected network" }, { dot: css("--d2"), ring: css("--ink"), l: `Linked to ${cardHosp.n}` }, { dot: css("--d0"), fade: true, l: "Other facilities (faded)" });
   return L;
@@ -2773,18 +2773,24 @@ async function drawOverview(g, x0, y0, w, h, S) {
     ADM1_GJ.features.forEach(f => { const gm = f.geometry; const polys = gm.type === "Polygon" ? [gm.coordinates] : gm.type === "MultiPolygon" ? gm.coordinates : [];
       polys.forEach(pl => { g.beginPath(); pl.forEach(ring); g.fill("evenodd"); g.stroke(); }); });
   }
-  // selected network footprint
-  const hull = map.getSource("net-hull") && map.getSource("net-hull")._data;
-  if (cardHosp && hull && hull.features && hull.features.length) {
-    g.strokeStyle = css("--net"); g.lineWidth = S(1.6); g.beginPath(); hull.features[0].geometry.coordinates.forEach(ring); g.stroke();
-  }
   // exported view: box, or a crosshair when it is too small to see
   const b = map.getBounds(), [ax, ay] = P([b.getWest(), b.getNorth()]), [bx, by] = P([b.getEast(), b.getSouth()]);
   g.strokeStyle = "#d1302b"; g.lineWidth = S(1.6);
-  if (bx - ax > S(7) && by - ay > S(7)) g.strokeRect(ax, ay, bx - ax, by - ay);
+  if (bx - ax > S(7) && by - ay > S(7)) { g.setLineDash([S(3), S(2)]); g.strokeRect(ax - S(2), ay - S(2), bx - ax + S(4), by - ay + S(4)); g.setLineDash([]); }
   else { const [cx, cy] = P([map.getCenter().lng, map.getCenter().lat]);
     g.beginPath(); g.arc(cx, cy, S(4), 0, 7); g.stroke();
     [[-1, 0], [1, 0], [0, -1], [0, 1]].forEach(([dx, dy]) => { g.beginPath(); g.moveTo(cx + dx * S(6), cy + dy * S(6)); g.lineTo(cx + dx * S(10), cy + dy * S(10)); g.stroke(); }); }
+  // selected network footprint rectangle, drawn last so the view box never hides it; filled, with a dark edge, at least 4 px
+  const hull = map.getSource("net-hull") && map.getSource("net-hull")._data;
+  const poly = cardHosp && hull && hull.features && hull.features.find(f => f.geometry.type === "Polygon");
+  if (poly) {
+    const xy = poly.geometry.coordinates[0].map(P), xs = xy.map(p => p[0]), ys = xy.map(p => p[1]);
+    let [l, r, t, u] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+    const mn = S(4); if (r - l < mn) { const c = (l + r) / 2; l = c - mn / 2; r = c + mn / 2; } if (u - t < mn) { const c = (t + u) / 2; t = c - mn / 2; u = c + mn / 2; }
+    g.globalAlpha = 0.45; g.fillStyle = css("--net"); g.fillRect(l, t, r - l, u - t); g.globalAlpha = 1;
+    g.strokeStyle = "#1a1a1a"; g.lineWidth = S(2.6); g.strokeRect(l, t, r - l, u - t);
+    g.strokeStyle = css("--net"); g.lineWidth = S(1.4); g.strokeRect(l, t, r - l, u - t);
+  }
   // scale bar, lower right of the inset (1 degree of latitude ~ 111 km)
   const km = 200, bl = km / 111.2 * sc, sx = x0 + w - pad - bl, sy = y0 + h - pad - S(2);
   g.fillStyle = css("--ink"); g.fillRect(sx, sy, bl, S(2.5));
