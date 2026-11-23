@@ -8,8 +8,8 @@ normal time on that same trip, with roads slowed by each window's own tier (days
 days: (3 x days 1-3 + 4 x days 4-7 + 8 x days 8-15) / 15. The worst-window figure ("all 15 days" elsewhere in the
 project) is shown alongside for reference.
 
-Regions are the facility register's admin-1 names (13 regions). The boundary file is the older 11-region geoBoundaries
-layer (SNNPR undivided), so maps are framed on each region's own facilities and draw those boundaries for context only.
+Regions are OCHA COD-AB 2025 admin-1 polygons (14 regions + the contested area); each health centre is assigned by
+location (nearest region within ~1 km if it falls just outside a boundary).
 Facilities > 10 km from a mapped road are left out.
 
 Outputs (<init> = forecast run date)
@@ -48,16 +48,25 @@ def hrs(m): return f"{m / 60:.1f} h" if m >= 90 else f"{m:.0f} min"
 
 
 if __name__ == "__main__":
-    ap = argparse.ArgumentParser(); ap.add_argument("--init", default="2026-11-19"); a = ap.parse_args()
+    ap = argparse.ArgumentParser(); ap.add_argument("--init", default=None); a = ap.parse_args()
+    if not a.init:                                        # latest run with access results
+        a.init = pd.Timestamp(sorted(glob.glob(os.path.join(wn.TB, "eth_health_access_2*.csv")))[-1].split("_")[-1][:8]).strftime("%Y-%m-%d")
     tag = a.init.replace("-", ""); init = pd.Timestamp(a.init)
     d = pd.read_csv(os.path.join(wn.TB, f"eth_health_access_{tag}.csv"))
     need = [f"to_hosp_added_w{w}_min" for w in DAYS]
     if not set(need) <= set(d.columns): raise SystemExit("per-window columns missing: rerun 17_health_access.py")
     hc = d[(d.Type == "Health Center") & ~d.off_network & d.to_hosp_min.notna()].copy()
+    # region by location (OCHA COD-AB 2025 polygons)
+    REG = gpd.GeoDataFrame({"region": wn.NAMES}, geometry=wn.GEOMS, crs="EPSG:4326")
+    pts = gpd.GeoDataFrame(hc[["Id"]], geometry=gpd.points_from_xy(hc.Longitude, hc.Latitude), crs="EPSG:4326")
+    j = gpd.sjoin_nearest(pts.to_crs(32637), REG.to_crs(32637), how="left", max_distance=1000)
+    hc["region"] = j[~j.index.duplicated()].region.reindex(hc.index).values
+    print(f"{hc.region.isna().sum()} health centres outside every region, left out")
+    hc = hc[hc.region.notna()]
     hc["mean15_added_min"] = sum(DAYS[w] * hc[f"to_hosp_added_w{w}_min"] for w in DAYS) / 15
     hc["mean15_added_min"] = hc.mean15_added_min.round(1)
     hosp = d[d.Type == "Hospital"]
-    keep = ["Id", "Name", "admin1Name", "admin2Name", "admin3Name", "Latitude", "Longitude", "nearest_hospital", "to_hosp_min"] + need + ["mean15_added_min", "to_hosp_added_min"]
+    keep = ["Id", "Name", "region", "admin1Name", "admin2Name", "admin3Name", "Latitude", "Longitude", "nearest_hospital", "to_hosp_min"] + need + ["mean15_added_min", "to_hosp_added_min"]
     hc[keep].rename(columns={"to_hosp_added_min": "worst_window_added_min"}).to_csv(
         os.path.join(wn.TB, f"eth_hc_access_15day_mean_{tag}.csv"), index=False)
 
@@ -72,9 +81,9 @@ if __name__ == "__main__":
     span = f"{init:%d %b} – {init + pd.Timedelta(days=14):%d %b %Y}"
 
     rows = []
-    regions = hc.admin1Name.value_counts().index.tolist()
+    regions = hc.region.value_counts().index.tolist()
     for reg in regions:
-        R = hc[hc.admin1Name == reg]
+        R = hc[hc.region == reg]
         st = {"region": reg, "health_centres": len(R),
               "median_normal_min": round(float(R.to_hosp_min.median()), 1),
               **{f"mean_added_{WLAB[w].lower().replace(' ', '_').replace('–', '_')}": round(float(R[f'to_hosp_added_w{w}_min'].mean()), 1) for w in DAYS},
@@ -97,7 +106,7 @@ if __name__ == "__main__":
         ax.add_collection(LineCollection(MAIN, colors="#bdbcb5", linewidths=0.5, zorder=1))
         ax.add_collection(LineCollection(SEV, colors="#e7c3ad", linewidths=0.45, zorder=1.5))
         wn.draw_outline(ax)
-        oth = hc[hc.admin1Name != reg]
+        oth = hc[hc.region != reg]
         ax.scatter(oth.Longitude, oth.Latitude, s=6, color="#c9c8c2", lw=0, zorder=2, alpha=0.6)
         Rs = R.sort_values("mean15_added_min")
         ax.scatter(Rs.Longitude, Rs.Latitude, c=Rs.mean15_added_min, cmap=cmap, norm=norm, s=np.where(Rs.mean15_added_min >= 30, 46, 22),
@@ -148,11 +157,14 @@ if __name__ == "__main__":
         fig.text(0.01, 0.955, f"WeatherNext 3 run {init:%d %b %Y}, 15 days ({span}) · road + slope model · "
                  f"15-day mean = (3 × days 1–3 + 4 × days 4–7 + 8 × days 8–15) ÷ 15", fontsize=9.5, color=INK2)
         wn.foot(fig, "Trip: each health centre to the hospital it reaches fastest by road at normal speeds; added minutes = forecast minus normal on that trip, "
-                     "roads slowed by each window's tier (Minor 0.9, Elevated 0.75, Severe 0.5).\nRegion = facility register admin-1; boundaries drawn are "
-                     "the older 11-region layer. Centres > 10 km from a mapped road left out. Speeds and slowdowns are illustrative, not calibrated. "
+                     "roads slowed by each window's tier (Minor 0.9, Elevated 0.75, Severe 0.5).\nRegions: OCHA COD-AB 2025 admin-1, centres assigned by location. Centres > 10 km from a mapped road left out. Speeds and slowdowns are illustrative, not calibrated. "
                      "Roads © OpenStreetMap contributors.")
         wn.save(fig, os.path.join(RDIR, f"ETH_hc_access_{slug(reg)}.png")); print(f"  {reg}: {len(R)} centres")
 
+    # drop region charts from earlier runs whose region no longer exists (e.g. the old 11-region names)
+    made = {f"ETH_hc_access_{slug(r)}.png" for r in regions}
+    for f_ in glob.glob(os.path.join(RDIR, "ETH_hc_access_*.png")):
+        if os.path.basename(f_) not in made: os.remove(f_); print(f"  removed old chart {os.path.basename(f_)}")
     S = pd.DataFrame(rows).sort_values("mean_added_15day_mean", ascending=False)
     S.to_csv(os.path.join(wn.TB, f"eth_hc_access_by_region_{tag}.csv"), index=False)
     print(S.to_string(index=False))
@@ -179,5 +191,5 @@ if __name__ == "__main__":
     fig.text(0.01, 1.005, f"WeatherNext 3 run {init:%d %b %Y}, 15 days · road + slope model · 15-day mean = (3 × days 1–3 + 4 × days 4–7 + 8 × days 8–15) ÷ 15",
              fontsize=9.5, color=INK2)
     wn.foot(fig, "Trip: each health centre to the hospital it reaches fastest by road at normal speeds; added minutes = forecast minus normal on that trip. "
-                 "Region = facility register admin-1. Centres > 10 km from a mapped road left out. Speeds and slowdowns are illustrative, not calibrated.")
+                 "Regions: OCHA COD-AB 2025 admin-1, centres assigned by location. Centres > 10 km from a mapped road left out. Speeds and slowdowns are illustrative, not calibrated.")
     wn.save(fig, os.path.join(wn.OUT, "ETH_hc_access_regions.png"))

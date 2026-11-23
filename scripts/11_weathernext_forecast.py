@@ -123,8 +123,19 @@ def latest_complete_00z():
 
 
 # --- shared geometry ------------------------------------------------------------------
-gj = json.load(open(os.path.join(BND, "geoboundaries_adm1", "ETH_ADM1.geojson"), encoding="utf-8"))
-NAMES = [f["properties"]["shapeName"] for f in gj["features"]]
+def adm1_path():
+    """OCHA COD-AB 2025 admin-1 regions (14 + the contested area), cached GeoJSON; built from the COD-AB download by
+    40_woreda_population.py when missing."""
+    p = os.path.join(ROOT, "data", "raw", "boundaries", "cod_ab_eth", "eth_adm1.geojson")
+    if not os.path.exists(p):
+        import importlib.util
+        sp = importlib.util.spec_from_file_location("wpop", os.path.join(ROOT, "scripts", "40_woreda_population.py"))
+        m = importlib.util.module_from_spec(sp); sp.loader.exec_module(m); m.adm1_geojson()
+    return p
+
+
+gj = json.load(open(adm1_path(), encoding="utf-8"))
+NAMES = [f["properties"]["name"] for f in gj["features"]]
 GEOMS = [shape(f["geometry"]) for f in gj["features"]]
 
 

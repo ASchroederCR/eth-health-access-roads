@@ -54,12 +54,23 @@ def fetch(init):
         a = np.load(io.BytesIO(raw)); arr = np.stack([a[k].astype("float32") for k in a.dtype.names]); arr[arr <= -9998] = np.nan
         out[stat] = arr
         print(f"  {stat}: fetched", flush=True)
-    gj = json.load(open(os.path.join(ROOT, "data", "raw", "boundaries", "geoboundaries_adm1", "ETH_ADM1.geojson"), encoding="utf-8"))
+    gj = json.load(open(adm1_path(), encoding="utf-8"))           # OCHA COD-AB 2025 regions
     mask = rasterize([(shape(f["geometry"]), 1) for f in gj["features"]], out_shape=(NY, NX),
                      transform=from_origin(X0, Y0, RES, RES), all_touched=True) == 1
     np.savez_compressed(path, **out, mask=mask, init=init.isoformat(), x0=X0, y0=Y0, res=RES, nx=NX, ny=NY,
                         field=FIELD, source=WN3)
     return path
+
+
+def adm1_path():
+    """OCHA COD-AB 2025 admin-1 regions (14 + the contested area), cached GeoJSON; built from the COD-AB download by
+    40_woreda_population.py when missing."""
+    p = os.path.join(ROOT, "data", "raw", "boundaries", "cod_ab_eth", "eth_adm1.geojson")
+    if not os.path.exists(p):
+        import importlib.util
+        sp = importlib.util.spec_from_file_location("wpop", os.path.join(ROOT, "scripts", "40_woreda_population.py"))
+        m = importlib.util.module_from_spec(sp); sp.loader.exec_module(m); m.adm1_geojson()
+    return p
 
 
 def latest_complete_00z():

@@ -25,12 +25,30 @@ OUT_T = os.path.join(ROOT, "data", "processed", "tables", "eth_woreda_population
 WP = "WorldPop/GP/100m/pop_age_sex_cons_unadj"
 
 
-def woredas():
+ADM1 = os.path.join(ROOT, "data", "raw", "boundaries", "cod_ab_eth", "eth_adm1.geojson")
+
+
+def gdb_path():
     gdb = glob.glob(os.path.join(BD, "**", "*.gdb"), recursive=True)
     if not gdb:
         r = requests.get(URL, timeout=600, headers={"User-Agent": "boundary-download/1.0"}); r.raise_for_status()
         zipfile.ZipFile(io.BytesIO(r.content)).extractall(BD)
         gdb = glob.glob(os.path.join(BD, "**", "*.gdb"), recursive=True)
+    return gdb[0]
+
+
+def adm1_geojson():
+    """OCHA COD-AB 2025 admin-1 regions (14 + the contested area), simplified ~100 m -> cached GeoJSON path."""
+    if not os.path.exists(ADM1):
+        a = gpd.read_file(gdb_path(), layer="eth_admin1", engine="pyogrio").to_crs(4326)
+        out = gpd.GeoDataFrame({"name": a.adm1_name, "pcode": a.adm1_pcode},
+                               geometry=shapely.simplify(shapely.make_valid(a.geometry.values), 0.001), crs=4326)
+        out.to_file(ADM1, driver="GeoJSON", engine="pyogrio")
+    return ADM1
+
+
+def woredas():
+    gdb = [gdb_path()]
     layers = [l[0] for l in pyogrio.list_layers(gdb[0])]
     lay = next(l for l in layers if "adm3" in l.lower() or "admin3" in l.lower())
     g = gpd.read_file(gdb[0], layer=lay, engine="pyogrio").to_crs(4326)
