@@ -2151,7 +2151,7 @@ function decode(d) {
   return feats;
 }
 // data files keep fixed names, so tag each request with this build's version: browsers then never mix a new page with old data
-const DATA_VERSION = "202611231746-d40693";
+const DATA_VERSION = "202611231751-d40693";
 const dv = u => `${u}?v=${DATA_VERSION}`;
 const getJSON = u => fetch(dv(u), { cache: "no-cache" }).then(r => { if (!r.ok) throw new Error(u + " " + r.status); return r.json(); });
 
@@ -2711,7 +2711,9 @@ async function drawSvg(g, svg, x, y, w, h) {
   g.textAlign = "left";
 }
 // the open hospital card, laid out for the export; returns its height (draw=false only measures)
-async function drawCard(g, x0, y0, w, S, draw, maxH = Infinity) {   // -> {h, w}; flows into side-by-side columns past maxH
+async function drawCard(g, x0, y0, w, S, draw, maxH = Infinity, compact = 0) {   // -> {h, w}; flows into side-by-side columns past maxH
+  // compact (PNG export, to keep the card one column over the map): 1 drops captions and the footprint explanation;
+  // 2 also keeps the top 5 woredas (the rest merged into "other")
   const body = document.getElementById("ic-body"), pad = S(12), iw = w - 2 * pad;
   const ink = css("--ink"), ink2 = css("--ink2"), muted = css("--muted");
   const F = (wt, px) => `${wt} ${S(px)}px ${ROBOTO}`;
@@ -2753,7 +2755,7 @@ async function drawCard(g, x0, y0, w, S, draw, maxH = Infinity) {   // -> {h, w}
         ops.push(() => { if (col) { g.globalAlpha = op; g.fillStyle = col; g.fillRect(xx, yy - S(8), S(10), S(8)); g.globalAlpha = 1; }
           g.font = F(400, 10.5); g.fillStyle = muted; g.fillText(t, xx + (sw ? S(14) : 0), yy); });
         cx += tw + S(12); }); return; }
-    if (el.matches(".cap")) { text(el.textContent, 400, 10.5, muted, 14); return; }
+    if (el.matches(".cap")) { if (compact >= 1) return; text(el.textContent, 400, 10.5, muted, 14); return; }
     if (el.matches(".pp-grid")) { const c = [...el.children]; y += S(4);
       g.font = F(500, 11.5); let kw = S(82);                    // key column: as wide as the longest key, within limits
       for (let i = 0; i + 1 < c.length; i += 3) kw = Math.max(kw, g.measureText(c[i].textContent.trim()).width + S(10));
@@ -2764,7 +2766,19 @@ async function drawCard(g, x0, y0, w, S, draw, maxH = Infinity) {   // -> {h, w}
           g.font = F(400, 11.5); g.fillStyle = ink2; g.fillText(l, x0 + pad + kw, yy); }); }); y += S(3); }
       return; }
     if (el.matches("table.pptab")) {                            // population table: name column + right-aligned number columns
-      const trs = [...el.querySelectorAll("tr")], ncol = trs[0].children.length, nw = iw * (ncol > 3 ? 0.21 : 0.3), rule = css("--rule");
+      let trs = [...el.querySelectorAll("tr")]; const ncol = trs[0].children.length;
+      if (compact >= 2 && ncol > 3) {                             // top 5 woredas; the rest summed into one "other" row (exact counts from titles)
+        const body_ = trs.filter(r => r.parentElement.tagName === "TBODY" && !r.classList.contains("tot")), plain = body_.filter(r => !r.classList.contains("oth"));
+        if (plain.length > 5) {
+          const rest = body_.filter(r => !plain.slice(0, 5).includes(r)), nRest = plain.length - 5 + (body_.length - plain.length ? +(body_.find(r => r.classList.contains("oth")).children[0].textContent.match(/\d+/) || [0])[0] : 0);
+          const kf = n => n >= 1e6 ? `${(n / 1e6).toFixed(n >= 1e7 ? 0 : 1)}M` : n >= 1e3 ? `${Math.round(n / 1e3)}k` : `${Math.round(n)}`;
+          const sums = [1, 2, 3].map(j => rest.reduce((a, r) => a + (+(r.children[j].title || "0").replace(/,/g, "") || 0), 0));
+          const oth = document.createElement("tr"); oth.className = "oth";
+          oth.innerHTML = `<td>${nRest} other woredas</td>${sums.map(v => `<td>${kf(v)}</td>`).join("")}`;
+          trs = [trs[0], ...plain.slice(0, 5), oth, ...trs.filter(r => r.classList.contains("tot"))];
+        }
+      }
+      const nw = iw * (ncol > 3 ? 0.21 : 0.3), rule = css("--rule");
       y += S(6);
       trs.forEach((row, ri) => { const cells = [...row.children].map(c => c.textContent.trim()), head = ri === 0, tot = row.classList.contains("tot"), oth = row.classList.contains("oth");
         const wt = head ? 500 : tot ? 600 : 400, px = head ? 10.5 : 11.5, col = head || oth ? muted : tot ? ink : ink2;
@@ -2781,7 +2795,10 @@ async function drawCard(g, x0, y0, w, S, draw, maxH = Infinity) {   // -> {h, w}
         if (head) { const yr = y + S(3); ops.push(() => { g.fillStyle = rule; g.fillRect(x0 + pad, yr, iw, S(1)); }); y += S(4); }
       });
       y += S(2); return; }
-    if (el.matches(".netnote")) { if (/Close this card/.test(el.textContent)) return; y += S(3); text(el.textContent, 400, 11.5, ink2, 15); return; }
+    if (el.matches(".netnote")) { if (/Close this card/.test(el.textContent)) return;
+      let t = el.textContent;
+      if (compact >= 1 && /Footprint:/.test(t)) t = t.split(/\s*Footprint:/)[0] + " " + ((t.match(/It overlaps [^.]*\./) || [""])[0]).replace("It overlaps", "The footprint (outlined) overlaps");
+      y += S(3); text(t, 400, 11.5, ink2, 15); return; }
     if (el.matches(".pill")) { text(el.textContent, 500, 12, ink, 16); return; }
     if (el.matches(".pp-foot")) { y += S(4); text(el.textContent, 400, 10.5, muted, 14); return; }
   };
@@ -2867,12 +2884,10 @@ async function exportPNG() {
       // inset over the map, flowing into side-by-side columns when taller than the map, in the first corner that
       // leaves the selected hospital visible; else its own column beside the legend
       const m = S(12), M = S(24);
-      const one = await drawCard(meas, 0, 0, cardW, S, false);
-      let fit = await drawCard(meas, 0, 0, cardW, S, false, mc.height - 2 * m), limH = mc.height - 2 * m;
-      if (fit.w > cardW) {                                        // balance the columns: lowest height that keeps the same column count
-        for (let t = Math.ceil(one.h / Math.round(fit.w / cardW)); t < mc.height - 2 * m; t += S(16)) {
-          const tr = await drawCard(meas, 0, 0, cardW, S, false, t); if (tr.w <= fit.w) { fit = tr; limH = t; break; } } }
-      const ch = fit.h, cw = fit.w;
+      // one column over the map: the lightest compact level that fits the map's height
+      let lvl = 0, fit = await drawCard(meas, 0, 0, cardW, S, false, Infinity, 0);
+      while (fit.h > mc.height - 2 * m && lvl < 2) fit = await drawCard(meas, 0, 0, cardW, S, false, Infinity, ++lvl);
+      const ch = fit.h, cw = fit.w, limH = Infinity;
       const hp = HF_ALL.find(f => f.properties.id === +cardHosp.id);
       const p = hp ? map.project(hp.geometry.coordinates) : null, px = p ? S(p.x) : -1, py = p ? S(p.y) : -1;
       const spots = [[mc.width - cw - m, m], [m, m], [mc.width - cw - m, mc.height - ch - m]];   // lower left: overview map
@@ -2883,7 +2898,7 @@ async function exportPNG() {
       const clear = ([x, y]) => !fpb || fpb[2] < x - S(6) || fpb[0] > x + cw + S(6) || fpb[3] < y - S(6) || fpb[1] > y + ch + S(6);
       const ok = ch + 2 * m <= mc.height && mc.width - cw >= S(260);
       const spot = ok ? (spots.find(q => free(q) && clear(q)) || spots.find(free)) : null;
-      card = spot ? { h: ch, w: cw, inset: true, x: spot[0], y: spot[1], maxH: limH } : { h: one.h, w: cardW, inset: false, x: 0, y: 0, maxH: Infinity };
+      card = { h: ch, w: cw, inset: !!spot, x: spot ? spot[0] : 0, y: spot ? spot[1] : 0, maxH: limH, lvl };
     }
     const extraW = card && !card.inset ? card.w + pad : 0;
     const cv = document.createElement("canvas");
@@ -2936,7 +2951,7 @@ async function exportPNG() {
         wrap(g, it.l, legendW - 2 * pad).forEach((l, i) => { if (i) y += S(14); g.fillText(l, x, y); }); continue; }
       g.fillStyle = ink2; const ls = wrap(g, it.l, legendW - 2 * pad - S(32)); ls.forEach((l, i) => { if (i) y += S(14); g.fillText(l, x + S(32), y); });
     }
-    if (card) await drawCard(g, card.inset ? mx + card.x : mx + mc.width + legendW, headH + (card.inset ? card.y : S(12)), cardW, S, true, card.maxH);
+    if (card) await drawCard(g, card.inset ? mx + card.x : mx + mc.width + legendW, headH + (card.inset ? card.y : S(12)), cardW, S, true, card.maxH, card.lvl);
     // scale bar on the map image
     const mpp = 40075016.686 * Math.cos(c.lat * Math.PI / 180) / (512 * Math.pow(2, map.getZoom()));   // metres per CSS pixel
     const target = 110 * mpp, p10 = Math.pow(10, Math.floor(Math.log10(target))), nice = [1, 2, 5, 10].map(k => k * p10).filter(v => v <= target).pop();
