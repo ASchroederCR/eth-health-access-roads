@@ -2125,7 +2125,7 @@ function decode(d) {
   return feats;
 }
 // data files keep fixed names, so tag each request with this build's version: browsers then never mix a new page with old data
-const DATA_VERSION = "202611231708-d40693";
+const DATA_VERSION = "202611231718-d40693";
 const dv = u => `${u}?v=${DATA_VERSION}`;
 const getJSON = u => fetch(dv(u), { cache: "no-cache" }).then(r => { if (!r.ok) throw new Error(u + " " + r.status); return r.json(); });
 
@@ -2195,6 +2195,7 @@ function applyTheme() {
   if (has("flood")) map.setPaintProperty("flood", "line-color", css("--flood"));
   if (has("xings")) xingImages();
   if (has("net-hull")) map.setPaintProperty("net-hull", "line-color", css("--net"));
+  if (has("net-ctr")) map.setPaintProperty("net-ctr", "circle-color", css("--net"));
 
   if (has("roads")) map.setPaintProperty("roads", "line-color", tierColor());
   ["hf-hp", "hf-main"].forEach(id => { if (has(id)) { map.setPaintProperty(id, "circle-color", hfColor(id));
@@ -2569,6 +2570,8 @@ async function ensureFootprintLayers() {
   map.addLayer({ id: "net-wd", type: "line", source: "net-wd", paint: { "line-color": css("--ink2"), "line-width": 0.8, "line-opacity": 0.7, "line-dasharray": [2, 1.5] } }, before);
   map.addLayer({ id: "net-hull-fill", type: "fill", source: "net-hull", paint: { "fill-color": css("--fl2"), "fill-opacity": 0.07 } }, before);
   map.addLayer({ id: "net-hull", type: "line", source: "net-hull", paint: { "line-color": css("--net"), "line-width": 2.2, "line-opacity": 1 } }, before);
+  map.addLayer({ id: "net-ctr", type: "circle", source: "net-hull", filter: ["==", ["geometry-type"], "Point"],
+    paint: { "circle-radius": 5, "circle-color": css("--net"), "circle-stroke-color": "#1a1a1a", "circle-stroke-width": 1.5 } }, before);
 }
 function clearFootprint() {
   if (!map) return;
@@ -2604,7 +2607,7 @@ async function addProfile(hp) {
   const ap = grid ? "" : " ≈";
   el.innerHTML = `<div class="subh" style="margin:12px 0 4px">Population profile of this network</div>
     <div class="netnote">${affected ? `<b>Flood-affected network</b> (${WIN_TXT()}): ${fk ? `${fk} km of low-lying road flagged` : ""}${fk && fx ? " and " : ""}${fx ? `${fx} river crossing${fx > 1 ? "s" : ""} at flood risk` : ""} inside the footprint.` : `No flood flags inside the footprint (${WIN_TXT()}).`}
-    Footprint: the area around the hospital and its ${fmt(nl)} linked facilities, plus about 2 km (outlined on the map). It overlaps ${wd.length} woreda${wd.length > 1 ? "s" : ""}.</div>
+    Footprint: a rectangle on the mean centre (dot) of the hospital and its ${fmt(nl)} linked facilities, reaching 2 standard deviations of their spread east–west and north–south, plus about 2 km (outlined on the map)${net.ni != null ? `; ${fmt(net.ni)} of the ${fmt(nl)} facilities fall inside` : ""}. It overlaps ${wd.length} woreda${wd.length > 1 ? "s" : ""}.</div>
     <table class="pptab"><colgroup><col><col class="n"><col class="n"><col class="n"></colgroup>
       <thead><tr><th>Woreda</th><th>People inside${ap}</th><th>Under 5 inside${ap}</th><th>Woreda total</th></tr></thead>
       <tbody>${rows}</tbody></table>
@@ -2612,7 +2615,8 @@ async function addProfile(hp) {
   // draw the footprint and the woredas it overlaps
   await ensureFootprintLayers(); if (seq !== profSeq || !cardHosp) return;
   const r = net.r, ring = []; for (let j = 0; j < r.length; j += 2) ring.push([r[j] / 1e4, r[j + 1] / 1e4]);
-  map.getSource("net-hull").setData({ type: "FeatureCollection", features: [{ type: "Feature", properties: {}, geometry: { type: "Polygon", coordinates: [ring] } }] });
+  map.getSource("net-hull").setData({ type: "FeatureCollection", features: [{ type: "Feature", properties: {}, geometry: { type: "Polygon", coordinates: [ring] } }]
+    .concat(net.c ? [{ type: "Feature", properties: {}, geometry: { type: "Point", coordinates: net.c } }] : []) });
   if (!WOREDA_LINES) { const d = await getJSON("data/woredas.json").catch(() => null); WOREDA_LINES = d && d.f ? decode(d) : []; }
   if (seq !== profSeq || !cardHosp) return;
   const want = new Set(wd.map(d => d.i));
@@ -2660,7 +2664,7 @@ function legendItems() {
     ...(state.trip === "hc" ? [{ dot: css("--panel"), ring: css("--ink"), l: "Health centre (destination)" }] : []),
     { sq: true, ring: css("--hosp"), l: "Hospital" });
   L.push({ line: "#d1302b", w: 2, l: "Overview (lower left): this view's extent" });
-  if (cardHosp) L.push({ line: css("--net"), w: 2, l: "Network footprint (population profile)" }, { line: css("--ink2"), w: 1, dash: [4, 3], l: "Woredas overlapped" });
+  if (cardHosp) L.push({ line: css("--net"), w: 2, l: "Network footprint: mean centre (dot) ± 2 SD, population profile" }, { line: css("--ink2"), w: 1, dash: [4, 3], l: "Woredas overlapped" });
   if (cardHosp) L.push({ h: "Selected network" }, { dot: css("--d2"), ring: css("--ink"), l: `Linked to ${cardHosp.n}` }, { dot: css("--d0"), fade: true, l: "Other facilities (faded)" });
   return L;
 }
