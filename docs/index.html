@@ -2094,6 +2094,32 @@ rainLegend();
 const status = document.getElementById("status");
 let map = null;
 let HF_ALL = [];
+// rain grid (0.1° cells, edges on .x5) indexed by cell, for per-facility lookups
+let RAIN_GJ = null, RAIN_IDX = null;
+const cellKey = (lon, lat) => `${Math.floor(lon * 10 - 0.5)},${Math.floor(lat * 10 - 0.5)}`;
+function rainCellAt(lon, lat) {
+  if (!RAIN_GJ) return null;
+  if (!RAIN_IDX) { RAIN_IDX = new Map(); RAIN_GJ.features.forEach(f => { const c = f.geometry.coordinates[0];
+    RAIN_IDX.set(`${Math.round(Math.min(...c.map(v => v[0])) * 10 - 0.5)},${Math.round(Math.min(...c.map(v => v[1])) * 10 - 0.5)}`, f.properties); }); }
+  return RAIN_IDX.get(cellKey(lon, lat)) || null;
+}
+// intense rain across a hospital's network: linked facilities whose rain cell has intense (1) / very intense (2) rain, per window
+function netRain(hp) {
+  const key = state.model === "fric" ? "fhid" : "hid";
+  const mem = HF_ALL.filter(f => f.properties[key] === +hp.id && f.properties.ty !== 2 && !f.properties.off);
+  if (!mem.length || !RAIN_GJ) return "";
+  const cells = mem.map(f => rainCellAt(...f.geometry.coordinates));
+  const cnt = w => [1, 2].map(lv => cells.filter(c => c && (c["i" + w] || 0) >= lv).length);
+  const C = [1, 2, 3].map(cnt), anyW = cells.filter(c => c && Math.max(c.i1 || 0, c.i2 || 0, c.i3 || 0) >= 1).length;
+  const sel = state.win, WN = ["", "Days 1–3", "Days 4–7", "Days 8–15"];
+  const head = anyW
+    ? `<b>Intense rain possible across this network:</b> at ${fmt(anyW)} of its ${fmt(mem.length)} linked facilities in at least one forecast window.`
+    : `No intense rain forecast at any of its ${fmt(mem.length)} linked facilities in the next 15 days.`;
+  return `<div class="netnote" style="margin:0 0 2px">${head}</div>
+    ${anyW ? `<table class="pptab" style="margin:4px 0 8px"><colgroup><col><col class="n" style="width:30%"><col class="n" style="width:30%"></colgroup>
+      <thead><tr><th>Linked facilities</th><th>Intense rain possible</th><th>Very intense</th></tr></thead>
+      <tbody>${[1, 2, 3].map(w => `<tr${sel === w ? ' class="tot"' : ""}><td>${WN[w]}</td><td>${C[w - 1][0]}</td><td>${C[w - 1][1]}</td></tr>`).join("")}</tbody></table>` : ""}`;
+}
 const xingLv = () => state.win ? ["get", `lv${state.win}`] : ["max", ["get", "lv1"], ["get", "lv2"], ["get", "lv3"]];
 const xingIcon = () => ["match", xingLv(), 3, "xt3", 2, "xt2", "xt1"];
 const xingSize = () => ["interpolate", ["linear"], ["zoom"], 5, ["match", xingLv(), 3, 0.8, 2, 0.65, 0.5], 10, ["match", xingLv(), 3, 1.45, 2, 1.2, 0.95]];
@@ -2125,7 +2151,7 @@ function decode(d) {
   return feats;
 }
 // data files keep fixed names, so tag each request with this build's version: browsers then never mix a new page with old data
-const DATA_VERSION = "202611231728-d40693";
+const DATA_VERSION = "202611231733-d40693";
 const dv = u => `${u}?v=${DATA_VERSION}`;
 const getJSON = u => fetch(dv(u), { cache: "no-cache" }).then(r => { if (!r.ok) throw new Error(u + " " + r.status); return r.json(); });
 
@@ -2231,7 +2257,7 @@ function init() {
     }
     map.addLayer({ id: "hs", type: "raster", source: "hs", paint: { "raster-opacity": ["interpolate", ["linear"], ["zoom"], 5, 0.45, 9, 0.8], "raster-fade-duration": 0 } });
     const [rain, adm] = await Promise.all([getJSON("data/rain.geojson"), getJSON("data/adm1.geojson")]);
-    map.addSource("rain", { type: "geojson", data: rain });
+    map.addSource("rain", { type: "geojson", data: rain }); RAIN_GJ = rain;
     map.addLayer({ id: "rain", type: "fill", source: "rain", paint: { "fill-opacity": 0.55, "fill-antialias": false } });
     map.addLayer({ id: "intense", type: "fill", source: "rain", filter: [">=", ["max", ["get", "i1"], ["get", "i2"], ["get", "i3"]], 1],
       paint: { "fill-opacity": 0.55, "fill-antialias": false } });
@@ -2465,6 +2491,7 @@ function facilityHTML(p0) {
   rows += `<span class="k">Roads nearby</span><span class="v">${p.s5 == null ? "no mapped roads within 5 km" : Math.round(p.s5 * 100) + "% Elevated / Severe within 5 km"}; nearest road ${esc(p.nt)}</span><span class="s"></span>`;
   return `<div class="pp-h">${esc(p.n)}</div><div class="pp-sub">${TYN[p.ty]} · ${esc(p.a3)}, ${esc(p.a2)} · ${fr ? "MAP friction surface" : "road + slope model"} · ${WIN_TXT()}</div>
     ${p.ty !== 2 ? `<span class="pill"><i style="background:var(${tok})"></i>+${pd ?? "–"} min to reach ${esc(target)}</span>` : ""}
+    ${p.ty === 2 ? netRain(p0) : ""}
     ${p.ty === 2 ? (p0.hs ? forecastChart(p0.hs) : p0.rs ? rainChart(p0.rs) : `<div class="netnote">The forecast series hasn't loaded. Reload the page to fetch the latest data.</div>`) : ""}
     <div class="pp-grid">${rows}</div>
     ${p.ty === 2 ? `<div class="netnote">Its linked health centres and posts are highlighted on the map, coloured by added travel time; other facilities are faded. Close this card to clear.</div>` : ""}
@@ -2546,8 +2573,8 @@ function forecastChart(hs) {
     const h = i * 3; g += `<text x="${x(i)}" y="${Ht - 5}" text-anchor="${an}" font-size="9" fill="var(--muted)">${dl(at(h))}</text>`; });
   const fmtSpan = ([a, b]) => `${tl(at(a))}${b > a ? "–" + String(at(b + 1).getUTCHours()).padStart(2, "0") + ":00" : ""}`;
   const head = s1.length
-    ? `<b>Intense rain possible</b> at ${s1.slice(0, 3).map(fmtSpan).join("; ")}${s1.length > 3 ? ` and ${s1.length - 3} more` : ""} (UTC)${s2.length ? "; very intense at " + s2.slice(0, 2).map(fmtSpan).join("; ") : ""}.`
-    : "No intense rain forecast here in the next 15 days.";
+    ? `<b>At the hospital itself:</b> intense rain possible at ${s1.slice(0, 3).map(fmtSpan).join("; ")}${s1.length > 3 ? ` and ${s1.length - 3} more` : ""} (UTC)${s2.length ? "; very intense at " + s2.slice(0, 2).map(fmtSpan).join("; ") : ""}.`
+    : "<b>At the hospital itself:</b> no intense rain forecast in the next 15 days.";
   const pkTh = SUMMARY.int_th ? SUMMARY.int_th[INT_KEYS[hs.pk < 72 ? 0 : hs.pk < 168 ? 1 : 2]] : null;
   return `<div class="rchart"><div class="netnote" style="margin:0 0 4px">${head} Wettest hour (wet end): ${hs.pkv} mm on ${tl(at(hs.pk))} UTC${pkTh ? ` (intense from ${pkTh.intense} mm in that window)` : ""}.</div>
     <svg viewBox="0 0 ${W} ${Ht}" role="img" aria-label="Forecast rain at this hospital, mm per 3 hours, with intense-rain periods shaded">${g}</svg>
@@ -2724,7 +2751,7 @@ async function drawCard(g, x0, y0, w, S, draw) {
           g.font = F(400, 11.5); g.fillStyle = ink2; g.fillText(l, x0 + pad + kw, yy); }); }); y += S(3); }
       return; }
     if (el.matches("table.pptab")) {                            // population table: name column + right-aligned number columns
-      const trs = [...el.querySelectorAll("tr")], nw = iw * 0.21, rule = css("--rule");
+      const trs = [...el.querySelectorAll("tr")], ncol = trs[0].children.length, nw = iw * (ncol > 3 ? 0.21 : 0.3), rule = css("--rule");
       y += S(6);
       trs.forEach((row, ri) => { const cells = [...row.children].map(c => c.textContent.trim()), head = ri === 0, tot = row.classList.contains("tot"), oth = row.classList.contains("oth");
         const wt = head ? 500 : tot ? 600 : 400, px = head ? 10.5 : 11.5, col = head || oth ? muted : tot ? ink : ink2;
@@ -2733,9 +2760,9 @@ async function drawCard(g, x0, y0, w, S, draw) {
         const nL = Math.max(...lines.map(l => l.length)), lh = head ? 13 : 15;
         if (tot) { const yr = y + S(3); ops.push(() => { g.fillStyle = rule; g.fillRect(x0 + pad, yr, iw, S(1)); }); y += S(4); }
         const y1 = y; y += S(lh) * nL;
-        lines.forEach((ls, j) => ls.forEach((l, li) => { const yy = y1 + S(lh) * (li + 1 + (nL - ls.length)), xr = x0 + pad + iw - (3 - (j - 1)) * nw + nw;
+        lines.forEach((ls, j) => ls.forEach((l, li) => { const yy = y1 + S(lh) * (li + 1 + (nL - ls.length)), xr = x0 + pad + iw - (ncol - 1 - j) * nw;
           let t = l;
-          if (!j) { g.font = F(wt, px); const mw = iw - 3 * nw - S(4); while (t.length > 3 && g.measureText(t).width > mw) t = t.slice(0, -2) + "…"; }
+          if (!j) { g.font = F(wt, px); const mw = iw - (ncol - 1) * nw - S(4); while (t.length > 3 && g.measureText(t).width > mw) t = t.slice(0, -2) + "…"; }
           ops.push(() => { g.font = F(wt, px); g.fillStyle = !j && !head && !oth && !tot ? ink : col;
             if (!j) { g.textAlign = "left"; g.fillText(t, x0 + pad, yy); } else { g.textAlign = "right"; g.fillText(t, xr, yy); g.textAlign = "left"; } }); }));
         if (head) { const yr = y + S(3); ops.push(() => { g.fillStyle = rule; g.fillRect(x0 + pad, yr, iw, S(1)); }); y += S(4); }
@@ -2839,6 +2866,22 @@ async function exportPNG() {
     g.drawImage(mc, mx, headH, mc.width, mc.height);
     g.strokeStyle = rule; g.lineWidth = S(1); g.strokeRect(mx, headH, mc.width, mc.height);
     const font = (w, px, fam) => `${w} ${S(px)}px ${fam}`;
+    // footprint label: linked facilities inside, at the rectangle's top-left corner (kept within the map)
+    const fpSrc = cardHosp && map.getSource("net-hull") && map.getSource("net-hull")._data;
+    const fpPoly = fpSrc && fpSrc.features && fpSrc.features.find(f => f.geometry.type === "Polygon");
+    if (fpPoly) {
+      const N_ = await loadNets(), net_ = N_ && N_.nets && N_.nets[state.model === "fric" ? "fhid" : "hid"] && N_.nets[state.model === "fric" ? "fhid" : "hid"][String(+cardHosp.id)];
+      if (net_) {
+        const cs = fpPoly.geometry.coordinates[0], lx = Math.min(...cs.map(v => v[0])), ly = Math.max(...cs.map(v => v[1]));
+        const pt = map.project([lx, ly]), n_ = net_.ni ?? net_.n;
+        const lab = `Network footprint · ${fmt(n_)} linked facilit${n_ === 1 ? "y" : "ies"} inside${net_.ni != null && net_.ni < net_.n ? ` (of ${fmt(net_.n)})` : ""}`;
+        g.font = font(600, 12, ROBOTO); const tw = g.measureText(lab).width, bw = tw + S(12), bh = S(20);
+        const lx0 = Math.min(Math.max(mx + S(pt.x) + S(4), mx + S(6)), mx + mc.width - bw - S(6)), ly0 = Math.min(Math.max(headH + S(pt.y) + S(4), headH + S(6)), headH + mc.height - bh - S(6));
+        g.fillStyle = css("--net"); g.beginPath(); g.roundRect(lx0, ly0, bw, bh, S(4)); g.fill();
+        g.strokeStyle = "#1a1a1a"; g.lineWidth = S(1); g.stroke();
+        g.fillStyle = "#1a1a1a"; g.fillText(lab, lx0 + S(6), ly0 + S(14));
+      }
+    }
     g.textBaseline = "alphabetic";
     g.fillStyle = ink; g.font = font(700, 22, ROBOTO);
     g.fillText("Ethiopia rain, flooding and healthcare access forecast", pad, S(30));
