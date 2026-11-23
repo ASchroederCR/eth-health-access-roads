@@ -674,7 +674,7 @@ if __name__ == "__main__":
             xw = XINGS[XINGS[f"w{w + 1}"]]
             lvw = xw[f"lv{w + 1}"].values
             ax.scatter(shapely.get_x(xw.geometry.values), shapely.get_y(xw.geometry.values), s=np.array([0, 9, 20, 36])[lvw],
-                       color=np.array(["#000", "#6f9be0", "#1f5fbf", "#0b2f66"])[lvw], edgecolors="white", linewidths=0.4, zorder=4)
+                       color=np.array(["#000", "#6f9be0", "#1f5fbf", "#0b2f66"])[lvw], marker="^", edgecolors="white", linewidths=0.4, zorder=4)
             wn.draw_outline(ax); wn.mapax(ax)
             a_, b_ = WINDOWS[w]
             ax.set_title(f"{WLAB[w].capitalize()} · {days[a_ - 1]:%d %b}–{days[b_ - 1]:%d %b}", loc="left", fontsize=11.5, color=INK, pad=30)
@@ -682,9 +682,9 @@ if __name__ == "__main__":
                     f"{int((lvw >= 2).sum()):,} at 5-year flood or worse · {int((xw[f'by{w + 1}'] == 'flash').sum()):,} flash-flood",
                     transform=ax.transAxes, fontsize=8.5, color=INK2)
         hd = [Line2D([], [], color=C_LOW, lw=2.2, label="low-lying road, heavy rain forecast"),
-              Line2D([], [], marker="o", ls="", color="#6f9be0", markersize=4, label="crossing: 2-year flood likely, or flash flood"),
-              Line2D([], [], marker="o", ls="", color="#1f5fbf", markersize=6, label="5-year flood likely"),
-              Line2D([], [], marker="o", ls="", color="#0b2f66", markersize=8, label="20-year flood likely"),
+              Line2D([], [], marker="^", ls="", color="#6f9be0", markersize=5, label="crossing: 2-year flood likely, or flash flood"),
+              Line2D([], [], marker="^", ls="", color="#1f5fbf", markersize=7, label="5-year flood likely"),
+              Line2D([], [], marker="^", ls="", color="#0b2f66", markersize=9, label="20-year flood likely"),
               Line2D([], [], color="#c9c8c2", lw=1.5, label="main roads")]
         fig.legend(handles=hd, loc="lower center", ncol=5, frameon=False, fontsize=9, bbox_to_anchor=(0.5, -0.02))
         fig.suptitle("Where roads could flood: low-lying stretches and river crossings by forecast window", x=0.01, ha="left",

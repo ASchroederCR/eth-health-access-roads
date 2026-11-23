@@ -286,7 +286,7 @@ section { display: flex; flex-direction: column; gap: 6px; }
       <div id="leg-pnnote" hidden style="font-size:11px;color:var(--muted)">blank: dry season, not compared</div>
       <div class="slip" id="leg-slip"><i></i>slip / rock-fall exposure</div>
       <div class="slip" id="leg-flood"><i style="border-top:2.5px solid var(--flood)"></i>flood-prone stretch </div>
-      <div class="dots" id="leg-flood2"><span style="color:var(--muted)">crossing flood risk:</span><span><i style="background:var(--fl1)"></i>2-yr / flash</span><span><i style="background:var(--fl2)"></i>5-yr</span><span><i style="background:var(--fl3)"></i>20-yr</span></div>
+      <div class="dots" id="leg-flood2"><span style="color:var(--muted)">crossing flood risk:</span><span><i style="background:var(--fl1);border-radius:0;clip-path:polygon(50% 0,100% 100%,0 100%)"></i>2-yr / flash</span><span><i style="background:var(--fl2);border-radius:0;clip-path:polygon(50% 0,100% 100%,0 100%)"></i>5-yr</span><span><i style="background:var(--fl3);border-radius:0;clip-path:polygon(50% 0,100% 100%,0 100%)"></i>20-yr</span></div>
       <div id="leg-fric" hidden>MAP travel speed, km/h</div>
       <div class="dots" id="leg-fric2" hidden><span><i style="background:#a8320f;border-radius:2px"></i>&lt;3</span><span><i style="background:#e0701f;border-radius:2px"></i>3–10</span><span><i style="background:#f2b33d;border-radius:2px"></i>10–30</span><span><i style="background:#c9c8c2;border-radius:2px"></i>30+</span></div>
       <div id="leg-fric3" hidden></div>
@@ -2085,7 +2085,19 @@ const status = document.getElementById("status");
 let map = null;
 let HF_ALL = [];
 const xingLv = () => state.win ? ["get", `lv${state.win}`] : ["max", ["get", "lv1"], ["get", "lv2"], ["get", "lv3"]];
-const xingColor = () => ["match", xingLv(), 3, css("--fl3"), 2, css("--fl2"), css("--fl1")];
+const xingIcon = () => ["match", xingLv(), 3, "xt3", 2, "xt2", "xt1"];
+const xingSize = () => ["interpolate", ["linear"], ["zoom"], 5, ["match", xingLv(), 3, 0.8, 2, 0.65, 0.5], 10, ["match", xingLv(), 3, 1.45, 2, 1.2, 0.95]];
+function xingImages() {          // upward triangles, one per flood level, outlined in the panel colour; drawn at 2x, 16 css px
+  if (!map) return;
+  const px = 2, n = 16 * px, b = 1.5 * px;
+  [1, 2, 3].forEach(lv => {
+    const c = document.createElement("canvas"); c.width = c.height = n; const g = c.getContext("2d");
+    g.beginPath(); g.moveTo(n / 2, b); g.lineTo(n - b, n - b); g.lineTo(b, n - b); g.closePath();
+    g.fillStyle = css(`--fl${lv}`); g.fill(); g.lineJoin = "round"; g.lineWidth = b; g.strokeStyle = css("--panel"); g.stroke();
+    const img = g.getImageData(0, 0, n, n), id = `xt${lv}`;
+    if (map.hasImage(id)) map.updateImage(id, img); else map.addImage(id, img, { pixelRatio: px });
+  });
+}
 function decodePoints(d) {  // {"cols", "lut", "f": [[values..., x*1e4, y*1e4]]} -> point features
   const C = d.cols, L = d.lut || {};
   return (d.f || []).map(r => { const p = {}; C.forEach((c, i) => p[c] = L[c] ? L[c][r[i]] : r[i]);
@@ -2103,7 +2115,7 @@ function decode(d) {
   return feats;
 }
 // data files keep fixed names, so tag each request with this build's version: browsers then never mix a new page with old data
-const DATA_VERSION = "202611231409-d40693";
+const DATA_VERSION = "202611231412-d40693";
 const dv = u => `${u}?v=${DATA_VERSION}`;
 const getJSON = u => fetch(dv(u), { cache: "no-cache" }).then(r => { if (!r.ok) throw new Error(u + " " + r.status); return r.json(); });
 
@@ -2149,8 +2161,8 @@ function applyFilter() {
   map.setLayoutProperty("roads", "line-sort-key", ["coalesce", ["get", prop], 0]);
   if (map.getLayer("slip")) map.setFilter("slip", state.win ? ["==", ["get", `w${state.win}`], 1] : null);
   ["flood", "xings"].forEach(id => { if (map.getLayer(id)) map.setFilter(id, state.win ? ["==", ["get", `w${state.win}`], 1] : null); });
-  if (map.getLayer("xings")) { map.setPaintProperty("xings", "circle-color", xingColor());
-    map.setPaintProperty("xings", "circle-radius", ["interpolate", ["linear"], ["zoom"], 5, ["match", xingLv(), 3, 4, 2, 3, 2], 10, ["match", xingLv(), 3, 8, 2, 6, 4.5]]); }
+  if (map.getLayer("xings")) { map.setLayoutProperty("xings", "icon-image", xingIcon()); map.setLayoutProperty("xings", "icon-size", xingSize());
+    map.setLayoutProperty("xings", "symbol-sort-key", xingLv()); }
   if (map.getLayer("intense")) {
     const lvl = state.win ? ["get", `i${state.win}`] : ["max", ["get", "i1"], ["get", "i2"], ["get", "i3"]];
     map.setFilter("intense", [">=", lvl, 1]);
@@ -2169,7 +2181,7 @@ function applyTheme() {
   if (has("mask")) map.setPaintProperty("mask", "fill-color", css("--outside"));
   if (has("slip")) map.setPaintProperty("slip", "line-color", css("--slip"));
   if (has("flood")) map.setPaintProperty("flood", "line-color", css("--flood"));
-  if (has("xings")) map.setPaintProperty("xings", "circle-stroke-color", css("--panel"));
+  if (has("xings")) xingImages();
   if (has("roads")) map.setPaintProperty("roads", "line-color", tierColor());
   ["hf-hp", "hf-main"].forEach(id => { if (has(id)) { map.setPaintProperty(id, "circle-color", hfColor(id));
     map.setPaintProperty(id, "circle-stroke-color", hfRing(id)); } });
@@ -2244,9 +2256,10 @@ function init() {
     const xD = await getJSON("data/xings.json").catch(() => null);
     XINGS_META = { glofas: xD && xD.glofas };
     map.addSource("xings", { type: "geojson", data: { type: "FeatureCollection", features: xD ? decodePoints(xD) : [] } });
-    map.addLayer({ id: "xings", type: "circle", source: "xings",
-      paint: { "circle-color": xingColor(), "circle-stroke-color": css("--panel"), "circle-stroke-width": 0.8,
-        "circle-radius": ["interpolate", ["linear"], ["zoom"], 5, ["match", xingLv(), 3, 4, 2, 3, 2], 10, ["match", xingLv(), 3, 8, 2, 6, 4.5]] } });
+    xingImages();
+    map.addLayer({ id: "xings", type: "symbol", source: "xings",
+      layout: { "icon-image": xingIcon(), "icon-size": xingSize(), "icon-allow-overlap": true, "icon-ignore-placement": true,
+        "symbol-sort-key": xingLv() } });
     if (map.getLayer("ctx")) map.moveLayer("ctx", "roads");
     if (map.getLayer("mask")) { map.moveLayer("mask"); map.moveLayer("adm"); }
     try {
@@ -2493,7 +2506,7 @@ function legendItems() {
   if (on("opt-roads")) L.push({ h: `Road slowdown tier · ${W}` }, ...[[3, "Severe (~50% slower)"], [2, "Elevated (~25% slower)"], [1, "Minor (~10% slower)"]]
     .filter(([t]) => state.on[t]).map(([t, l]) => ({ line: css(TIER_TOK[t]), w: 4, l })));
   if (on("opt-slip")) L.push({ line: css("--slip"), w: 2, dash: [4, 3], l: "Slip / rock-fall exposed stretch" });
-  if (on("opt-flood")) L.push({ line: css("--flood"), w: 3, l: "Flood-prone stretch, heavy rain forecast" }, { box: css("--fl1"), l: "Crossing: 2-year flood or flash flood likely" }, { box: css("--fl2"), l: "Crossing: 5-year flood likely" }, { box: css("--fl3"), l: "Crossing: 20-year flood likely" });
+  if (on("opt-flood")) L.push({ line: css("--flood"), w: 3, l: "Flood-prone stretch, heavy rain forecast" }, { tri: css("--fl1"), l: "Crossing: 2-year flood or flash flood likely" }, { tri: css("--fl2"), l: "Crossing: 5-year flood likely" }, { tri: css("--fl3"), l: "Crossing: 20-year flood likely" });
   if (on("opt-ctx")) L.push({ line: css("--ctx"), w: 2, l: "Main road network" });
   if (on("opt-int")) L.push({ h: `Intense rain possible · ${W}` }, { box: css("--int1"), l: "≈ 10 mm in an hour (as observed)" }, { box: css("--int2"), l: "≈ 20 mm in an hour (as observed)" });
   if (on("opt-rain")) L.push(...(state.rain === "pn"
@@ -2626,6 +2639,7 @@ async function exportPNG() {
       g.font = font(400, 12, ROBOTO);
       if (it.line) { g.strokeStyle = it.line; g.lineWidth = S(it.w); g.setLineDash((it.dash || []).map(S)); g.beginPath(); g.moveTo(x, y - S(4)); g.lineTo(x + S(24), y - S(4)); g.stroke(); g.setLineDash([]); }
       if (it.box) { g.fillStyle = it.box; g.fillRect(x, y - S(10), S(24), S(11)); }
+      if (it.tri) { g.fillStyle = it.tri; g.beginPath(); g.moveTo(x + S(12), y - S(11)); g.lineTo(x + S(18), y + S(1)); g.lineTo(x + S(6), y + S(1)); g.closePath(); g.fill(); }
       if (it.dot) { g.globalAlpha = it.fade ? 0.25 : 1; g.fillStyle = it.dot; g.beginPath(); g.arc(x + S(12), y - S(4), S(5), 0, 7); g.fill();
         if (it.ring) { g.strokeStyle = it.ring; g.lineWidth = S(2); g.stroke(); } g.globalAlpha = 1; }
       if (it.sq) { g.strokeStyle = it.ring; g.lineWidth = S(2); g.strokeRect(x + S(7), y - S(9), S(11), S(11)); }
