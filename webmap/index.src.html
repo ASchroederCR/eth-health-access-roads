@@ -74,7 +74,7 @@ section { display: flex; flex-direction: column; gap: 6px; }
 .tier.off { opacity: .42; }
 .tiers.muted-all { opacity: .4; pointer-events: none; }
 [hidden] { display: none !important; }
-.infocard { position: absolute; top: 12px; right: calc(52px + env(safe-area-inset-right, 0px)); width: min(352px, calc(100% - 76px)); max-height: calc(100% - 64px);
+.infocard { position: absolute; top: 12px; right: calc(52px + env(safe-area-inset-right, 0px)); width: min(352px, calc(100% - 76px)); max-height: calc(100% - 100px);
   display: flex; flex-direction: column; border: 1px solid var(--rule); border-radius: 10px; box-shadow: 0 8px 28px rgba(0,0,0,.16);
   background: color-mix(in srgb, var(--panel) 84%, transparent); -webkit-backdrop-filter: blur(10px) saturate(1.1); backdrop-filter: blur(10px) saturate(1.1); color: var(--ink); z-index: 3; }
 .infocard header { display: flex; align-items: center; gap: 6px; padding: 9px 8px 7px 13px; border-bottom: 1px solid var(--rule); }
@@ -92,7 +92,7 @@ section { display: flex; flex-direction: column; gap: 6px; }
 .exportbtn:hover { background: var(--panel); }
 .exportbtn:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
 .toast { position: absolute; left: 50%; bottom: 48px; transform: translateX(-50%); background: var(--ink); color: var(--panel); font-size: 12.5px; padding: 6px 12px; border-radius: 999px; z-index: 4; }
-@media (max-width: 760px) { .infocard { top: auto; bottom: 30px; left: max(8px, env(safe-area-inset-left, 0px)); right: max(8px, env(safe-area-inset-right, 0px)); width: auto; max-height: 55%; } }
+@media (max-width: 760px) { .infocard { top: auto; bottom: 84px; left: max(8px, env(safe-area-inset-left, 0px)); right: max(8px, env(safe-area-inset-right, 0px)); width: auto; max-height: 55%; } }
 .rchart { margin-top: 8px; }
 .rchart svg { display: block; width: 100%; height: auto; }
 .rchart .cap { font-size: 11px; color: var(--muted); display: flex; gap: 10px; flex-wrap: wrap; margin-top: 2px; }
@@ -1125,6 +1125,11 @@ async function drawOverview(g, x0, y0, w, h, S) {
   else { const [cx, cy] = P([map.getCenter().lng, map.getCenter().lat]);
     g.beginPath(); g.arc(cx, cy, S(4), 0, 7); g.stroke();
     [[-1, 0], [1, 0], [0, -1], [0, 1]].forEach(([dx, dy]) => { g.beginPath(); g.moveTo(cx + dx * S(6), cy + dy * S(6)); g.lineTo(cx + dx * S(10), cy + dy * S(10)); g.stroke(); }); }
+  // scale bar, lower right of the inset (1 degree of latitude ~ 111 km)
+  const km = 200, bl = km / 111.2 * sc, sx = x0 + w - pad - bl, sy = y0 + h - pad - S(2);
+  g.fillStyle = css("--ink"); g.fillRect(sx, sy, bl, S(2.5));
+  g.fillRect(sx, sy - S(3), S(1.2), S(5.5)); g.fillRect(sx + bl - S(1.2), sy - S(3), S(1.2), S(5.5));
+  g.font = `500 ${S(9.5)}px ${ROBOTO}`; g.textAlign = "right"; g.fillText(`${km} km`, sx + bl, sy - S(5)); g.textAlign = "left";
   g.restore();
 }
 async function exportPNG() {
