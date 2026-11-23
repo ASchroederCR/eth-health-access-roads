@@ -98,6 +98,14 @@ section { display: flex; flex-direction: column; gap: 6px; }
 .rchart .cap { font-size: 11px; color: var(--muted); display: flex; gap: 10px; flex-wrap: wrap; margin-top: 2px; }
 .rchart .cap i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 3px; vertical-align: -1px; }
 .netnote { margin-top: 6px; font-size: 12px; color: var(--ink2); }
+.pptab { width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: 8px; font-size: 12px; font-variant-numeric: tabular-nums; }
+.pptab col.n { width: 21%; }
+.pptab th { font-weight: 500; font-size: 11px; color: var(--muted); text-align: right; vertical-align: bottom; line-height: 1.2; padding: 0 0 4px 6px; border-bottom: 1px solid var(--rule); }
+.pptab td { text-align: right; color: var(--ink2); padding: 2px 0 2px 6px; }
+.pptab th:first-child, .pptab td:first-child { text-align: left; padding-left: 0; }
+.pptab td:first-child { color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pptab tr.oth td { color: var(--muted); }
+.pptab tr.tot td { border-top: 1px solid var(--rule); padding-top: 4px; font-weight: 600; color: var(--ink); }
 .winrow { display: flex; flex-direction: column; gap: 6px; }
 .seg.wide button { padding: 5px 8px; font-size: 12.5px; }
 .toggle:disabled { opacity: .45; cursor: not-allowed; }
@@ -957,20 +965,22 @@ async function addProfile(hp) {
   const affected = fk > 0 || fx > 0;
   const k = n => n >= 1e6 ? `${(n / 1e6).toFixed(n >= 1e7 ? 0 : 1)}M` : n >= 1e3 ? `${Math.round(n / 1e3)}k` : `${Math.round(n)}`;
   const nl = net.n ?? HF_ALL.filter(f => f.properties[key] === +hp.id && f.properties.ty !== 2).length;
-  if (grid) wd.sort((a, b) => b.pin - a.pin);
-  const rows = wd.slice(0, 10).map(d => `<span class="k" title="${esc(d.w[1])}, ${esc(d.w[2])}">${esc(d.w[0])}</span><span class="v">${grid
-    ? `<b>${k(d.pin)}</b> people inside (${k(d.uin)} under 5) of ${k(d.w[3])}`
-    : `${Math.round(100 * d.f)}% of area inside · ${k(d.w[3])} people · ${k(d.w[4])} under 5`}</span><span class="s"></span>`).join("");
+  wd.forEach(d => { if (!grid) { d.pin = d.w[3] * d.f; d.uin = d.w[4] * d.f; } });
+  wd.sort((a, b) => b.pin - a.pin);
+  const TOP = 10, top = wd.slice(0, TOP), rest = wd.slice(TOP);
+  const tr = (cls, name, tip, p, u, t) => `<tr${cls ? ` class="${cls}"` : ""}><td${tip ? ` title="${esc(tip)}"` : ""}>${name}</td><td title="${fmt(p)}">${k(p)}</td><td title="${fmt(u)}">${k(u)}</td><td title="${fmt(t)}">${k(t)}</td></tr>`;
+  const sum = (a, f) => a.reduce((s, d) => s + f(d), 0);
+  const rows = top.map(d => tr("", esc(d.w[0]), `${d.w[0]} · ${d.w[1]}, ${d.w[2]}${grid ? "" : ` · ${Math.round(100 * d.f)}% of area inside`}`, d.pin, d.uin, d.w[3])).join("")
+    + (rest.length ? tr("oth", `${rest.length} other woreda${rest.length > 1 ? "s" : ""}`, "", sum(rest, d => d.pin), sum(rest, d => d.uin), sum(rest, d => d.w[3])) : "")
+    + tr("tot", "Total", "", inP, inU, totP);
+  const ap = grid ? "" : " ≈";
   el.innerHTML = `<div class="subh" style="margin:12px 0 4px">Population profile of this network</div>
     <div class="netnote">${affected ? `<b>Flood-affected network</b> (${WIN_TXT()}): ${fk ? `${fk} km of low-lying road flagged` : ""}${fk && fx ? " and " : ""}${fx ? `${fx} river crossing${fx > 1 ? "s" : ""} at flood risk` : ""} inside the footprint.` : `No flood flags inside the footprint (${WIN_TXT()}).`}
     Footprint: the area around the hospital and its ${fmt(nl)} linked facilities, plus about 2 km (outlined on the map). It overlaps ${wd.length} woreda${wd.length > 1 ? "s" : ""}.</div>
-    <div class="pp-grid" style="margin-top:6px">
-      <span class="k">Woredas overlapped</span><span class="v"><b>${fmt(totP)}</b> people · <b>${fmt(totU)}</b> under 5</span><span class="s"></span>
-      <span class="k">Inside footprint</span><span class="v"><b>${fmt(inP)}</b> people · <b>${fmt(inU)}</b> under 5${grid ? "" : ` <span style="color:var(--muted)">(≈, by area share)</span>`}</span><span class="s"></span>
-    </div>
-    <div class="pp-grid" style="margin-top:6px">${rows}</div>
-    ${wd.length > 10 ? `<div class="netnote">and ${wd.length - 10} more woredas with fewer people inside.</div>` : ""}
-    <div class="cap" style="margin-top:4px">${esc(N.src || "")}. ${grid ? "\"Inside\" sums WorldPop's 100 m cells within the footprint, split by woreda; woreda totals are for the whole woreda." : "Grid sums unavailable for this run: \"inside\" scales each woreda by the share of its area in the footprint, assuming people are spread evenly."} WorldPop 2020 constrained counts are not adjusted to UN totals and run below them.</div>`;
+    <table class="pptab"><colgroup><col><col class="n"><col class="n"><col class="n"></colgroup>
+      <thead><tr><th>Woreda</th><th>People inside${ap}</th><th>Under 5 inside${ap}</th><th>Woreda total</th></tr></thead>
+      <tbody>${rows}</tbody></table>
+    <div class="cap" style="margin-top:6px">${esc(N.src || "")}. ${grid ? "\"Inside\" sums WorldPop's 100 m cells within the footprint, split by woreda; \"woreda total\" is the whole woreda" : "Grid sums unavailable for this run: \"inside\" (≈) scales each woreda by the share of its area in the footprint, assuming people are spread evenly; \"woreda total\" is the whole woreda"} (all overlapped woredas: ${fmt(totU)} under 5). WorldPop 2020 constrained counts are not adjusted to UN totals and run below them.</div>`;
   // draw the footprint and the woredas it overlaps
   await ensureFootprintLayers(); if (seq !== profSeq || !cardHosp) return;
   const r = net.r, ring = []; for (let j = 0; j < r.length; j += 2) ring.push([r[j] / 1e4, r[j + 1] / 1e4]);
@@ -1081,6 +1091,24 @@ async function drawCard(g, x0, y0, w, S, draw) {
         ls.forEach((l, j) => { y += S(15); const yy = y; ops.push(() => { if (!j) { g.font = F(500, 11.5); g.fillStyle = muted; g.fillText(k, x0 + pad, yy); }
           g.font = F(400, 11.5); g.fillStyle = ink2; g.fillText(l, x0 + pad + kw, yy); }); }); y += S(3); }
       return; }
+    if (el.matches("table.pptab")) {                            // population table: name column + right-aligned number columns
+      const trs = [...el.querySelectorAll("tr")], nw = iw * 0.21, rule = css("--rule");
+      y += S(6);
+      trs.forEach((row, ri) => { const cells = [...row.children].map(c => c.textContent.trim()), head = ri === 0, tot = row.classList.contains("tot"), oth = row.classList.contains("oth");
+        const wt = head ? 500 : tot ? 600 : 400, px = head ? 10.5 : 11.5, col = head || oth ? muted : tot ? ink : ink2;
+        g.font = F(wt, px);
+        const lines = head ? cells.map((c, j) => j ? wrapT(c, nw - S(6)) : [c]) : cells.map(c => [c]);
+        const nL = Math.max(...lines.map(l => l.length)), lh = head ? 13 : 15;
+        if (tot) { const yr = y + S(3); ops.push(() => { g.fillStyle = rule; g.fillRect(x0 + pad, yr, iw, S(1)); }); y += S(4); }
+        const y1 = y; y += S(lh) * nL;
+        lines.forEach((ls, j) => ls.forEach((l, li) => { const yy = y1 + S(lh) * (li + 1 + (nL - ls.length)), xr = x0 + pad + iw - (3 - (j - 1)) * nw + nw;
+          let t = l;
+          if (!j) { g.font = F(wt, px); const mw = iw - 3 * nw - S(4); while (t.length > 3 && g.measureText(t).width > mw) t = t.slice(0, -2) + "…"; }
+          ops.push(() => { g.font = F(wt, px); g.fillStyle = !j && !head && !oth && !tot ? ink : col;
+            if (!j) { g.textAlign = "left"; g.fillText(t, x0 + pad, yy); } else { g.textAlign = "right"; g.fillText(t, xr, yy); g.textAlign = "left"; } }); }));
+        if (head) { const yr = y + S(3); ops.push(() => { g.fillStyle = rule; g.fillRect(x0 + pad, yr, iw, S(1)); }); y += S(4); }
+      });
+      y += S(2); return; }
     if (el.matches(".netnote")) { if (/Close this card/.test(el.textContent)) return; y += S(3); text(el.textContent, 400, 11.5, ink2, 15); return; }
     if (el.matches(".pill")) { text(el.textContent, 500, 12, ink, 16); return; }
     if (el.matches(".pp-foot")) { y += S(4); text(el.textContent, 400, 10.5, muted, 14); return; }
