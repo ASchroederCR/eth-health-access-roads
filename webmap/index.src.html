@@ -12,7 +12,7 @@
 :root {
   --bg: #f3f4f1; --panel: #fbfbf9; --ink: #1d211f; --ink2: #4a504c; --muted: #737a75; --rule: #dcdfd9;
   --mapbg: #e6e8e3; --chip: #eceee9;
-  --minor: #f2b33d; --elev: #e0701f; --sev: #a8320f; --slip: #1d211f; --ctx: #8e9590; --adm: #5d635f;
+  --minor: #f2b33d; --elev: #e0701f; --sev: #a8320f; --slip: #1d211f; --flood: #1f5fbf; --ctx: #8e9590; --adm: #5d635f;
   --r1: #e6effa; --r2: #cde2fb; --r3: #9ec5f4; --r4: #6da7ec; --r5: #3987e5; --r6: #256abf;
   --hs-min: 0; --focus: #2a6fb8;
   --outside: #ffffff; --int1: #cdb7e6; --int2: #8656bd;
@@ -27,7 +27,7 @@
   :root:not([data-theme="light"]) {
     --bg: #141716; --panel: #1a1e1c; --ink: #e8ebe7; --ink2: #b8beb9; --muted: #8b928d; --rule: #2d3330;
     --mapbg: #1f2321; --chip: #232826;
-    --minor: #e3a83f; --elev: #f2812f; --sev: #ff5a3c; --slip: #f4f6f3; --ctx: #66706a; --adm: #a2aaa4;
+    --minor: #e3a83f; --elev: #f2812f; --sev: #ff5a3c; --slip: #f4f6f3; --flood: #6aa8ff; --ctx: #66706a; --adm: #a2aaa4;
     --r1: #1d2a37; --r2: #213651; --r3: #24456d; --r4: #285b93; --r5: #2f74bd; --r6: #4691dc;
     --pn1: #e0a458; --pn2: #8a6630; --pn3: #3a3f3c; --pn4: #2f6aa8; --pn5: #6aa8ec; --rain-op: 0.8; --pn-op: 0.85; --ctrl-icon: invert(1); --hosp: #f4f6f3; --hs-min: 0.32; --outside: #141716; --int1: #5d4a78; --int2: #b38be0; --d0: #4d5450; --d1: #6e5a24; --d2: #a8661f; --d3: #e27b33; --d4: #ffb07a; --hfring: #141716; --focus: #6aa8ec; color-scheme: dark;
   }
@@ -35,7 +35,7 @@
 :root[data-theme="dark"] {
   --bg: #141716; --panel: #1a1e1c; --ink: #e8ebe7; --ink2: #b8beb9; --muted: #8b928d; --rule: #2d3330;
   --mapbg: #1f2321; --chip: #232826;
-  --minor: #e3a83f; --elev: #f2812f; --sev: #ff5a3c; --slip: #f4f6f3; --ctx: #66706a; --adm: #a2aaa4;
+  --minor: #e3a83f; --elev: #f2812f; --sev: #ff5a3c; --slip: #f4f6f3; --flood: #6aa8ff; --ctx: #66706a; --adm: #a2aaa4;
   --r1: #1d2a37; --r2: #213651; --r3: #24456d; --r4: #285b93; --r5: #2f74bd; --r6: #4691dc;
   --pn1: #e0a458; --pn2: #8a6630; --pn3: #3a3f3c; --pn4: #2f6aa8; --pn5: #6aa8ec; --rain-op: 0.8; --pn-op: 0.85; --ctrl-icon: invert(1); --hosp: #f4f6f3; --hs-min: 0.32; --outside: #141716; --int1: #5d4a78; --int2: #b38be0; --d0: #4d5450; --d1: #6e5a24; --d2: #a8661f; --d3: #e27b33; --d4: #ffb07a; --hfring: #141716; --focus: #6aa8ec; color-scheme: dark;
 }
@@ -188,7 +188,7 @@ section { display: flex; flex-direction: column; gap: 6px; }
 
     <section aria-labelledby="h-tier">
       <h2 id="h-tier">Slowdown tier</h2>
-      <label class="sw-row" for="opt-roads"><span>Show slowdown tiers on the map<small>Off hides all coloured roads</small></span><input type="checkbox" class="toggle" id="opt-roads"></label>
+      <label class="sw-row" for="opt-roads"><span>Show slowdown tiers on the map<small>Off shows the plain road network instead</small></span><input type="checkbox" class="toggle" id="opt-roads"></label>
       <div class="winrow">
         <div class="seg wide" role="radiogroup" aria-label="Forecast window" id="winseg">
           <button type="button" role="radio" aria-checked="true" data-w="0">All 15 days</button>
@@ -227,9 +227,10 @@ section { display: flex; flex-direction: column; gap: 6px; }
         <div class="subh">Roads</div>
         <label class="sw-row" for="opt-terrain"><span>Include terrain in the score<small>Off shows rain and surface only</small></span><input type="checkbox" class="toggle" id="opt-terrain" checked></label>
         <label class="sw-row" for="opt-slip"><span>Slip / rock-fall exposure<small>Exposed stretches: moderate+ rain on steep, landslide-prone ground</small></span><input type="checkbox" class="toggle" id="opt-slip" checked></label>
-        <label class="sw-row" for="opt-ctx"><span>Main road network</span><input type="checkbox" class="toggle" id="opt-ctx" checked></label>
+        <label class="sw-row" for="opt-flood"><span>Flood exposure<small>Low-lying stretches and unbridged river crossings under heavy rain</small></span><input type="checkbox" class="toggle" id="opt-flood" checked></label>
+        <label class="sw-row" for="opt-ctx"><span>Road network<small>Trunk to tertiary roads; drawn darker when slowdown tiers are off</small></span><input type="checkbox" class="toggle" id="opt-ctx" checked></label>
         <div class="subh">Other layers</div>
-        <label class="sw-row" for="opt-int"><span>Intense rain possible<small>≥ 10 / 20 mm in an hour, follows the forecast window</small></span><input type="checkbox" class="toggle" id="opt-int" checked></label>
+        <label class="sw-row" for="opt-int"><span>Intense rain possible<small>Downpours like those observed at ≥ 10 / 20 mm in an hour; follows the forecast window</small></span><input type="checkbox" class="toggle" id="opt-int" checked></label>
         <label class="sw-row" for="opt-hf"><span>Health facilities<small id="hfsub">Added minutes to the nearest hospital; health posts from zoom 7</small></span><input type="checkbox" class="toggle" id="opt-hf" checked></label>
         <label class="sw-row" for="opt-rain"><span>Forecast rain<small id="rainsub">15-day total, mm</small></span><input type="checkbox" class="toggle" id="opt-rain" checked></label>
         <div class="seg" role="radiogroup" aria-label="Rain shown as" id="rainseg">
@@ -252,10 +253,11 @@ section { display: flex; flex-direction: column; gap: 6px; }
     <section aria-labelledby="h-how">
       <h2 id="h-how">How the score works</h2>
       <p class="note">Tier = rain (0–3) + surface (paved 0, unpaved 1, +1 if mapped in bad condition) + steepness (0–2) − 1, kept to 0–3 and at most one tier above the rain score. No forecast rain means Normal. Speed losses (Minor ~10%, Elevated ~25%, Severe ~50%) are illustrative assumptions, not measured.</p>
-      <p class="note">Rain is judged two ways, each for days 1–3, 4–7 and 8–15. Accumulation drives the slowdown tiers: the wettest 10-day running total in the window, counting rain PARDIG observed before the forecast plus WeatherNext 3's bias-corrected forecast (low ≥ 25 mm, moderate ≥ 50 mm, high ≥ 100 mm). Intense rain marks where a downpour is possible: the wettest hour of WeatherNext 3's hourly 90th percentile, with thresholds set so it flags as often as PARDIG observed ≥ 10 mm (or ≥ 20 mm) in an hour in early November 2026. "All 15 days" shows the worst window. Health-facility travel times follow the selected window: each window is routed with its own road tiers, and "All 15 days" uses each road's worst tier. Forecast skill falls after about day 7, so days 8–15 are lower confidence.</p>
+      <p class="note">Rain is judged two ways, each for days 1–3, 4–7 and 8–15. Accumulation drives the slowdown tiers: the wettest 10-day running total in the window, counting rain PARDIG observed before the forecast plus WeatherNext 3's bias-corrected forecast (low ≥ 25 mm, moderate ≥ 50 mm, high ≥ 100 mm). Intense rain marks where a downpour is possible: the wettest hour of WeatherNext 3's hourly 90th percentile, with thresholds set so it flags as often as PARDIG observed ≥ 10 mm (or ≥ 20 mm) in an hour in early November 2026. The forecast's hourly rain runs lower than observed, so those thresholds are only about 3–7 mm in the forecast's wettest hour; a hospital's chart can peak well under 10 mm in an hour where intense rain is flagged. "All 15 days" shows the worst window. Health-facility travel times follow the selected window: each window is routed with its own road tiers, and "All 15 days" uses each road's worst tier. Forecast skill falls after about day 7, so days 8–15 are lower confidence.</p>
       <p class="note">Slip / rock-fall exposure needs intense rain or high accumulation on ground ≥ 26.6° that NASA rates moderately or more landslide-prone, or very high susceptibility on ground ≥ 14°. Rain amounts shown use a year-round monthly bias correction; hazard classes use a stronger correction that caught the most observed hazard in tests.</p>
       <p class="note">Health access: two trips are timed separately. Every health centre and health post is timed to its nearest hospital; health posts are also timed to their nearest health centre. The map colours one trip at a time (choose under Health facility access). Each trip is the shortest road travel time at normal speeds by road class (trunk 70 … track 15 km/h, unpaved × 0.7, track grade 5 or sand / mud a further × 0.6), then to that same facility with each road slowed by its tier. A hospital's linked facilities are the health centres and posts for which it is the nearest hospital by road; this is a road-network grouping, not a population catchment or the official referral pathway. Facilities are approved hospitals, health centres and health posts from the Ethiopian health facility register.</p>
       <p class="note">Travel model: the road + slope model routes over the mapped road network with class speeds and walking to the road. The MAP friction surface (Malaria Atlas Project 2019 motorized, ~1 km) routes cell to cell using MAP's road, land-cover and off-road speeds, with cells crossed by a scored road slowed by the same tier factors. Both use the same facilities and the same nearest-hospital rule. MAP's journeys come out about 3–4 times shorter, so the two models usually agree on which facilities are worst hit but not on how many minutes are added.</p>
+      <p class="note">Flood exposure (first-guess thresholds, not yet checked against observed road floods; not used in travel times): a ~110 m piece of road is low-lying if it is no more than 3 m above the nearest drainage with a river draining 100 km² or more within 1 km (MERIT Hydro), or on ground that satellites saw under water at least 10% of the time (JRC, 1984–2021) and no more than 5 m above drainage; it is flagged when the window's 10-day running rain reaches 50 mm or very intense rain is possible. River crossings come from OpenStreetMap waterways and, where OSM maps none, MERIT Hydro channels draining 50 km² or more. Fords, minor-road crossings with no bridge mapped and culverts under large catchments are flagged when intense rain is possible or the 10-day rain reaches 50 mm; trunk, primary and secondary roads are assumed bridged. Rain upstream of a crossing is not yet counted.</p>
       <p class="note">Slip / rock-fall exposure is judged on each ~110 m piece of road: moderate or high forecast rain over that piece, and either ground ≥ 26.6° where NASA's global landslide susceptibility map rates it moderate or higher, or very high susceptibility on ground ≥ 14°. Only the exposed stretches are drawn and counted.</p>
       <p class="note">Surface is mapped (OSM tag or Mapillary image model) for about a fifth of road length; the rest is inferred from road class. The road network is the current OpenStreetMap extract (Geofabrik); roads tagged under construction, no access or impassable are left out. Road grades come from a ~110 m elevation grid and run high where roads cut across hillsides.</p>
     </section>
@@ -278,11 +280,13 @@ section { display: flex; flex-direction: column; gap: 6px; }
       <div class="ticks" id="rticks"><span>5</span><span>10</span><span>25</span><span>50</span><span>100</span><span>150</span></div>
       <div id="leg-pnnote" hidden style="font-size:11px;color:var(--muted)">blank: dry season, not compared</div>
       <div class="slip" id="leg-slip"><i></i>slip / rock-fall exposure</div>
+      <div class="slip" id="leg-flood"><i style="border-top:2.5px solid var(--flood)"></i>flood-prone stretch <i style="width:8px;height:8px;border:0;border-radius:50%;background:var(--flood);margin-left:8px"></i>river crossing</div>
       <div id="leg-fric" hidden>MAP travel speed, km/h</div>
       <div class="dots" id="leg-fric2" hidden><span><i style="background:#a8320f;border-radius:2px"></i>&lt;3</span><span><i style="background:#e0701f;border-radius:2px"></i>3–10</span><span><i style="background:#f2b33d;border-radius:2px"></i>10–30</span><span><i style="background:#c9c8c2;border-radius:2px"></i>30+</span></div>
       <div id="leg-fric3" hidden></div>
       <div id="leg-int">Intense rain possible</div>
-      <div class="dots" id="leg-int2"><span><i style="background:var(--int1);border-radius:2px"></i>≥ 10 mm/h</span><span><i style="background:var(--int2);border-radius:2px"></i>≥ 20 mm/h</span></div>
+      <div class="dots" id="leg-int2"><span><i style="background:var(--int1);border-radius:2px"></i>≈ 10 mm/h</span><span><i style="background:var(--int2);border-radius:2px"></i>≈ 20 mm/h</span></div>
+      <div id="leg-int3" style="font-size:11px;color:var(--muted);max-width:260px"></div>
       <div id="leg-hf">Added minutes to the nearest hospital</div>
       <div class="dots" id="leg-hf2"><span><i style="background:var(--d0)"></i>&lt;5</span><span><i style="background:var(--d1)"></i>5–15</span><span><i style="background:var(--d2)"></i>15–30</span><span><i style="background:var(--d3)"></i>30–60</span><span><i style="background:var(--d4)"></i>60+</span><span id="leg-hcdest" hidden><i style="background:var(--panel);box-shadow:inset 0 0 0 1.5px var(--ink)"></i>health centre</span><span><i style="background:transparent;border-radius:0;box-shadow:inset 0 0 0 2px var(--hosp)"></i>hospital</span></div>
     </div>
@@ -324,15 +328,22 @@ function renderTiers() {
   TIERS.forEach(T => { const el = document.getElementById(`km-${T.t}`); if (el) el.textContent = `${fmt(src[T.key] || 0)} km`; });
   const slowed = (src.Minor || 0) + (src.Elevated || 0) + (src.Severe || 0);
   document.getElementById("totline").innerHTML = W
-    ? `<b>${W.label}</b> (${W.dates}): <span class="num">${fmt(slowed)}</span> km of vehicle road likely slowed; <span class="num">${fmt(W.slip)}</span> km exposed to slips or rock fall; intense rain possible over ${Math.round(W.intense_share * 100)}% of the country.`
-    : `<span class="num">${fmt(slowed)}</span> of <span class="num">${fmt(SUMMARY.total_km)}</span> km of vehicle road likely slowed at some point in the 15 days (${Math.round(100 * slowed / SUMMARY.total_km)}%). Terrain raises <span class="num">${fmt(SUMMARY.raised_km)}</span> km by at least one tier; <span class="num">${fmt(SUMMARY.slide_km)}</span> km are exposed to slips or rock fall.`;
+    ? `<b>${W.label}</b> (${W.dates}): <span class="num">${fmt(slowed)}</span> km of vehicle road likely slowed; <span class="num">${fmt(W.slip)}</span> km exposed to slips or rock fall${W.flood_km != null ? `; flood flags on <span class="num">${fmt(W.flood_km)}</span> km of low-lying road and <span class="num">${fmt(W.flood_x)}</span> river crossings` : ""}; intense rain possible over ${Math.round(W.intense_share * 100)}% of the country.`
+    : `<span class="num">${fmt(slowed)}</span> of <span class="num">${fmt(SUMMARY.total_km)}</span> km of vehicle road likely slowed at some point in the 15 days (${Math.round(100 * slowed / SUMMARY.total_km)}%). Terrain raises <span class="num">${fmt(SUMMARY.raised_km)}</span> km by at least one tier; <span class="num">${fmt(SUMMARY.slide_km)}</span> km are exposed to slips or rock fall.${SUMMARY.flood_km != null ? ` Flood flags: <span class="num">${fmt(SUMMARY.flood_km)}</span> km of low-lying road and <span class="num">${fmt(SUMMARY.flood_x)}</span> river crossings.` : ""}`;
   document.getElementById("winnote").textContent = state.win === 3 ? "Days 8–15 are lower confidence: forecast skill falls after about a week."
     : state.win ? "Terrain switch applies to the all-15-days view." : "Worst of the three windows. Pick a window to see when the risk falls.";
+}
+const INT_KEYS = ["days_1_3", "days_4_7", "days_8_15"];
+function intThTxt() {  // the forecast wettest-hour amounts that stand in for the observed rates
+  const T = SUMMARY.int_th; if (!T) return "";
+  if (state.win) { const t = T[INT_KEYS[state.win - 1]]; return `rates as observed; flagged where the forecast's wettest hour reaches ${t.intense} / ${t.very_intense} mm (it runs lower than observed)`; }
+  return `rates as observed; flagged where the forecast's wettest hour reaches ${INT_KEYS.map(k => T[k].intense).join(" / ")} mm (days 1–3 / 4–7 / 8–15; it runs lower than observed)`;
 }
 function setWindow(w) {
   state.win = w;
   document.querySelectorAll("#winseg button").forEach(b => b.setAttribute("aria-checked", String(+b.dataset.w === w)));
   renderTiers(); applyFilter(); rainPaint(); rainLegend(); refreshAccess();
+  document.getElementById("leg-int3").textContent = intThTxt();
 }
 document.querySelectorAll("#winseg button").forEach(b => b.addEventListener("click", () => setWindow(+b.dataset.w)));
 renderTiers();
@@ -444,6 +455,11 @@ rainLegend();
 const status = document.getElementById("status");
 let map = null;
 let HF_ALL = [];
+function decodePoints(d) {  // {"cols", "lut", "f": [[values..., x*1e4, y*1e4]]} -> point features
+  const C = d.cols, L = d.lut || {};
+  return (d.f || []).map(r => { const p = {}; C.forEach((c, i) => p[c] = L[c] ? L[c][r[i]] : r[i]);
+    return { type: "Feature", properties: p, geometry: { type: "Point", coordinates: [r[C.length] / 1e4, r[C.length + 1] / 1e4] } }; });
+}
 function decode(d) {
   const C = d.cols, L = d.lut, last = C.length, feats = new Array(d.f.length);
   for (let n = 0; n < d.f.length; n++) {
@@ -501,6 +517,7 @@ function applyFilter() {
   map.setPaintProperty("roads", "line-color", tierColor());
   map.setLayoutProperty("roads", "line-sort-key", ["coalesce", ["get", prop], 0]);
   if (map.getLayer("slip")) map.setFilter("slip", state.win ? ["==", ["get", `w${state.win}`], 1] : null);
+  ["flood", "xings"].forEach(id => { if (map.getLayer(id)) map.setFilter(id, state.win ? ["==", ["get", `w${state.win}`], 1] : null); });
   if (map.getLayer("intense")) {
     const lvl = state.win ? ["get", `i${state.win}`] : ["max", ["get", "i1"], ["get", "i2"], ["get", "i3"]];
     map.setFilter("intense", [">=", lvl, 1]);
@@ -514,10 +531,12 @@ function applyTheme() {
   map.setPaintProperty("bg", "background-color", css("--mapbg"));
   if (has("rain")) rainPaint();
   if (has("hs")) map.setPaintProperty("hs", "raster-brightness-min", parseFloat(css("--hs-min")) || 0);
-  if (has("ctx")) map.setPaintProperty("ctx", "line-color", css("--ctx"));
+  ctxPaint();
   if (has("adm")) map.setPaintProperty("adm", "line-color", css("--adm"));
   if (has("mask")) map.setPaintProperty("mask", "fill-color", css("--outside"));
   if (has("slip")) map.setPaintProperty("slip", "line-color", css("--slip"));
+  if (has("flood")) map.setPaintProperty("flood", "line-color", css("--flood"));
+  if (has("xings")) { map.setPaintProperty("xings", "circle-color", css("--flood")); map.setPaintProperty("xings", "circle-stroke-color", css("--panel")); }
   if (has("roads")) map.setPaintProperty("roads", "line-color", tierColor());
   ["hf-hp", "hf-main"].forEach(id => { if (has(id)) { map.setPaintProperty(id, "circle-color", hfColor(id));
     map.setPaintProperty(id, "circle-stroke-color", hfRing(id)); } });
@@ -566,7 +585,7 @@ function init() {
     getJSON("data/roads_context.json").then(d => {
       map.addSource("ctx", { type: "geojson", data: { type: "FeatureCollection", features: decode(d) } });
       map.addLayer({ id: "ctx", type: "line", source: "ctx", paint: { "line-color": css("--ctx"), "line-opacity": 0.8,
-        "line-width": ["interpolate", ["linear"], ["zoom"], 5, ["match", ["get", "c"], 0, 0.9, 1, 0.7, 0.45], 10, ["match", ["get", "c"], 0, 2.4, 1, 1.8, 1.2]] } }, map.getLayer("roads") ? "roads" : undefined);
+        "line-width": ["interpolate", ["linear"], ["zoom"], 5, ["match", ["get", "c"], 0, 0.9, 1, 0.7, 2, 0.45, 0.25], 10, ["match", ["get", "c"], 0, 2.4, 1, 1.8, 2, 1.2, 0.8]] } }, map.getLayer("roads") ? "roads" : undefined);
       sync();
     });
 
@@ -577,14 +596,23 @@ function init() {
       feats = parts.flat();
     } catch (e) { status.textContent = "Road data did not load. Reload the page to try again."; return; }
     map.addSource("roads", { type: "geojson", data: { type: "FeatureCollection", features: feats }, tolerance: 0.3 });
-    const w = (a, b) => ["interpolate", ["linear"], ["zoom"], 5, ["match", ["get", "t"], 3, a * 1.6, 2, a * 1.15, a], 11, ["match", ["get", "t"], 3, b * 1.4, 2, b * 1.15, b]];
+    const w = (a, b) => ["interpolate", ["linear"], ["zoom"], 5, ["match", ["get", "t"], 3, a * 1.5, 2, a * 1.15, a], 11, ["match", ["get", "t"], 3, b * 1.35, 2, b * 1.15, b]];
     map.addLayer({ id: "roads", type: "line", source: "roads", layout: { "line-cap": "round", "line-join": "round", "line-sort-key": ["get", "t"] },
-      paint: { "line-color": tierColor(), "line-width": w(0.55, 3) } });
+      paint: { "line-color": tierColor(), "line-width": w(0.35, 1.9) } });
     const slipD = await getJSON("data/slip.json").catch(() => null);
     map.addSource("slip", { type: "geojson", data: { type: "FeatureCollection", features: slipD ? decode(slipD) : [] } });
     map.addLayer({ id: "slip", type: "line", source: "slip", layout: { "line-cap": "butt" },
       paint: { "line-color": css("--slip"), "line-width": ["interpolate", ["linear"], ["zoom"], 5, 0.35, 8, 0.9, 11, 1.8],
         "line-opacity": ["interpolate", ["linear"], ["zoom"], 5, 0.7, 8, 1], "line-dasharray": [1.2, 1.4] } });
+    const floodD = await getJSON("data/flood.json").catch(() => null);
+    map.addSource("flood", { type: "geojson", data: { type: "FeatureCollection", features: floodD && floodD.f.length ? decode(floodD) : [] } });
+    map.addLayer({ id: "flood", type: "line", source: "flood", layout: { "line-cap": "round" },
+      paint: { "line-color": css("--flood"), "line-width": ["interpolate", ["linear"], ["zoom"], 5, 1, 8, 2, 11, 3.5] } });
+    const xD = await getJSON("data/xings.json").catch(() => null);
+    map.addSource("xings", { type: "geojson", data: { type: "FeatureCollection", features: xD ? decodePoints(xD) : [] } });
+    map.addLayer({ id: "xings", type: "circle", source: "xings",
+      paint: { "circle-color": css("--flood"), "circle-stroke-color": css("--panel"), "circle-stroke-width": 0.8,
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 5, ["case", [">=", ["get", "up"], 1000], 3, 1.6], 10, ["case", [">=", ["get", "up"], 1000], 6.5, 4.5]] } });
     if (map.getLayer("ctx")) map.moveLayer("ctx", "roads");
     if (map.getLayer("mask")) { map.moveLayer("mask"); map.moveLayer("adm"); }
     try {
@@ -619,6 +647,7 @@ function sync() {
   vis("rain", document.getElementById("opt-rain").checked);
   const intOn = document.getElementById("opt-int").checked;
   vis("intense", intOn); document.getElementById("leg-int").hidden = !intOn; document.getElementById("leg-int2").hidden = !intOn;
+  { const li3 = document.getElementById("leg-int3"); li3.hidden = !intOn || !SUMMARY.int_th; li3.textContent = intThTxt(); }
   vis("hs", document.getElementById("opt-hs").checked);
   vis("ctx", document.getElementById("opt-ctx").checked);
   const roadsOn = document.getElementById("opt-roads").checked;
@@ -633,13 +662,35 @@ function sync() {
   vis("hf-hp", hfOn); vis("hf-main", hfOn); vis("hf-hosp", hfOn);
   document.getElementById("leg-hf").hidden = !hfOn; document.getElementById("leg-hf2").hidden = !hfOn;
   document.getElementById("leg-slip").hidden = !document.getElementById("opt-slip").checked;
+  const flOn = document.getElementById("opt-flood").checked;
+  vis("flood", flOn); vis("xings", flOn); document.getElementById("leg-flood").hidden = !flOn;
+  ctxPaint();
 }
-["opt-roads", "opt-int", "opt-rain", "opt-hs", "opt-ctx", "opt-slip", "opt-hf", "opt-fric"].forEach(id => document.getElementById(id).addEventListener("change", sync));
+function ctxPaint() {                                // slowdown tiers off: the plain road network, drawn darker
+  if (!map || !map.getLayer("ctx")) return;
+  const tiersOn = document.getElementById("opt-roads").checked;
+  map.setPaintProperty("ctx", "line-color", tiersOn ? css("--ctx") : css("--ink2"));
+  map.setPaintProperty("ctx", "line-opacity", tiersOn ? 0.8 : 0.95);
+}
+["opt-roads", "opt-int", "opt-rain", "opt-hs", "opt-ctx", "opt-slip", "opt-flood", "opt-hf", "opt-fric"].forEach(id => document.getElementById(id).addEventListener("change", sync));
 document.getElementById("opt-terrain").addEventListener("change", e => { state.terrain = e.target.checked; applyFilter(); });
 
 const TIER_NAME = ["Normal", "Minor", "Elevated", "Severe"], TIER_TOK = ["--ctx", "--minor", "--elev", "--sev"];
 const HW = { trunk: "Trunk road", trunk_link: "Trunk link", primary: "Primary road", primary_link: "Primary link", secondary: "Secondary road", secondary_link: "Secondary link",
   tertiary: "Tertiary road", tertiary_link: "Tertiary link", unclassified: "Minor road", residential: "Residential street", track: "Track", service: "Service road", road: "Road", living_street: "Living street", motorway: "Motorway" };
+const XING_TXT = { ford: "Ford", none: "No bridge mapped", culvert: "Culvert" };
+function xingHTML(p) {
+  const wins = [1, 2, 3].filter(w => +p["w" + w] === 1).map(w => ["", "days 1–3", "days 4–7", "days 8–15"][w]);
+  const wtr = p.wn ? esc(p.wn) : p.src === "merit" ? "river channel from MERIT Hydro (not mapped in OpenStreetMap)" : "unnamed waterway";
+  return `<div class="pp-h">River crossing · ${XING_TXT[p.st] || esc(p.st)}</div>
+    <div class="pp-sub">${esc(p.rd || "unnamed road")}</div>
+    <div class="pp-grid">
+      <span class="k">Waterway</span><span class="v">${wtr}</span><span class="s"></span>
+      <span class="k">Catchment</span><span class="v">${p.up >= 65534 ? "65,000+" : fmt(p.up)} km² drains to this point</span><span class="s"></span>
+      <span class="k">Flagged</span><span class="v">${wins.join(", ")}: intense rain possible or 10-day rain ≥ 50 mm here</span><span class="s"></span>
+    </div>
+    <div class="pp-foot">${p.st === "none" ? "No bridge or culvert is mapped here; one may exist. " : p.st === "ford" ? "Mapped as a ford: the road crosses the riverbed. " : "Culvert under a large catchment: can overtop. "}Rain upstream is not counted.</div>`;
+}
 function popupHTML(p) {
   const t = state.terrain ? p.t : p.tw;
   const cond = p.cond ? `, mapped as ${esc(p.cond.replace("_", " "))}` : "";
@@ -755,7 +806,8 @@ function forecastChart(hs) {
   // ensemble mean (area) and wet end (line), mm per 3 h
   g += `<path d="M${x(0)},${y(0)} ${hs.m.map((v, i) => `L${x(i + 0.5)},${y(v)}`).join(" ")} L${x(n)},${y(0)} Z" fill="var(--r4)" opacity=".75"/>`;
   g += `<polyline fill="none" stroke="var(--ink2)" stroke-width="1" stroke-dasharray="3 2" points="${hs.w.map((v, i) => `${x(i + 0.5)},${y(v)}`).join(" ")}"/>`;
-  if (hs.pkv > 0) g += `<circle cx="${x(hs.pk / 3)}" cy="${y(hs.w[Math.floor(hs.pk / 3)])}" r="3" fill="var(--int2)" stroke="var(--panel)" stroke-width="1"/>`;
+  if (hs.pkv > 0) g += `<circle cx="${x(hs.pk / 3)}" cy="${y(hs.w[Math.floor(hs.pk / 3)])}" r="3" fill="none" stroke="var(--ink)" stroke-width="1.2"><title>wettest hour (wet end): ${hs.pkv} mm</title></circle>`;
+  g += `<text x="${pL + 3}" y="${pT + 7}" font-size="9" fill="var(--muted)">mm per 3 h</text>`;
   g += `<line x1="${pL}" x2="${W - pR}" y1="${Ht - pB}" y2="${Ht - pB}" stroke="var(--ink2)" stroke-width=".6"/>`;
   g += `<text x="${pL - 3}" y="${pT + 6}" text-anchor="end" font-size="9" fill="var(--muted)">${vmax.toFixed(vmax < 10 ? 1 : 0)}</text><text x="${pL - 3}" y="${Ht - pB}" text-anchor="end" font-size="9" fill="var(--muted)">0</text>`;
   [[0, "start"], [24, "middle"], [56, "middle"], [n, "end"]].forEach(([i, an]) => {
@@ -764,9 +816,10 @@ function forecastChart(hs) {
   const head = s1.length
     ? `<b>Intense rain possible</b> at ${s1.slice(0, 3).map(fmtSpan).join("; ")}${s1.length > 3 ? ` and ${s1.length - 3} more` : ""} (UTC)${s2.length ? "; very intense at " + s2.slice(0, 2).map(fmtSpan).join("; ") : ""}.`
     : "No intense rain forecast here in the next 15 days.";
-  return `<div class="rchart"><div class="netnote" style="margin:0 0 4px">${head} Wettest hour (wet end): ${hs.pkv} mm on ${tl(at(hs.pk))} UTC.</div>
+  const pkTh = SUMMARY.int_th ? SUMMARY.int_th[INT_KEYS[hs.pk < 72 ? 0 : hs.pk < 168 ? 1 : 2]] : null;
+  return `<div class="rchart"><div class="netnote" style="margin:0 0 4px">${head} Wettest hour (wet end): ${hs.pkv} mm on ${tl(at(hs.pk))} UTC${pkTh ? ` (intense from ${pkTh.intense} mm in that window)` : ""}.</div>
     <svg viewBox="0 0 ${W} ${Ht}" role="img" aria-label="Forecast rain at this hospital, mm per 3 hours, with intense-rain periods shaded">${g}</svg>
-    <div class="cap"><span><i style="background:var(--r4)"></i>forecast, mm per 3 h</span><span>- - wet end (90th pct)</span><span><i style="background:var(--int1)"></i>intense rain possible</span><span><i style="background:var(--int2)"></i>very intense</span></div>
+    <div class="cap"><span><i style="background:var(--r4)"></i>forecast, mm per 3 h</span><span>- - wet end (90th pct)</span><span><i style="background:transparent;border-radius:50%;box-shadow:inset 0 0 0 1.2px var(--ink)"></i>wettest hour</span><span><i style="background:var(--int1)"></i>intense rain possible</span><span><i style="background:var(--int2)"></i>very intense</span></div>
     <div class="cap">Days 1–3 · 4–7 · 8–15 split by solid lines. Raw WeatherNext 3 ensemble, which runs low on amounts. Last 10 days observed (PARDIG): ${hs.obs10} mm.</div>
     ${hs.pn >= 0 || hs.po >= 0 ? `<div class="netnote" style="margin-top:6px">Compared with normal (CHIRPS 1991–2020) here: next 15 days ${hs.pn >= 0 ? `<b>${hs.pn}%</b>` : "n/a"}, last 10 days ${hs.po >= 0 ? `<b>${hs.po}%</b>` : "n/a"}.</div>` : ""}</div>`;
 }
@@ -796,8 +849,9 @@ function legendItems() {
   if (on("opt-roads")) L.push({ h: `Road slowdown tier · ${W}` }, ...[[3, "Severe (~50% slower)"], [2, "Elevated (~25% slower)"], [1, "Minor (~10% slower)"]]
     .filter(([t]) => state.on[t]).map(([t, l]) => ({ line: css(TIER_TOK[t]), w: 4, l })));
   if (on("opt-slip")) L.push({ line: css("--slip"), w: 2, dash: [4, 3], l: "Slip / rock-fall exposed stretch" });
+  if (on("opt-flood")) L.push({ line: css("--flood"), w: 3, l: "Flood-prone stretch, heavy rain forecast" }, { box: css("--flood"), l: "River crossing (ford or no bridge mapped)" });
   if (on("opt-ctx")) L.push({ line: css("--ctx"), w: 2, l: "Main road network" });
-  if (on("opt-int")) L.push({ h: `Intense rain possible · ${W}` }, { box: css("--int1"), l: "≥ 10 mm in an hour" }, { box: css("--int2"), l: "≥ 20 mm in an hour" });
+  if (on("opt-int")) L.push({ h: `Intense rain possible · ${W}` }, { box: css("--int1"), l: "≈ 10 mm in an hour (as observed)" }, { box: css("--int2"), l: "≈ 20 mm in an hour (as observed)" });
   if (on("opt-rain")) L.push(...(state.rain === "pn"
     ? [{ h: `${state.win ? ["", "Days 1–3", "Days 4–7", "Days 8–15"][state.win] : "15-day"} forecast rain, % of normal (CHIRPS 1991–2020)` },
        { ramp: [1, 2, 3, 4, 5].map(i => css(`--pn${i}`)), ticks: PN_TICKS }, { l: "Blank: dry season, not compared", note: true }]
@@ -971,6 +1025,9 @@ function wirePopup() {
   const hit = e => {
     const f = map.queryRenderedFeatures(box(e), { layers: hfLayers() }).sort((a, b) => b.properties.ty - a.properties.ty)[0];
     if (f) return { html: facilityHTML(f.properties), hosp: f.properties.ty === 2 ? f.properties : null };
+    const xl = ["xings"].filter(id => map.getLayer(id) && map.getLayoutProperty(id, "visibility") !== "none");
+    const x = xl.length ? map.queryRenderedFeatures(box(e), { layers: xl })[0] : null;
+    if (x) return { html: xingHTML(x.properties) };
     const rl = ["roads"].filter(id => map.getLayer(id) && map.getLayoutProperty(id, "visibility") !== "none");
     const r = rl.length ? map.queryRenderedFeatures(box(e), { layers: rl }).sort((a, b) => b.properties.t - a.properties.t)[0] : null;
     return r ? { html: popupHTML(r.properties) } : null;
@@ -983,7 +1040,7 @@ function wirePopup() {
     else { hideCard(); pinned = true; pop.setLngLat([x, y]).setHTML(facilityHTML(f.properties)).addTo(map); }
   };
   map.on("mousemove", e => {                         // hover only changes the cursor; details open on click
-    const q = map.queryRenderedFeatures(box(e), { layers: hfLayers().concat(["roads"].filter(id => map.getLayer(id) && map.getLayoutProperty(id, "visibility") !== "none")) });
+    const q = map.queryRenderedFeatures(box(e), { layers: hfLayers().concat(["roads", "xings"].filter(id => map.getLayer(id) && map.getLayoutProperty(id, "visibility") !== "none")) });
     map.getCanvas().style.cursor = q.length ? "pointer" : "";
   });
   map.on("click", e => {

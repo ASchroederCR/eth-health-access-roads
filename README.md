@@ -87,6 +87,11 @@ Each road segment's tier, per window, is **accumulation (0–3) + surface (0–2
 - **Rain bias correction:** forecast rain is corrected toward observed rain before any of these levels are applied; see *Rain bias correction* above.
 - **Tiers and assumed speeds:** Normal, Minor (~10% slower), Elevated (~25% slower), Severe (~50% slower).
 - **Slip / rock-fall exposure:** judged on each ~110 m piece of road, not the whole segment. A piece is exposed when the forecast rain over it is moderate or high, and either the ground is ≥ 26.6° where NASA's global landslide susceptibility map rates it moderate or higher, or susceptibility is very high on ground ≥ 14°. Only the exposed stretches are counted (km) and drawn on the maps. The flag is reported separately and doesn't change the slowdown tier.
+- **Flood exposure** (`38_flood_exposure.py` once, then `14_` each run; `charts/ETH_roads_flood_windows.png`): two kinds of place, each flagged per forecast window and reported separately (not used in travel times).
+  - *Low-lying stretches:* a ~110 m piece of road no more than 3 m above the nearest drainage with a river draining ≥ 100 km² within 1 km (MERIT Hydro height above nearest drainage and upstream area), or ground JRC Global Surface Water saw under water ≥ 10% of the time (1984–2021) and ≤ 5 m above drainage. About 7% of road length qualifies; it is flagged when the window's 10-day running rain reaches 50 mm or very intense rain is possible.
+  - *River crossings:* every place a vehicle road meets an OSM river, stream, canal or drain (14,377), plus crossings of MERIT channels draining ≥ 50 km² where OSM maps no waterway (18,108). Each is classed by what OSM maps: bridge, culvert, ford (way tag or ford node within 30 m), or nothing; on trunk, primary and secondary roads nothing mapped is assumed to be a bridge. Fords, minor-road crossings with no bridge mapped (catchment ≥ 10 km²) and culverts under ≥ 100 km² are exposed (about 24,000); they are flagged when intense rain is possible or the 10-day rain reaches 50 mm at the crossing.
+  - On the 23 Nov run: 1,164 km of low-lying road and 1,892 crossings flagged in at least one window, most in days 8–15.
+  - Limits: thresholds are first guesses, not yet checked against observed road floods; rain is taken at the road, not over the catchment upstream, so a flood arriving from a wet highland onto a dry lowland is missed; many unmapped crossings will in fact have a bridge or culvert. River-flow forecasts (GloFAS) and observed flood extents are the next steps.
 - **Removed:** about 4,700 km of seismic survey cut-lines in the Ogaden that OSM maps as tracks, and 361 ways (246 km) that OSM tags as under construction, no access, no motor vehicles or impassable.
 - **Road network history:** until 19 Nov 2026 the network was the HeiGIT file itself. That file repeats about 90,000 rows verbatim, which counted ~28% of road length twice and made trips about 1.5× too long; it stops at July 2024 and lacks about 8% of today's OSM road length, including stretches of the A10 and B90; and it carries no construction or access tags. The per-facility OSRM check (below) traced its worst outliers to these gaps, so the network now comes from the current OSM extract, with HeiGIT used for surface only.
 
@@ -148,6 +153,7 @@ scripts/
   35_osrm_facility_check.py    every facility's trips vs OSRM, with outlier flags
   36_region_access_charts.py   per-region charts and maps: health centre → hospital added time by window and 15-day mean
   37_graphhopper_rain_check.py the forecast slowdowns on GraphHopper with the same road tiers, against our added minutes
+  38_flood_exposure.py         static flood exposure: MERIT Hydro / JRC surface water grid, river crossings and fords (run once)
 webmap/index.src.html  web map source (MapLibre GL)
 charts/               PNG outputs
 tables/               CSV outputs (per region, per facility, top lists, woredas)

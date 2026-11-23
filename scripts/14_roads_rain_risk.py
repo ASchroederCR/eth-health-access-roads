@@ -65,6 +65,17 @@ Outputs (<init> = run date)
   data/processed/roads/eth_roads_rain_risk_<init>.gpkg   scored segments (tier Minor+), for GIS
   data/processed/roads/eth_roads_scored_<init>.parquet   every vehicle segment with tier + speed factor (routing)
   data/processed/roads/eth_slip_pieces_<init>.parquet    exposed ~110 m pieces (slip / rock fall), as lines
+  data/processed/roads/eth_flood_pieces_<init>.parquet   low-lying stretches flagged for flooding, as lines (w1..w3)
+  data/processed/roads/eth_flood_xings_<init>.parquet    unbridged river crossings and fords flagged for flooding (w1..w3)
+  charts/ETH_roads_flood_windows.png                     flood flags by forecast window
+
+  Flood flag (needs 38_flood_exposure.py run once), per forecast window, not used in routing:
+    low-lying stretch: ~110 m piece <= 3 m above a drainage with a >= 100 km2 river within 1 km (MERIT Hydro), or ground
+      JRC saw under water >= 10% of the time and <= 5 m above drainage; flagged when the window's 10-day running rain is
+      moderate or high (>= 50 mm) or very intense rain is possible there.
+    river crossing: a ford, or a crossing with no bridge mapped on a minor road (catchment >= 10 km2, or >= 50 km2 for
+      MERIT channels OSM does not map), or a culvert under >= 100 km2; flagged when intense rain is possible or the 10-day
+      running rain is moderate or high at the crossing.
   data/processed/tables/eth_roads_rain_risk_adm1_<init>.csv
 
     python scripts\\14_roads_rain_risk.py [--init 2026-11-17]
@@ -280,6 +291,45 @@ def slip_pieces(smp, triggers, length_m):
     return slide_km, sumax, pieces, slide_w
 
 
+def exposed_pieces(smp, ground, triggers, length_m):
+    """As slip_pieces, for any static per-sample exposure (ground) and per-window trigger grids.
+    -> (km any window, [km per window], pieces with w1..w3 flags)"""
+    seg, x, y = smp["seg"], smp["x"], smp["y"]
+    r, c = to_cell(x, y)
+    ew = [ground & tg[r, c] for tg in triggers]
+    e = np.any(ew, axis=0)
+    nseg = len(smp["n"])
+    piece_km = np.where(smp["n"] > 1, length_m / 1000 / (smp["n"] - 1), 0)
+    same = seg[1:] == seg[:-1]
+    def km_of(ex):
+        wt = 0.5 * (ex[1:].astype(float) + ex[:-1].astype(float)) * same
+        return np.bincount(seg[1:], wt * piece_km[seg[1:]], minlength=nseg)
+    k = np.flatnonzero(same & (e[1:] | e[:-1]))
+    pieces = gpd.GeoDataFrame({"seg": seg[k], "km": piece_km[seg[k]] * 0.5 * (e[k].astype(float) + e[k + 1]),
+                               **{f"w{i + 1}": (ex[k] | ex[k + 1]) for i, ex in enumerate(ew)}},
+                              geometry=shapely.linestrings(np.stack([np.c_[x[k], y[k]], np.c_[x[k + 1], y[k + 1]]], axis=1)),
+                              crs="EPSG:4326")
+    return km_of(e), [km_of(ex) for ex in ew], pieces
+
+
+FLOOD_X = os.path.join(ROOT, "data", "processed", "roads", "eth_flood_crossings.parquet")
+
+
+def flood_module():
+    sp = importlib.util.spec_from_file_location("fe", os.path.join(ROOT, "scripts", "38_flood_exposure.py"))
+    m = importlib.util.module_from_spec(sp); sp.loader.exec_module(m); return m
+
+
+def flood_crossings(osm_ids, triggers):
+    """Exposed crossings (38_) on the scored network, flagged per window by the rain at the crossing."""
+    X = gpd.read_parquet(FLOOD_X); X = X[X.exposed].copy()
+    pos = pd.Series(np.arange(len(osm_ids)), index=osm_ids)
+    X = X[X.osm_id.isin(pos.index)].copy(); X["seg"] = pos.reindex(X.osm_id).values
+    r, c = to_cell(shapely.get_x(X.geometry.values), shapely.get_y(X.geometry.values))
+    for w, tg in enumerate(triggers): X[f"w{w + 1}"] = tg[r, c]
+    return X.reset_index(drop=True)
+
+
 WINDOWS = [(1, 3), (4, 7), (8, 15)]
 WLAB = ["days 1–3", "days 4–7", "days 8–15"]
 ACC_T = (25, 50, 100)                                       # mm in a 10-day running total -> A 1 / 2 / 3
@@ -369,6 +419,20 @@ if __name__ == "__main__":
     grade, smean, smax, elev_mean, (DEMA, DEMT), SMP = terrain(g.geometry.values, g.osm_length.values)
     TRIG = [(WH["I"][w] >= 1) | (WH["A"][w] >= 3) for w in range(3)]
     slide_km, sumax, PIECES, slide_w = slip_pieces(SMP, TRIG, g.osm_length.values)
+    HAS_FLOOD = os.path.exists(FLOOD_X)
+    if HAS_FLOOD:
+        FE = flood_module()
+        fs = FE.sample(SMP["x"], SMP["y"])
+        LOW = FE.lowland(np.nan_to_num(fs["hnd_m"], nan=1e9), fs["upa_near"], fs["gsw_occ"])
+        FTRIG = [(WH["A"][w] >= 2) | (WH["I"][w] >= 2) for w in range(3)]
+        flood_km, flood_w, FPIECES = exposed_pieces(SMP, LOW, FTRIG, g.osm_length.values)
+        XTRIG = [(WH["I"][w] >= 1) | (WH["A"][w] >= 2) for w in range(3)]
+        XINGS = flood_crossings(g.osm_id.values, XTRIG)
+        xing_w = [np.bincount(XINGS.seg[XINGS[f"w{w + 1}"]], minlength=len(g)) for w in range(3)]
+        xing_any = np.bincount(XINGS.seg[XINGS[["w1", "w2", "w3"]].any(axis=1)], minlength=len(g))
+    else:
+        print("WARNING: no flood exposure (run 38_flood_exposure.py) - flood flags left out")
+        flood_km = np.zeros(len(g)); flood_w = [np.zeros(len(g))] * 3; xing_w = [np.zeros(len(g), int)] * 3; xing_any = np.zeros(len(g), int)
     T = np.where((smean >= 26.6) | (grade >= 10), 2, np.where((smean >= 14) | (grade >= 5), 1, 0))
     def tier_of(h_, with_terrain=True):
         t_ = np.clip(h_ + S + (T if with_terrain else 0) - 1, 0, 3)
@@ -380,6 +444,7 @@ if __name__ == "__main__":
         g[f"tier_w{w + 1}"] = np.array(TIERS)[tier_w[w]]
         g[f"acc_w{w + 1}"], g[f"int_w{w + 1}"] = hzw[w], izw[w]
         g[f"slide_km_w{w + 1}"] = slide_w[w].round(3)
+        g[f"flood_km_w{w + 1}"] = flood_w[w].round(3); g[f"xing_w{w + 1}"] = xing_w[w]
     g["rain_hazard"], g["surface_score"], g["steep_score"] = hz, S, T
     g["terrain_class"] = np.array(TERRAIN)[T]
     g["road_grade_pct"], g["terrain_slope_mean_deg"] = grade.round(1), smean.round(1)
@@ -387,6 +452,8 @@ if __name__ == "__main__":
     g["slide_km"] = slide_km.round(3)
     g["slide_exposure"] = slide_km > 0
     g["landslide_susc_max"] = sumax
+    g["flood_km"], g["xing"] = flood_km.round(3), xing_any
+    g["flood_flag"] = (flood_km > 0) | (xing_any > 0)
     g["tier"] = pd.Categorical(np.array(TIERS)[tier], TIERS, ordered=True)
     g["tier_without_terrain"] = np.array(TIERS)[tier_flat]
     g["speed_factor"] = g.tier.map(SPEED).astype(float)
@@ -410,6 +477,10 @@ if __name__ == "__main__":
         sl_ = tier_w[w] > 0
         tab[f"slowed_km_{WLAB[w].replace(' ', '_').replace('–', '_')}"] = km[sl_].groupby(g.region[sl_]).sum().reindex(tab.index).fillna(0).round(0)
         tab[f"slide_km_w{w + 1}"] = pd.Series(slide_w[w]).groupby(g.region.values).sum().reindex(tab.index).fillna(0).round(1)
+        tab[f"flood_km_w{w + 1}"] = pd.Series(flood_w[w]).groupby(g.region.values).sum().reindex(tab.index).fillna(0).round(1)
+        tab[f"flood_xings_w{w + 1}"] = pd.Series(xing_w[w]).groupby(g.region.values).sum().reindex(tab.index).fillna(0).astype(int)
+    tab["flood_km"] = pd.Series(flood_km).groupby(g.region.values).sum().reindex(tab.index).fillna(0).round(0)
+    tab["flood_xings"] = pd.Series(xing_any).groupby(g.region.values).sum().reindex(tab.index).fillna(0).astype(int)
     tab = tab.sort_values("share_slowed_%", ascending=False)
     tab.to_csv(os.path.join(wn.TB, f"eth_roads_rain_risk_adm1_{tag}.csv"))
     flag = g[g.tier != "Normal"].copy(); flag["tier"] = flag.tier.astype(str)
@@ -428,6 +499,13 @@ if __name__ == "__main__":
           f"on {int(g.slide_exposure.sum()):,} segments ({km[g.slide_exposure].sum():,.0f} km of whole segments)")
     PIECES["region"] = g.region.values[PIECES.seg.values]
     PIECES.to_parquet(os.path.join(PROC, f"eth_slip_pieces_{tag}.parquet"))
+    if HAS_FLOOD:
+        FPIECES["region"] = g.region.values[FPIECES.seg.values]
+        FPIECES.to_parquet(os.path.join(PROC, f"eth_flood_pieces_{tag}.parquet"))
+        XINGS["region"] = g.region.values[XINGS.seg.values]; XINGS["road"] = g.name_en.fillna(g.name).fillna("").values[XINGS.seg.values]
+        XINGS.to_parquet(os.path.join(PROC, f"eth_flood_xings_{tag}.parquet"))
+        print(f"flood: low-lying flagged {flood_km.sum():,.0f} km; crossings flagged {int(XINGS[['w1', 'w2', 'w3']].any(axis=1).sum()):,} "
+              f"of {len(XINGS):,} exposed; by window " + "; ".join(f"{WLAB[w]} {flood_w[w].sum():,.0f} km, {int(XINGS[f'w{w + 1}'].sum()):,} crossings" for w in range(3)))
     print("without terrain:", km.groupby(tier_flat).sum().round(0).to_dict())
 
     # --- map: national + hotspot zoom ---------------------------------------------------
@@ -548,8 +626,44 @@ if __name__ == "__main__":
              "Slip / rock-fall exposure: intense rain or high accumulation on ground ≥ 26.6° with moderate+ NASA landslide susceptibility, or very high "
              "susceptibility on ≥ 14°. Lead-time skill falls after about day 7, so treat days 8–15 as lower confidence.", fontsize=8, color=MUTED, va="top")
     wn.save(fig, os.path.join(wn.OUT, "ETH_roads_rain_risk_windows.png"))
-    print("windows:", {WLAB[w]: {t: round(float(km[g[f'tier_w{w + 1}'] == t].sum())) for t in TIERS[1:]} | {"slip_km": round(float(slide_w[w].sum()))}
-                       for w in range(3)})
+    print("windows:", {WLAB[w]: {t: round(float(km[g[f'tier_w{w + 1}'] == t].sum())) for t in TIERS[1:]} | {"slip_km": round(float(slide_w[w].sum())),
+                       "flood_km": round(float(flood_w[w].sum())), "flood_xings": int(xing_w[w].sum())} for w in range(3)})
+
+    # --- flood flags by window ---------------------------------------------------------------
+    if HAS_FLOOD:
+        C_LOW, C_X = "#1f5fbf", "#0b2f66"
+        fig, axs3 = plt.subplots(1, 3, figsize=(18, 6.0), gridspec_kw={"wspace": 0.06})
+        main_ = g[g.highway.isin(["motorway", "trunk", "primary", "secondary"])]
+        for w, ax in enumerate(axs3):
+            lines(ax, main_, "#c9c8c2", 0.5, 1)
+            pw = FPIECES[FPIECES[f"w{w + 1}"]]
+            if len(pw): lines(ax, pw, C_LOW, 1.3, 3)
+            xw = XINGS[XINGS[f"w{w + 1}"]]
+            big = xw.upa_km2 >= 1000
+            ax.scatter(shapely.get_x(xw.geometry.values), shapely.get_y(xw.geometry.values), s=np.where(big, 14, 4), color=C_X,
+                       linewidths=0, zorder=4)
+            wn.draw_outline(ax); wn.mapax(ax)
+            a_, b_ = WINDOWS[w]
+            ax.set_title(f"{WLAB[w].capitalize()} · {days[a_ - 1]:%d %b}–{days[b_ - 1]:%d %b}", loc="left", fontsize=11.5, color=INK, pad=30)
+            ax.text(0, 1.01, f"low-lying road flagged {flood_w[w].sum():,.0f} km\n{int(xw.shape[0]):,} river crossings flagged "
+                    f"({int((xw.structure == 'ford').sum()):,} fords, {int(big.sum()):,} on rivers ≥ 1,000 km²)",
+                    transform=ax.transAxes, fontsize=8.5, color=INK2)
+        hd = [Line2D([], [], color=C_LOW, lw=2.2, label="low-lying road, heavy rain forecast"),
+              Line2D([], [], marker="o", ls="", color=C_X, markersize=4, label="ford or unbridged crossing, rain forecast"),
+              Line2D([], [], marker="o", ls="", color=C_X, markersize=7, label="… on a river draining ≥ 1,000 km²"),
+              Line2D([], [], color="#c9c8c2", lw=1.5, label="main roads")]
+        fig.legend(handles=hd, loc="lower center", ncol=4, frameon=False, fontsize=9, bbox_to_anchor=(0.5, -0.02))
+        fig.suptitle("Where roads could flood: low-lying stretches and river crossings by forecast window", x=0.01, ha="left",
+                     fontsize=13.5, fontweight="bold", color=INK, y=1.02)
+        fig.text(0.01, 0.95, f"WeatherNext 3 run {init:%d %b %Y} 00Z · terrain from MERIT Hydro (height above drainage, upstream area) and JRC "
+                 f"surface water · crossings from OpenStreetMap and MERIT river channels", fontsize=9.5, color=INK2)
+        fig.text(0.01, -0.07, "Low-lying: ≤ 3 m above a drainage with a river draining ≥ 100 km² within 1 km, or ground under water ≥ 10% of the time (JRC, 1984–2021) "
+                 "and ≤ 5 m above drainage; flagged where the window's 10-day running rain is ≥ 50 mm or very intense rain is possible.\n"
+                 "Crossings: fords, and minor-road crossings with no bridge mapped (catchment ≥ 10 km²; ≥ 50 km² where only MERIT shows the river), "
+                 "culverts under ≥ 100 km²; trunk, primary and secondary roads are assumed bridged. Flagged where intense rain is possible or "
+                 "the 10-day rain is ≥ 50 mm.\nFirst-guess thresholds, not calibrated against observed road floods; upstream rain is not counted. "
+                 "Lead-time skill falls after about day 7.", fontsize=8, color=MUTED, va="top")
+        wn.save(fig, os.path.join(wn.OUT, "ETH_roads_flood_windows.png"))
 
     # --- km by region -----------------------------------------------------------------
     t2 = tab[tab.index != "Unassigned"].sort_values("share_slowed_%")

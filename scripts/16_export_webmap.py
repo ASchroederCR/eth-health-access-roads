@@ -8,6 +8,8 @@ GEM-15 elevation (15_fetch_gem15_dem.py) and the ADM1 boundaries, and writes com
   rain.geojson             0.25 deg forecast cells: 15-day mean, wettest 3 days, P(day >= 20 mm), hazard
   adm1.geojson             region outlines
   slip.json                slip / rock-fall exposed road stretches (compact, as the road files)
+  flood.json               flood-flagged low-lying stretches (14_; as slip.json)
+  xings.json               flood-flagged river crossings (points: {"cols", "lut", "f": [[values..., x*1e4, y*1e4]]})
   mask.geojson             everything outside Ethiopia, drawn white on the map
   facilities.geojson       hospitals, health centres, health posts with access results (17_health_access.py) and,
                            where available, the MAP friction-surface results (20_friction_access.py) as fr* fields
@@ -102,9 +104,9 @@ if __name__ == "__main__":
     spec = importlib.util.spec_from_file_location("rr", os.path.join(ROOT, "scripts", "14_roads_rain_risk.py"))
     rr = importlib.util.module_from_spec(spec); spec.loader.exec_module(rr)
     allr, _ = rr.drop_seismic(rr.load_roads())
-    ctx = allr[allr.highway.isin(["motorway", "trunk", "primary", "secondary"])].copy()
+    ctx = allr[allr.highway.isin(["motorway", "trunk", "primary", "secondary", "tertiary"])].copy()
     ctx["geometry"] = r4(ctx.geometry.values, 0.001)
-    ctx["c"] = ctx.highway.map({"motorway": 0, "trunk": 0, "primary": 1, "secondary": 2})
+    ctx["c"] = ctx.highway.map({"motorway": 0, "trunk": 0, "primary": 1, "secondary": 2, "tertiary": 3})
     n, mb = dump(os.path.join(OUT, "roads_context.json"), ctx.reset_index(drop=True), {"c": "c"})
     print(f"context: {n} segments, {mb:.1f} MB")
 
@@ -117,6 +119,31 @@ if __name__ == "__main__":
     pcs["km"] = pcs.km.round(2)
     n, mb = dump(os.path.join(OUT, "slip.json"), pcs, {"km": "km", "w1": "w1", "w2": "w2", "w3": "w3"})
     print(f"slip stretches: {n}, {mb:.1f} MB")
+
+    # --- flood-flagged stretches and river crossings (14_) ----------------------------------------
+    fpp = os.path.join(ROOT, "data", "processed", "roads", f"eth_flood_pieces_{tag}.parquet")
+    fxp = os.path.join(ROOT, "data", "processed", "roads", f"eth_flood_xings_{tag}.parquet")
+    if os.path.exists(fpp) and os.path.exists(fxp):
+        fp = gpd.read_parquet(fpp)
+        for w_ in ("w1", "w2", "w3"): fp[w_] = fp[w_].astype(int)
+        if len(fp):
+            fp = fp.dissolve(by=["seg", "w1", "w2", "w3"], aggfunc={"km": "sum"}).reset_index()
+            fp["geometry"] = shapely.line_merge(fp.geometry.values)
+            fp = fp.explode(index_parts=False).reset_index(drop=True); fp["km"] = fp.km.round(2)
+        n, mb = dump(os.path.join(OUT, "flood.json"), fp, {"km": "km", "w1": "w1", "w2": "w2", "w3": "w3"})
+        X = gpd.read_parquet(fxp); X = X[X[["w1", "w2", "w3"]].any(axis=1)].reset_index(drop=True)
+        ST, SRC = ["ford", "none", "culvert"], ["osm", "merit"]
+        clean = lambda v: "" if v is None or (isinstance(v, float) and np.isnan(v)) else str(v)
+        rows = [[ST.index(r.structure) if r.structure in ST else 1, SRC.index(r.source), int(round(float(r.upa_km2))),
+                 int(r.w1), int(r.w2), int(r.w3), clean(r.road), clean(r.waterway_name),
+                 int(round(r.geometry.x * 1e4)), int(round(r.geometry.y * 1e4))] for r in X.itertuples()]
+        with open(os.path.join(OUT, "xings.json"), "w", encoding="utf-8") as f_:
+            json.dump({"cols": ["st", "src", "up", "w1", "w2", "w3", "rd", "wn"], "lut": {"st": ST, "src": SRC}, "f": rows},
+                      f_, separators=(",", ":"), ensure_ascii=False)
+        print(f"flood stretches: {n}, {mb:.1f} MB; crossings flagged: {len(rows)}")
+    else:
+        for f_ in ("flood.json", "xings.json"):
+            with open(os.path.join(OUT, f_), "w") as fh: json.dump({"cols": [], "lut": {}, "f": []}, fh)
 
     # --- outside-Ethiopia mask -------------------------------------------------------------------
     import importlib.util as _iu
@@ -360,11 +387,15 @@ if __name__ == "__main__":
         win.append({"label": f"Days {a_}–{b_}", "dates": f"{days[a_ - 1]:%d %b} – {days[b_ - 1]:%d %b}",
                     **{t: round(float(kmw.get(t, 0))) for t in TIERS[1:]},
                     "slip": round(float(tab[f"slide_km_w{w_}"].sum())) if f"slide_km_w{w_}" in tab.columns else None,
+                    "flood_km": round(float(tab[f"flood_km_w{w_}"].sum())) if f"flood_km_w{w_}" in tab.columns else None,
+                    "flood_x": int(tab[f"flood_xings_w{w_}"].sum()) if f"flood_xings_w{w_}" in tab.columns else None,
                     "intense_share": round(float(np.mean(WH["I"][w_ - 1][z["mask"]] >= 1)), 3)})
     summ = {"init": f"{init:%d %b %Y}", "start": f"{days[0]:%d %b}", "end": f"{days[-1]:%d %b %Y}",
             "total_km": round(float(tab[TIERS].sum().sum())),
             "tiers": {t: round(float(tab[t].sum())) for t in TIERS},
             "slide_km": round(float(tab.slide_exposure_km.sum())),
+            "flood_km": round(float(tab.flood_km.sum())) if "flood_km" in tab.columns else None,
+            "flood_x": int(tab.flood_xings.sum()) if "flood_xings" in tab.columns else None,
             "raised_km": round(float(tab.raised_by_terrain_km.sum())),
             "regions": [{"name": n, **{t: round(float(tab.loc[n, t])) for t in TIERS},
                          "share": float(tab.loc[n, "share_slowed_%"]), "slide": round(float(tab.loc[n, "slide_exposure_km"])),
@@ -377,5 +408,6 @@ if __name__ == "__main__":
                    for k in ("obs", "w1", "w2", "w3", "all")},
                 **{lab: round(float(100 * (_w[_tok] * (_ter[_tok] == v)).sum() / _w[_tok].sum()))
                    for lab, v in (("above", 1), ("below", -1))}}}
+    if _th: summ["int_th"] = _th                    # forecast wettest-hour thresholds (mm) per window, for the page's labels
     json.dump(summ, open(os.path.join(OUT, "summary.json"), "w"), indent=1)
     print(json.dumps({k: summ[k] for k in ["init", "tiers", "slide_km", "raised_km"]}))
