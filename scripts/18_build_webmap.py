@@ -46,5 +46,11 @@ if __name__ == "__main__":
     for f in DATA:
         if not os.path.exists(os.path.join(WEB, "data", f)): continue
         shutil.copyfile(os.path.join(WEB, "data", f), os.path.join(a.pages_dir, "data", f))
+    loc = os.path.join(WEB, "data", "local")              # local-road tiles (41_), static
+    if os.path.isdir(loc):
+        dst = os.path.join(a.pages_dir, "data", "local"); os.makedirs(dst, exist_ok=True)
+        for f in os.listdir(dst):
+            if f.endswith(".json") and not os.path.exists(os.path.join(loc, f)): os.remove(os.path.join(dst, f))
+        for f in os.listdir(loc): shutil.copyfile(os.path.join(loc, f), os.path.join(dst, f))
     open(os.path.join(a.pages_dir, ".nojekyll"), "w").close()
     print(f"wrote webmap/index.html and {a.pages_dir}/index.html + {len(DATA)} data files")

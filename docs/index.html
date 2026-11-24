@@ -242,7 +242,7 @@ section { display: flex; flex-direction: column; gap: 6px; }
         <label class="sw-row" for="opt-slip"><span>Slip / rock-fall exposure<small>Exposed stretches: moderate+ rain on steep, landslide-prone ground</small></span><input type="checkbox" class="toggle" id="opt-slip" checked></label>
         <label class="sw-row" for="opt-river"><span>River flow forecast (GloFAS)<small>Points along the larger rivers; filled where a flood is likely. Click for the 15-day forecast</small></span><input type="checkbox" class="toggle" id="opt-river" checked></label>
         <label class="sw-row" for="opt-flood"><span>Flood risk<small>Low-lying stretches under heavy rain; river crossings where GloFAS forecasts a flood or a flash flood is likely</small></span><input type="checkbox" class="toggle" id="opt-flood" checked></label>
-        <label class="sw-row" for="opt-ctx"><span>Road network<small>Trunk to tertiary roads; drawn darker when slowdown tiers are off</small></span><input type="checkbox" class="toggle" id="opt-ctx" checked></label>
+        <label class="sw-row" for="opt-ctx"><span>Road network<small>Trunk to tertiary roads; local roads and tracks added faintly when zoomed in; drawn darker when slowdown tiers are off</small></span><input type="checkbox" class="toggle" id="opt-ctx" checked></label>
         <div class="subh">Other layers</div>
         <label class="sw-row" for="opt-int"><span>Intense rain possible<small>Downpours like those observed at ≥ 10 / 20 mm in an hour; follows the forecast window</small></span><input type="checkbox" class="toggle" id="opt-int" checked></label>
         <label class="sw-row" for="opt-hf"><span>Health facilities<small id="hfsub">Added minutes to the nearest hospital; health posts from zoom 7</small></span><input type="checkbox" class="toggle" id="opt-hf" checked></label>
@@ -2211,7 +2211,7 @@ function decode(d) {
   return feats;
 }
 // data files keep fixed names, so tag each request with this build's version: browsers then never mix a new page with old data
-const DATA_VERSION = "202611240905-d9986e";
+const DATA_VERSION = "202611240907-d9986e";
 const dv = u => `${u}?v=${DATA_VERSION}`;
 const getJSON = u => fetch(dv(u), { cache: "no-cache" }).then(r => { if (!r.ok) throw new Error(u + " " + r.status); return r.json(); });
 
@@ -2334,6 +2334,13 @@ function init() {
         "line-width": ["interpolate", ["linear"], ["zoom"], 5, ["match", ["get", "c"], 0, 0.9, 1, 0.7, 2, 0.45, 0.25], 10, ["match", ["get", "c"], 0, 2.4, 1, 1.8, 2, 1.2, 0.8]] } }, map.getLayer("roads") ? "roads" : undefined);
       sync();
     });
+    // local roads (41_): faint base under the main network, 1-degree tiles fetched for the view from zoom 8
+    map.addSource("local", { type: "geojson", data: { type: "FeatureCollection", features: [] }, tolerance: 0.4 });
+    map.addLayer({ id: "local", type: "line", source: "local", minzoom: LOCAL_Z, layout: { "line-cap": "round", "line-join": "round" },
+      paint: { "line-color": css("--ctx"), "line-opacity": ["interpolate", ["linear"], ["zoom"], LOCAL_Z, 0.3, 12, 0.55],
+        "line-width": ["interpolate", ["linear"], ["zoom"], LOCAL_Z, 0.3, 12, ["match", ["get", "c"], 0, 1.1, 1, 0.9, 0.7]] } },
+      map.getLayer("ctx") ? "ctx" : undefined);
+    map.on("moveend", loadLocal); loadLocal();
 
     const files = ["severe", "elevated", "minor"]; let feats = [], done = 0;
     status.textContent = "Loading roads… 0 of 3";
@@ -2366,6 +2373,7 @@ function init() {
       layout: { "icon-image": xingIcon(), "icon-size": xingSize(), "icon-allow-overlap": true, "icon-ignore-placement": true,
         "symbol-sort-key": xingLv() } });
     if (map.getLayer("ctx")) map.moveLayer("ctx", "roads");
+    if (map.getLayer("local")) map.moveLayer("local", map.getLayer("ctx") ? "ctx" : "roads");
     if (map.getLayer("mask")) { map.moveLayer("mask"); map.moveLayer("adm"); }
     try {
       const hfd = await getJSON("data/facilities.geojson");
@@ -2401,7 +2409,7 @@ function sync() {
   vis("intense", intOn); document.getElementById("leg-int").hidden = !intOn; document.getElementById("leg-int2").hidden = !intOn;
   { const li3 = document.getElementById("leg-int3"); li3.hidden = !intOn || !SUMMARY.int_th; li3.textContent = intThTxt(); }
   vis("hs", document.getElementById("opt-hs").checked);
-  vis("ctx", document.getElementById("opt-ctx").checked);
+  vis("ctx", document.getElementById("opt-ctx").checked); vis("local", document.getElementById("opt-ctx").checked); loadLocal();
   const roadsOn = document.getElementById("opt-roads").checked;
   vis("roads", roadsOn);
   document.getElementById("tiers").classList.toggle("muted-all", !roadsOn);
@@ -2419,9 +2427,23 @@ function sync() {
   vis("flood", flOn); vis("xings", flOn); document.getElementById("leg-flood").hidden = !flOn; document.getElementById("leg-flood2").hidden = !flOn;
   ctxPaint();
 }
+const LOCAL_Z = 8, LOCAL = { cells: null, have: new Set(), feats: [] };
+async function loadLocal() {                          // fetch the local-road tiles in view not yet loaded
+  if (!map || !map.getSource("local") || map.getZoom() < LOCAL_Z - 0.25 || !document.getElementById("opt-ctx").checked) return;
+  if (!LOCAL.cells) LOCAL.cells = new Set((await getJSON("data/local/index.json").catch(() => ({ cells: [] }))).cells);
+  const b = map.getBounds(), need = [];
+  for (let x = Math.floor(b.getWest()); x <= Math.floor(b.getEast()); x++)
+    for (let y = Math.floor(b.getSouth()); y <= Math.floor(b.getNorth()); y++) {
+      const k = `${x}_${y}`; if (LOCAL.cells.has(k) && !LOCAL.have.has(k)) { LOCAL.have.add(k); need.push(k); } }
+  if (!need.length) return;
+  const parts = await Promise.all(need.map(k => getJSON(`data/local/${k}.json`).then(decode).catch(() => { LOCAL.have.delete(k); return []; })));
+  parts.forEach(pt => { for (const f of pt) LOCAL.feats.push(f); });
+  map.getSource("local").setData({ type: "FeatureCollection", features: LOCAL.feats });
+}
 function ctxPaint() {                                // slowdown tiers off: the plain road network, drawn darker
   if (!map || !map.getLayer("ctx")) return;
   const tiersOn = document.getElementById("opt-roads").checked;
+  if (map.getLayer("local")) map.setPaintProperty("local", "line-color", tiersOn ? css("--ctx") : css("--ink2"));
   map.setPaintProperty("ctx", "line-color", tiersOn ? css("--ctx") : css("--ink2"));
   map.setPaintProperty("ctx", "line-opacity", tiersOn ? 0.8 : 0.95);
 }
@@ -2739,7 +2761,7 @@ function legendItems() {
   if (on("opt-river")) L.push({ h: `River flow forecast (GloFAS) · ${W}` }, { dot: css("--panel"), ring: css("--fl2"), l: "No flood signal" },
     { dot: css("--fl1"), l: "2-year flood likely" }, { dot: css("--fl2"), l: "5-year flood likely" }, { dot: css("--fl3"), l: "20-year flood likely" });
   if (on("opt-flood")) L.push({ line: css("--flood"), w: 3, l: "Flood-prone stretch, heavy rain forecast" }, { tri: css("--fl1"), l: "Crossing: 2-year flood or flash flood likely" }, { tri: css("--fl2"), l: "Crossing: 5-year flood likely" }, { tri: css("--fl3"), l: "Crossing: 20-year flood likely" });
-  if (on("opt-ctx")) L.push({ line: css("--ctx"), w: 2, l: "Main road network" });
+  if (on("opt-ctx")) L.push({ line: css("--ctx"), w: 2, l: map.getZoom() >= LOCAL_Z ? "Road network (main; local roads fainter)" : "Main road network" });
   if (on("opt-int")) L.push({ h: `Intense rain possible · ${W}` }, { box: css("--int1"), l: "≈ 10 mm in an hour (as observed)" }, { box: css("--int2"), l: "≈ 20 mm in an hour (as observed)" });
   if (on("opt-rain")) L.push(...(state.rain === "pn"
     ? [{ h: `${state.win ? ["", "Days 1–3", "Days 4–7", "Days 8–15"][state.win] : "15-day"} forecast rain, % of normal (CHIRPS 1991–2020)` },
