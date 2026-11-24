@@ -14,7 +14,7 @@
 :root {
   --bg: #f3f4f1; --panel: #fbfbf9; --ink: #1d211f; --ink2: #4a504c; --muted: #737a75; --rule: #dcdfd9;
   --mapbg: #e6e8e3; --chip: #eceee9;
-  --minor: #f2b33d; --elev: #e0701f; --sev: #a8320f; --slip: #1d211f; --flood: #1f5fbf; --fl1: #8fb4ee; --fl2: #2f6fd0; --fl3: #0b2f66; --net: #f2c200; --ctx: #8e9590; --adm: #5d635f; --pri: #7a3ea8;
+  --minor: #f2b33d; --elev: #e0701f; --sev: #a8320f; --slip: #1d211f; --flood: #1f5fbf; --fl1: #8fb4ee; --fl2: #2f6fd0; --fl3: #0b2f66; --net: #f2c200; --ctx: #8e9590; --adm: #5d635f; --pri: #0e8577;
   --r1: #e6effa; --r2: #cde2fb; --r3: #9ec5f4; --r4: #6da7ec; --r5: #3987e5; --r6: #256abf;
   --hs-min: 0; --focus: #2a6fb8;
   --outside: #ffffff; --int1: #cdb7e6; --int2: #8656bd;
@@ -29,7 +29,7 @@
   :root:not([data-theme="light"]) {
     --bg: #141716; --panel: #1a1e1c; --ink: #e8ebe7; --ink2: #b8beb9; --muted: #8b928d; --rule: #2d3330;
     --mapbg: #1f2321; --chip: #232826;
-    --minor: #e3a83f; --elev: #f2812f; --sev: #ff5a3c; --slip: #f4f6f3; --flood: #6aa8ff; --fl1: #3f6db0; --fl2: #7fb2ff; --fl3: #d4e6ff; --net: #ffd60a; --ctx: #66706a; --adm: #a2aaa4; --pri: #c99cf0;
+    --minor: #e3a83f; --elev: #f2812f; --sev: #ff5a3c; --slip: #f4f6f3; --flood: #6aa8ff; --fl1: #3f6db0; --fl2: #7fb2ff; --fl3: #d4e6ff; --net: #ffd60a; --ctx: #66706a; --adm: #a2aaa4; --pri: #3fc4b3;
     --r1: #1d2a37; --r2: #213651; --r3: #24456d; --r4: #285b93; --r5: #2f74bd; --r6: #4691dc;
     --pn1: #e0a458; --pn2: #8a6630; --pn3: #3a3f3c; --pn4: #2f6aa8; --pn5: #6aa8ec; --rain-op: 0.8; --pn-op: 0.85; --ctrl-icon: invert(1); --hosp: #f4f6f3; --hs-min: 0.32; --outside: #141716; --int1: #5d4a78; --int2: #b38be0; --d0: #4d5450; --d1: #6e5a24; --d2: #a8661f; --d3: #e27b33; --d4: #ffb07a; --hfring: #141716; --focus: #6aa8ec; color-scheme: dark;
   }
@@ -37,7 +37,7 @@
 :root[data-theme="dark"] {
   --bg: #141716; --panel: #1a1e1c; --ink: #e8ebe7; --ink2: #b8beb9; --muted: #8b928d; --rule: #2d3330;
   --mapbg: #1f2321; --chip: #232826;
-  --minor: #e3a83f; --elev: #f2812f; --sev: #ff5a3c; --slip: #f4f6f3; --flood: #6aa8ff; --fl1: #3f6db0; --fl2: #7fb2ff; --fl3: #d4e6ff; --net: #ffd60a; --ctx: #66706a; --adm: #a2aaa4; --pri: #c99cf0;
+  --minor: #e3a83f; --elev: #f2812f; --sev: #ff5a3c; --slip: #f4f6f3; --flood: #6aa8ff; --fl1: #3f6db0; --fl2: #7fb2ff; --fl3: #d4e6ff; --net: #ffd60a; --ctx: #66706a; --adm: #a2aaa4; --pri: #3fc4b3;
   --r1: #1d2a37; --r2: #213651; --r3: #24456d; --r4: #285b93; --r5: #2f74bd; --r6: #4691dc;
   --pn1: #e0a458; --pn2: #8a6630; --pn3: #3a3f3c; --pn4: #2f6aa8; --pn5: #6aa8ec; --rain-op: 0.8; --pn-op: 0.85; --ctrl-icon: invert(1); --hosp: #f4f6f3; --hs-min: 0.32; --outside: #141716; --int1: #5d4a78; --int2: #b38be0; --d0: #4d5450; --d1: #6e5a24; --d2: #a8661f; --d3: #e27b33; --d4: #ffb07a; --hfring: #141716; --focus: #6aa8ec; color-scheme: dark;
 }
@@ -114,7 +114,18 @@ section { display: flex; flex-direction: column; gap: 6px; }
 .rpt th, .rpt td { text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--rule); vertical-align: top; }
 .rpt th { color: var(--muted); font-weight: 500; font-size: 11.5px; } .rpt td.n, .rpt th.n { text-align: right; white-space: nowrap; }
 .rpt tr.aff td:first-child { box-shadow: inset 3px 0 0 var(--pri); } .rpt .muted { color: var(--muted); }
+.rpt .ts { margin: 4px 0 6px; } .rpt .ts svg { width: 100%; height: auto; display: block; }
+.rpt .ts .cap { color: var(--muted); font-size: 11.5px; display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 3px; }
+.rpt .ts .cap i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
+.rpt table.hm { width: auto; } .rpt table.hm td, .rpt table.hm th { padding: 2px 3px; border-bottom: 0; }
+.rpt table.hm td.c { width: 30px; height: 16px; border-radius: 3px; } .rpt table.hm th.d { font-size: 10.5px; text-align: center; min-width: 30px; }
+.rpt table.hm td.w { font-size: 12px; padding-right: 8px; white-space: nowrap; }
 .rpt .notes { color: var(--muted); font-size: 12px; margin-top: 14px; } .rpt .notes p { margin: 0 0 5px; }
+.cf-ctl { margin: 0 2px 10px; display: flex; flex-direction: column; gap: 6px; }
+.cf-ctl[hidden] { display: none; }
+.cf-ctl .cf-mon { font-size: 13px; font-weight: 500; } .cf-ctl .cf-mon small { color: var(--muted); font-weight: 400; }
+.cf-ctl input[type=range] { width: 100%; accent-color: #b8405f; }
+.cf-spark svg { width: 100%; height: auto; display: block; } .cf-spark rect { cursor: pointer; }
 .toast { position: absolute; left: 50%; bottom: 48px; transform: translateX(-50%); background: var(--ink); color: var(--panel); font-size: 12.5px; padding: 6px 12px; border-radius: 999px; z-index: 4; }
 @media (max-width: 760px) { .infocard { top: auto; bottom: 84px; left: max(8px, env(safe-area-inset-left, 0px)); right: max(8px, env(safe-area-inset-right, 0px)); width: auto; max-height: 55%; } }
 .rchart { margin-top: 8px; }
@@ -270,6 +281,16 @@ section { display: flex; flex-direction: column; gap: 6px; }
         <label class="sw-row" for="opt-hf"><span>Health facilities<small id="hfsub">Added minutes to the nearest hospital; health posts from zoom 7</small></span><input type="checkbox" class="toggle" id="opt-hf" checked></label>
         <label class="sw-row" for="opt-prio"><span>Priority woredas<small id="priosub">Supplied priority list; on to outline them and open the report</small></span><input type="checkbox" class="toggle" id="opt-prio"></label>
         <button type="button" class="prio-btn" id="priobtn" hidden>Priority woreda report</button>
+        <label class="sw-row" for="opt-cf"><span>Political violence (ACLED)<small>Events by zone and month since January 2026</small></span><input type="checkbox" class="toggle" id="opt-cf"></label>
+        <div class="cf-ctl" id="cf-ctl" hidden>
+          <div class="seg" role="radiogroup" aria-label="Political violence measure" id="cfseg">
+            <button type="button" role="radio" aria-checked="true" data-m="ev">Events</button>
+            <button type="button" role="radio" aria-checked="false" data-m="fa">Fatalities</button>
+          </div>
+          <div class="cf-spark" id="cf-spark"></div>
+          <input type="range" id="cf-range" min="0" max="1" step="1" value="1" aria-label="Month">
+          <div class="cf-mon" id="cf-mon"></div>
+        </div>
         <label class="sw-row" for="opt-rain"><span>Forecast rain<small id="rainsub">15-day total, mm</small></span><input type="checkbox" class="toggle" id="opt-rain" checked></label>
         <div class="seg" role="radiogroup" aria-label="Rain shown as" id="rainseg">
           <button type="button" role="radio" aria-checked="true" data-m="mm">mm</button>
@@ -334,6 +355,8 @@ section { display: flex; flex-direction: column; gap: 6px; }
       <div id="leg-int">Intense rain possible</div>
       <div class="dots" id="leg-int2"><span><i style="background:var(--int1);border-radius:2px"></i>≈ 10 mm/h</span><span><i style="background:var(--int2);border-radius:2px"></i>≈ 20 mm/h</span></div>
       <div id="leg-int3" style="font-size:11px;color:var(--muted);max-width:260px"></div>
+      <div id="leg-cf" hidden></div>
+      <div class="dots" id="leg-cf2" hidden></div>
       <div id="leg-hf">Added minutes to the nearest hospital</div>
       <div class="dots" id="leg-hf2"><span><i style="background:var(--d0)"></i>&lt;5</span><span><i style="background:var(--d1)"></i>5–15</span><span><i style="background:var(--d2)"></i>15–30</span><span><i style="background:var(--d3)"></i>30–60</span><span><i style="background:var(--d4)"></i>60+</span><span id="leg-hcdest" hidden><i style="background:var(--panel);box-shadow:inset 0 0 0 1.5px var(--ink)"></i>health centre</span><span><i style="background:transparent;border-radius:0;box-shadow:inset 0 0 0 2px var(--hosp)"></i>hospital</span></div>
     </div>
@@ -2242,7 +2265,7 @@ function decode(d) {
   return feats;
 }
 // data files keep fixed names, so tag each request with this build's version: browsers then never mix a new page with old data
-const DATA_VERSION = "202611241101-d9986e";
+const DATA_VERSION = "202611241150-d9986e";
 const dv = u => `${u}?v=${DATA_VERSION}`;
 const getJSON = u => fetch(dv(u), { cache: "no-cache" }).then(r => { if (!r.ok) throw new Error(u + " " + r.status); return r.json(); });
 
@@ -2310,6 +2333,7 @@ function applyTheme() {
   if (has("mask")) map.setPaintProperty("mask", "fill-color", css("--outside"));
   if (has("slip")) map.setPaintProperty("slip", "line-color", css("--slip"));
   if (has("flood")) map.setPaintProperty("flood", "line-color", css("--flood"));
+  if (has("cf-fill")) { map.setPaintProperty("cf-line", "line-color", css("--adm")); cfPaint(); }
   if (has("prio-fill")) { map.setPaintProperty("prio-fill", "fill-color", css("--pri")); map.setPaintProperty("prio-line", "line-color", css("--pri")); }
   if (has("xings")) xingImages();
   if (has("net-hull")) map.setPaintProperty("net-hull", "line-color", css("--net"));
@@ -2334,7 +2358,7 @@ function init() {
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
   map.addControl(new maplibregl.ScaleControl({ maxWidth: 110 }), "bottom-right");
   map.addControl(new maplibregl.AttributionControl({ compact: true, customAttribution:
-    'Roads © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>, surface model HeiGIT · Elevation Google GEM-15 · Rain Google WeatherNext 3 · Regions and woredas OCHA COD-AB 2025' }), "bottom-right");
+    'Roads © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>, surface model HeiGIT · Elevation Google GEM-15 · Rain Google WeatherNext 3 · Regions and woredas OCHA COD-AB 2025 · Political violence <a href="https://acleddata.com" target="_blank" rel="noopener">ACLED</a>' }), "bottom-right");
 
   // the container can still be unsized when the map starts (e.g. a linked stylesheet still loading): re-measure and re-fit
   new ResizeObserver(() => map.resize()).observe(document.getElementById("map"));
@@ -2793,6 +2817,8 @@ function legendItems() {
   if (on("opt-river")) L.push({ h: `River flow forecast (GloFAS) · ${W}` }, { dot: css("--panel"), ring: css("--fl2"), l: "No flood signal" },
     { dot: css("--fl1"), l: "2-year flood likely" }, { dot: css("--fl2"), l: "5-year flood likely" }, { dot: css("--fl3"), l: "20-year flood likely" });
   if (on("opt-flood")) L.push({ line: css("--flood"), w: 3, l: "Flood-prone stretch, heavy rain forecast" }, { tri: css("--fl1"), l: "Crossing: 2-year flood or flash flood likely" }, { tri: css("--fl2"), l: "Crossing: 5-year flood likely" }, { tri: css("--fl3"), l: "Crossing: 20-year flood likely" });
+  if (on("opt-cf") && CF.d) { const c = cfCuts(); L.push({ h: `Political violence (ACLED), ${CF.m === "ev" ? "events" : "fatalities"}: ${cfLabel()}` },
+    { ramp: CF_RAMP, ticks: c.map(String) }, { box: css("--chip"), l: "Not covered by the HDX file (Central and South Ethiopia, some new zones)" }); }
   if (on("opt-prio")) L.push({ line: css("--pri"), w: 2.5, l: "Priority woreda" });
   if (on("opt-ctx")) L.push({ line: css("--ctx"), w: 2, l: map.getZoom() >= LOCAL_Z ? "Road network (main; local roads fainter)" : "Main road network" });
   if (on("opt-int")) L.push({ h: `Intense rain possible · ${W}` }, { box: css("--int1"), l: "≈ 10 mm in an hour (as observed)" }, { box: css("--int2"), l: "≈ 20 mm in an hour (as observed)" });
@@ -2991,7 +3017,8 @@ async function exportPNG() {
       (state.model !== "fric" && document.getElementById("opt-fric").checked ? " · Travel speed layer: Malaria Atlas Project 2019 friction surface" : "") +
       (state.rain === "pn" && document.getElementById("opt-rain").checked ? " · Normal: CHIRPS v3 1991–2020 (UCSB CHC); forecast put into CHIRPS terms by the regional PARDIG ÷ CHIRPS ratio" : "");
     const foot2 = `Speed factors and thresholds are illustrative. Exported ${new Date().toISOString().slice(0, 16).replace("T", " ")} UTC.`;
-    const foot1p = foot1 + (document.getElementById("opt-prio").checked && PRIO ? ` · Priority woredas: ${PRIO.src}` : "");
+    const foot1p = foot1 + (document.getElementById("opt-prio").checked && PRIO ? ` · Priority woredas: ${PRIO.src}` : "")
+      + (document.getElementById("opt-cf").checked && CF.d ? ` · Political violence: Armed Conflict Location & Event Data (ACLED), www.acleddata.com, aggregated by HDX, data to ${CF.d.asof}` : "");
     const footLines = wrap(meas, foot1p, mx + mc.width + legendW - 2 * pad).concat([foot2]);
     const footH = S(14) + footLines.length * S(14) + S(8);
     const cardW = S(340);
@@ -3094,6 +3121,84 @@ async function exportPNG() {
   finally { btn.disabled = false; btn.textContent = "Export PNG"; }
 }
 document.getElementById("exportbtn").addEventListener("click", exportPNG);
+// ---- political violence by zone and month (ACLED via HDX, 43_) ----
+const CF_RAMP = ["#f4d6dc", "#e9a6b5", "#d8708a", "#b8405f", "#85193c"];
+const CF = { d: null, m: "ev", k: null };          // k: month index, or months.length = whole period
+const CF_CUTS = { ev: [[1, 3, 6, 11, 26], [1, 11, 26, 51, 101]], fa: [[1, 6, 21, 51, 101], [1, 21, 51, 151, 301]] };   // [month, period]
+const cfMonth = (i, long) => { const [y, m] = CF.d.months[i].split("-").map(Number); return new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString("en-GB", { month: long ? "long" : "short", year: long ? "numeric" : undefined, timeZone: "UTC" }); };
+const cfLast = () => { const d = CF.d, last = d.months.length - 1, a = d.asof && d.asof.slice(0, 7) === d.months[last] ? new Date(d.asof + "T00:00:00Z") : null;
+  return a && a.getUTCDate() < 28 ? ` (to ${a.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" })})` : ""; };
+const cfAll = () => CF.k >= CF.d.months.length;
+const cfVal = r => { const a = r[CF.m === "ev" ? 2 : 3]; return cfAll() ? a.reduce((x, v) => x + v, 0) : a[CF.k]; };
+const cfCuts = () => CF_CUTS[CF.m][cfAll() ? 1 : 0];
+const cfLabel = () => cfAll() ? `January – ${cfMonth(CF.d.months.length - 1, true)}${cfLast()}` : `${cfMonth(CF.k, true)}${CF.k === CF.d.months.length - 1 ? cfLast() : ""}`;
+const cfWhat = () => CF.m === "ev" ? "political violence events" : "fatalities from political violence";
+let CF_GJ = null;
+async function cfLoad() {
+  if (!CF.d) { CF.d = await getJSON("data/conflict.json").catch(() => null); if (CF.d) CF.k = CF.d.months.length; }
+  if (!CF_GJ && CF.d) CF_GJ = await getJSON("data/conflict.geojson").catch(() => null);
+  return CF.d && CF_GJ;
+}
+function cfPaint() {
+  if (!map || !map.getSource("cf") || !CF.d) return;
+  CF_GJ.features.forEach(f => { const i = f.properties.i; f.properties.v = i < 0 ? -1 : cfVal(CF.d.z[i]); });
+  map.getSource("cf").setData(CF_GJ);
+  const c = cfCuts();
+  map.setPaintProperty("cf-fill", "fill-color", ["case", ["<", ["get", "v"], 0], "rgba(0,0,0,0)", ["step", ["get", "v"], "rgba(0,0,0,0)", c[0], CF_RAMP[0], c[1], CF_RAMP[1], c[2], CF_RAMP[2], c[3], CF_RAMP[3], c[4], CF_RAMP[4]]]);
+  map.setPaintProperty("cf-fill", "fill-opacity", ["case", ["<", ["get", "v"], 0], 0.55, 0.62]);
+  // control text, sparkline and legend
+  const d = CF.d, n = d.months.length, idx = d.m === "ev" ? 2 : 3, tot = d.months.map((_, k) => d.z.reduce((x, r) => x + r[CF.m === "ev" ? 2 : 3][k], 0));
+  const sel = cfAll() ? tot.reduce((x, v) => x + v, 0) : tot[CF.k];
+  document.getElementById("cf-mon").innerHTML = `${cfLabel()} <small>· ${fmt(sel)} ${cfWhat()} in the covered zones</small>`;
+  const W = 300, H = 54, pB = 12, bw = W / n, vmax = Math.max(1, ...tot);
+  document.getElementById("cf-spark").innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${cfWhat()} per month, whole country">${tot.map((v, k) => {
+    const h = (H - pB - 2) * v / vmax, on = cfAll() || k === CF.k;
+    return `<rect data-k="${k}" x="${k * bw + 1}" y="${H - pB - h}" width="${bw - 2}" height="${Math.max(h, 0.5)}" rx="1.5" fill="${on ? "#b8405f" : "var(--rule)"}"><title>${cfMonth(k, true)}${k === n - 1 ? cfLast() : ""}: ${fmt(v)} ${cfWhat()}</title></rect>`
+      + (k % 2 === 0 || n <= 6 ? `<text x="${k * bw + bw / 2}" y="${H - 2}" text-anchor="middle" font-size="8.5" fill="var(--muted)">${cfMonth(k)}</text>` : ""); }).join("")}</svg>`;
+  const lab = c.map((v, i) => i < 4 ? (c[i + 1] - 1 > v ? `${v}–${c[i + 1] - 1}` : `${v}`) : `${v}+`);
+  document.getElementById("leg-cf").textContent = `Political violence (ACLED), ${CF.m === "ev" ? "events" : "fatalities"}: ${cfLabel()}`;
+  document.getElementById("leg-cf2").innerHTML = CF_RAMP.map((col, i) => `<span><i style="background:${col};border-radius:2px"></i>${lab[i]}</span>`).join("")
+    + `<span><i style="background:repeating-linear-gradient(135deg,var(--muted) 0 1.2px,transparent 1.2px 4px);border-radius:2px;opacity:.7"></i>not covered</span>`;
+}
+async function cfToggle() {
+  const on = document.getElementById("opt-cf").checked;
+  document.getElementById("cf-ctl").hidden = !on; document.getElementById("leg-cf").hidden = !on; document.getElementById("leg-cf2").hidden = !on;
+  if (on && !(await cfLoad())) { toast("The political violence data didn't load"); return; }
+  if (on && map && !map.getSource("cf")) {
+    map.addSource("cf", { type: "geojson", data: CF_GJ });
+    const below = ["prio-fill", "local", "ctx", "roads"].find(id => map.getLayer(id));
+    map.addLayer({ id: "cf-fill", type: "fill", source: "cf", paint: { "fill-color": "rgba(0,0,0,0)" } }, below);
+    if (!map.hasImage("cf-hatch")) { const n = 8, cv = document.createElement("canvas"); cv.width = cv.height = n * 2; const g = cv.getContext("2d");
+      g.strokeStyle = css("--muted"); g.globalAlpha = 0.55; g.lineWidth = 1.6; g.beginPath(); g.moveTo(0, n * 2); g.lineTo(n * 2, 0); g.moveTo(-n, n); g.lineTo(n, -n); g.moveTo(n, n * 3); g.lineTo(n * 3, n); g.stroke();
+      map.addImage("cf-hatch", g.getImageData(0, 0, n * 2, n * 2), { pixelRatio: 2 }); }
+    map.addLayer({ id: "cf-nc", type: "fill", source: "cf", filter: ["<", ["get", "i"], 0], paint: { "fill-pattern": "cf-hatch", "fill-opacity": 0.8 } }, below);
+    map.addLayer({ id: "cf-line", type: "line", source: "cf", paint: { "line-color": css("--adm"), "line-width": 0.5, "line-opacity": 0.6 } }, below);
+    const r = document.getElementById("cf-range"); r.max = CF.d.months.length; r.value = CF.k;
+  }
+  if (map && map.getLayer("cf-fill")) ["cf-fill", "cf-nc", "cf-line"].forEach(id => map.setLayoutProperty(id, "visibility", on ? "visible" : "none"));
+  if (on) cfPaint();
+}
+document.getElementById("opt-cf").addEventListener("change", cfToggle);
+document.getElementById("cf-range").addEventListener("input", e => { CF.k = +e.target.value; cfPaint(); });
+document.getElementById("cf-spark").addEventListener("click", e => { const k = e.target.closest("rect")?.dataset.k; if (k == null) return;
+  CF.k = CF.k === +k ? CF.d.months.length : +k; document.getElementById("cf-range").value = CF.k; cfPaint(); });
+document.querySelectorAll("#cfseg button").forEach(b => b.addEventListener("click", () => {
+  CF.m = b.dataset.m; document.querySelectorAll("#cfseg button").forEach(x => x.setAttribute("aria-checked", x === b ? "true" : "false")); cfPaint(); }));
+function cfZoneHTML(pr) {
+  if (pr.i < 0) return `<div class="pp-h">${esc(pr.nm)}</div><div class="pp-sub">Political violence (ACLED)</div>
+    <div class="netnote">Not covered: the HDX file uses an older zone set. Its former-SNNP zones (now Central and South Ethiopia) carry no events, and this zone's events, if any, are counted in a neighbouring or former parent zone.</div>`;
+  const r = CF.d.z[pr.i], n = CF.d.months.length, ev = r[2], fa = r[3], te = ev.reduce((a, v) => a + v, 0), tf = fa.reduce((a, v) => a + v, 0);
+  const W = 300, H = 92, pL = 22, pB = 16, pT = 8, bw = (W - pL) / n, vmax = Math.max(3, ...ev), y = v => pT + (H - pT - pB) * (1 - v / vmax);
+  let g = `<line x1="${pL}" x2="${W}" y1="${y(0)}" y2="${y(0)}" stroke="var(--ink2)" stroke-width=".6"/><text x="${pL - 3}" y="${pT + 6}" text-anchor="end" font-size="9" fill="var(--muted)">${vmax}</text><text x="${pL - 3}" y="${y(0)}" text-anchor="end" font-size="9" fill="var(--muted)">0</text>`;
+  ev.forEach((v, k) => { const on = cfAll() || k === CF.k;
+    g += `<rect x="${pL + k * bw + 1}" y="${y(v)}" width="${bw - 2}" height="${y(0) - y(v)}" rx="1.5" fill="${on ? "#b8405f" : "var(--rule)"}"><title>${cfMonth(k, true)}${k === n - 1 ? cfLast() : ""}: ${v} events, ${fa[k]} fatalities</title></rect>`;
+    if (k % 2 === 0) g += `<text x="${pL + k * bw + bw / 2}" y="${H - 4}" text-anchor="middle" font-size="9" fill="var(--muted)">${cfMonth(k)}</text>`; });
+  const k = CF.k, sel = cfAll() ? `${fmt(te)} events, ${fmt(tf)} fatalities since January` : `${ev[k]} events, ${fa[k]} fatalities in ${cfMonth(k, true)}${k === n - 1 ? cfLast() : ""}`;
+  return `<div class="pp-h">${esc(r[0])}</div><div class="pp-sub">Zone · ${esc(r[1])} · political violence (ACLED)</div>
+    <div class="netnote" style="margin:0 0 4px"><b>${sel}</b>${cfAll() ? "" : ` · ${fmt(te)} events, ${fmt(tf)} fatalities since January`}</div>
+    <div class="rchart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Political violence events per month in this zone">${g}</svg>
+    <div class="cap">Events per month, 2026 (hover for fatalities). ACLED aggregated counts via HDX, data to ${esc(CF.d.asof || "")}.</div></div>`;
+}
 // ---- priority woredas (42_): layer, popup and report ----
 let PRIO = null;
 async function loadPrio() { if (!PRIO) PRIO = await getJSON("data/priority.json").catch(() => null); return PRIO; }
@@ -3182,6 +3287,49 @@ function prioUnitHTML(o) {
 }
 async function prioPopup(k) { const S = await prioStats(); return S ? prioUnitHTML(S.units[k]) : ""; }
 
+// collective intense-rain series: per 3-hour step, how many priority woredas have intense / very intense rain possible
+function prioRainTS(S) {
+  const P = S.P, U = P.units.filter(u => u.it); if (!U.length || !P.t0) return `<p class="muted">The hourly forecast isn't available for this run, so there is no intense-rain series.</p>`;
+  const n = U[0].it.length, t0 = new Date(P.t0 + ":00:00Z"), at = h => new Date(t0.getTime() + h * 36e5);
+  const dl = d => d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
+  const hh = d => String(d.getUTCHours()).padStart(2, "0") + ":00";
+  const c1 = [], c2 = [];
+  for (let k = 0; k < n; k++) { c1.push(U.filter(u => u.it[k] === "1")); c2.push(U.filter(u => u.it[k] === "2")); }
+  const any = U.filter(u => /[12]/.test(u.it));
+  const W = 760, H = 150, pL = 30, pR = 6, pT = 10, pB = 22, st = (W - pL - pR) / n;
+  const vmax = Math.max(3, ...c1.map((a, k) => a.length + c2[k].length));
+  const y = v => pT + (H - pT - pB) * (1 - v / vmax), x = k => pL + k * st;
+  const win = state.win, wr = [[0, 24], [24, 56], [56, n]][win - 1];
+  let g = "";
+  if (win) g += `<rect x="${x(wr[0])}" y="${pT}" width="${(wr[1] - wr[0]) * st}" height="${H - pT - pB}" fill="var(--chip)"/>`;
+  for (let v = 1; v <= vmax; v++) if (vmax <= 8 || v % Math.ceil(vmax / 6) === 0)
+    g += `<line x1="${pL}" x2="${W - pR}" y1="${y(v)}" y2="${y(v)}" stroke="var(--rule)" stroke-width=".6"/><text x="${pL - 4}" y="${y(v) + 3}" text-anchor="end" font-size="9.5" fill="var(--muted)">${v}</text>`;
+  for (let d = 1; d < 15; d++) { const xx = x(d * 8), big = d === 3 || d === 7;
+    g += `<line x1="${xx}" x2="${xx}" y1="${pT}" y2="${H - pB}" stroke="var(${big ? "--ink2" : "--rule"})" stroke-width="${big ? 0.9 : 0.6}"${big ? "" : ' stroke-dasharray="1 2"'}/>`; }
+  for (let d = 0; d < 15; d += 2) g += `<text x="${x(d * 8 + 4)}" y="${H - 7}" text-anchor="middle" font-size="9.5" fill="var(--muted)">${dl(at(d * 24))}</text>`;
+  const u1 = a => a.reduce((t, u) => t + (u.under1_2025 || 0), 0);
+  for (let k = 0; k < n; k++) {
+    const a = c1[k].length, b = c2[k].length; if (!a && !b) continue;
+    const names = [...c2[k], ...c1[k]].map(u => u.nm), tip = `${dl(at(k * 3))} ${hh(at(k * 3))}–${hh(at(k * 3 + 3))} UTC: intense rain possible in ${a + b} priority woreda${a + b > 1 ? "s" : ""}${b ? ` (very intense in ${b})` : ""}: ${names.join(", ")}. Under 1: ${fmt(u1([...c1[k], ...c2[k]]))}`;
+    const op = win && (k < wr[0] || k >= wr[1]) ? 0.35 : 1;
+    if (a) g += `<rect x="${x(k) + 0.3}" y="${y(a)}" width="${Math.max(1, st - 0.6)}" height="${y(0) - y(a)}" fill="var(--int1)" opacity="${op}"><title>${esc(tip)}</title></rect>`;
+    if (b) g += `<rect x="${x(k) + 0.3}" y="${y(a + b)}" width="${Math.max(1, st - 0.6)}" height="${y(a) - y(a + b)}" fill="var(--int2)" opacity="${op}"><title>${esc(tip)}</title></rect>`;
+  }
+  g += `<line x1="${pL}" x2="${W - pR}" y1="${y(0)}" y2="${y(0)}" stroke="var(--ink2)" stroke-width=".7"/>`;
+  // peak periods, for the text: runs of steps with the most woredas
+  const tot = c1.map((a, k) => a.length + c2[k].length), mx = Math.max(...tot);
+  const peaks = []; tot.forEach((v, k) => { if (v && v >= Math.max(1, Math.ceil(mx * 0.6))) { const L = peaks[peaks.length - 1]; if (L && k === L[1] + 1) L[1] = k; else peaks.push([k, k]); } });
+  const pk = peaks.slice(0, 4).map(([a, b]) => `${dl(at(a * 3))} ${hh(at(a * 3))}–${a === b || dl(at(a * 3)) === dl(at(b * 3 + 3)) ? "" : dl(at(b * 3 + 3)) + " "}${hh(at(b * 3 + 3))}`).join("; ");
+  // day grid: affected woredas by forecast day (highest level that day)
+  const rows = any.map(u => ({ u, d: Array.from({ length: 15 }, (_, d) => Math.max(...u.it.slice(d * 8, d * 8 + 8).split("").map(Number))) }))
+    .sort((a, b) => a.d.findIndex(v => v) - b.d.findIndex(v => v) || b.d.filter(v => v).length - a.d.filter(v => v).length);
+  const hm = rows.length ? `<table class="hm"><thead><tr><th></th>${Array.from({ length: 15 }, (_, d) => `<th class="d">${at(d * 24).getUTCDate()}</th>`).join("")}</tr></thead><tbody>${rows.map(r => `<tr><td class="w">${esc(r.u.nm)} <span class="muted">${PR_K(r.u.under1_2025)} u1</span></td>${r.d.map((v, d) =>
+      `<td class="c" title="${esc(r.u.nm)}, ${dl(at(d * 24))}: ${v === 2 ? "very intense rain possible" : v === 1 ? "intense rain possible" : "no intense rain"}" style="background:${v === 2 ? "var(--int2)" : v === 1 ? "var(--int1)" : "var(--chip)"}"></td>`).join("")}</tr>`).join("")}</tbody></table>` : "";
+  return `<div class="ts"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Number of priority woredas with intense rain possible, per 3 hours">${g}</svg>
+      <div class="cap"><span><i style="background:var(--int1)"></i>intense rain possible (number of priority woredas)</span><span><i style="background:var(--int2)"></i>very intense</span><span>3-hour steps, UTC (Ethiopia is UTC+3) · days 1–3 · 4–7 · 8–15 split by solid lines${win ? ` · ${WIN_TXT()} highlighted` : ""}</span></div></div>
+    <p>${any.length ? `Intense rain is possible in <b>${any.length} of ${P.units.length}</b> priority woredas at some point${peaks.length ? `; it is most widespread on ${pk} UTC (up to ${mx} woredas at once)` : ""}. ${any.length < P.units.length ? `The other ${P.units.length - any.length} have no intense rain forecast in the 15 days.` : ""}` : "No intense rain is forecast in any priority woreda in the next 15 days."}</p>
+    ${hm ? `<div style="overflow-x:auto">${hm}</div><p class="muted" style="font-size:11.5px;margin-top:4px">Each square is one forecast day (UTC date shown): the highest level in any of the woreda's 0.1° rain cells that day. Hover for details.</p>` : ""}`;
+}
 function prioReportHTML(S) {
   const t = new Date(), U = S.units, H = S.hosp, C = S.hcs;
   const ua = U.filter(o => o.aff).length, ha = H.filter(o => o.aff), ca = C.filter(o => o.aff);
@@ -3206,6 +3354,8 @@ function prioReportHTML(S) {
     <p>Across the ${U.length} priority woredas, intense rain is possible at ${fmt(sum(U, o => o.ri))} health facilities (very intense at ${fmt(sum(U, o => o.rv))});
       ${fmt(sum(U, o => o.s30))} health centres and posts would take 30+ minutes longer to reach their hospital; ${fmt(Math.round(sum(U, o => o.fl)))} km of low-lying road is flagged for flooding,
       ${fmt(sum(U, o => o.fx))} road river crossings are at flood risk and ${fmt(sum(U, o => o.rvs))} GloFAS river points show a flood signal.</p>
+    <h3>When intense rain is possible across the priority woredas</h3>
+    ${prioRainTS(S)}
     <h3>Priority woredas</h3>
     <table><thead><tr><th>Woreda</th><th class="n">Under 1</th><th class="n">Zero-dose</th><th class="n">Hosp / HC / HP</th><th class="n">Intense rain at (very)</th><th class="n">+30 min to hospital (max)</th><th>Flood flags</th></tr></thead><tbody>${wrows}</tbody></table>
     <h3>Hospital networks serving priority woredas (${H.length}; ${ha.length} affected)</h3>
@@ -3215,6 +3365,7 @@ function prioReportHTML(S) {
       : `<p class="muted">None of the ${C.length} health-centre networks has intense rain at its facilities or a 30+ minute slowdown in this window.</p>`}
     ${C.length > ca.length ? `<p class="muted" style="margin-top:6px">${C.length - ca.length} other health-centre networks touch a priority woreda without intense rain or a 30+ minute slowdown; all are in the CSV.</p>` : ""}
     <div class="notes"><p><b>Affected</b> means at least one of: intense rain possible at one of its facilities (an hour of ≥ 10 mm, very intense ≥ 20 mm), a linked facility taking 30+ minutes longer to reach its hospital (health posts to their health centre, for health-centre networks), or a flood flag (low-lying road under heavy rain, a road river crossing where GloFAS forecasts a flood or a flash flood is likely, a GloFAS river point above its 2-year flood).</p>
+      <p><b>Intense-rain series:</b> for each 3-hour step, a priority woreda counts if any of its 0.1° rain cells has an hour of WeatherNext 3's wet end (hourly 90th percentile) at or above the window's intense-rain threshold, calibrated to PARDIG's observed hourly rates (≥ 10 mm in an hour; very intense ≥ 20 mm). It covers the whole woreda, so it can flag woredas where no facility's own cell is flagged.</p>
       <p>Facilities are counted in the priority woreda they sit in (OCHA COD-AB 2025 outlines; merged woredas in the list take all their parts). Hospital networks: the health centres and posts whose nearest hospital by road (or MAP friction surface) is that hospital; "in priority" counts those inside a priority woreda. Flood flags for a hospital network are those inside its footprint rectangle. Health posts are linked to the closest health centre of the name in the access table. "All 15 days" takes each facility's worst forecast window.</p>
       <p>Sources: rain Google WeatherNext 3, bias-corrected to Google PARDIG; river flow GloFAS (Copernicus EMS); roads OpenStreetMap; facilities: Ethiopian health facility register; priority list and population figures as supplied (${esc(S.P.src)}).</p></div>`;
 }
@@ -3244,7 +3395,7 @@ document.addEventListener("keydown", e => { if (e.key === "Escape" && !document.
 document.getElementById("priobtn").addEventListener("click", openPrioReport);
 document.getElementById("rp-html").addEventListener("click", () => {
   const st = `body{font:13px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#1d211f;background:#fff;margin:24px auto;max-width:1100px;padding:0 16px}
-    :root{--ink:#1d211f;--muted:#6b716d;--rule:#dfe3df;--pri:#7a3ea8}` + [...document.styleSheets].flatMap(ss => { try { return [...ss.cssRules].map(r => r.cssText).filter(c => c.startsWith(".rpt")); } catch (e) { return []; } }).join("\n")
+    :root{--ink:#1d211f;--ink2:#4a504c;--muted:#737a75;--rule:#dcdfd9;--chip:#eceee9;--panel:#fbfbf9;--pri:#0e8577;--int1:#cdb7e6;--int2:#8656bd}` + [...document.styleSheets].flatMap(ss => { try { return [...ss.cssRules].map(r => r.cssText).filter(c => c.startsWith(".rpt")); } catch (e) { return []; } }).join("\n")
     + "@media print{body{margin:0}.rpt tr{break-inside:avoid}}";
   const doc = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Priority woreda report ${esc(SUMMARY.init)}</title><style>${st}</style></head><body><div class="rpt">${document.getElementById("rp-body").innerHTML}</div></body></html>`;
   saveFile(prioName("html"), new Blob([doc], { type: "text/html" }), "Report saved");
@@ -3260,6 +3411,11 @@ document.getElementById("rp-csv").addEventListener("click", () => {
   S.hosp.forEach(o => L.push(row([o.q.n, o.q.a3, o.q.a1, o.n, o.np, o.wds.join("; "), o.ri, o.rv, o.s30, o.md, o.fk, o.fx, o.aff ? 1 : 0])));
   L.push("", row(["Health-centre networks"]), row(["health_centre", "woreda", "zone", "health_posts", "posts_in_priority", "centre_in_priority", "priority_woredas", "intense_rain_facilities", "very_intense_rain_facilities", "posts_30min_plus_to_centre", "median_added_min_posts", "centre_to_hospital_added_min", "affected"]));
   S.hcs.forEach(o => L.push(row([o.q.n, o.q.a3, o.q.a2, o.n, o.np, o.cin ? 1 : 0, o.wds.join("; "), o.ri, o.rv, o.s30, o.md, o.hh, o.aff ? 1 : 0])));
+  if (S.P.t0 && S.P.units.some(u => u.it)) {
+    const t0 = new Date(S.P.t0 + ":00:00Z"), n = S.P.units.find(u => u.it).it.length;
+    L.push("", row(["Intense rain by 3-hour step (0 none, 1 intense possible, 2 very intense possible)"]),
+      row(["woreda", "zone", ...Array.from({ length: n }, (_, k) => new Date(t0.getTime() + k * 3 * 36e5).toISOString().slice(0, 13) + ":00Z")]));
+    S.P.units.forEach(u => u.it && L.push(row([u.nm, u.zone, ...u.it.split("")]))); }
   saveFile(prioName("csv"), new Blob(["\ufeff" + L.join("\r\n")], { type: "text/csv" }), "Tables saved");
 });
 let openFacility = () => {};
@@ -3281,7 +3437,9 @@ function wirePopup() {
     const r = rl.length ? map.queryRenderedFeatures(box(e), { layers: rl }).sort((a, b) => b.properties.t - a.properties.t)[0] : null;
     if (r) return { html: popupHTML(r.properties) };
     const pq = map.getLayer("prio-fill") && map.getLayoutProperty("prio-fill", "visibility") !== "none" ? map.queryRenderedFeatures(e.point, { layers: ["prio-fill"] })[0] : null;
-    return pq ? { prio: pq.properties.k } : null;
+    if (pq) return { prio: pq.properties.k };
+    const cq = map.getLayer("cf-fill") && map.getLayoutProperty("cf-fill", "visibility") !== "none" ? map.queryRenderedFeatures(e.point, { layers: ["cf-fill"] })[0] : null;
+    return cq ? { html: cfZoneHTML(cq.properties) } : null;
   };
   openFacility = (name, x, y) => {
     const f = map.querySourceFeatures("hf", { filter: ["==", ["get", "n"], name] })[0];
