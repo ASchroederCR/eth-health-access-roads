@@ -1,0 +1,33 @@
+name,zone,woreda,region,intense_periods_utc,very_intense_periods_utc,wettest_hour_utc,wettest_hour_wet_end_mm,forecast_15d_mm_corrected,observed_last_10d_mm,linked_facilities,linked_30min_plus
+Gazer Primary Hospital,South Omo,South Ari,SNNP,03 Dec 09:00–11:00; 04 Dec 07:00–11:00; 05 Dec 08:00–12:00,04 Dec 08:00–09:00; 05 Dec 09:00–11:00,04 Dec 08:00,6.1,147.4,24.5,40.0,31.0
+Mizan Teppi university Teaching Hospital,Bench Sheko,Mizan Aman town,South West Ethiopia,04 Dec 09:00–11:00; 05 Dec 09:00–11:00; 06 Dec 10:00–12:00; 07 Dec 11:00–12:00,,24 Nov 11:00,4.5,137.5,28.3,118.0,39.0
+Kamba Primary Hospital,Gamo,Kemba,SNNP,04 Dec 09:00–13:00; 05 Dec 10:00–11:00,,04 Dec 09:00,3.8,160.8,16.5,42.0,37.0
+Woterarasa Primary Hospital,Sidama,Malga,Sidama,04 Dec 10:00–14:00; 05 Dec 11:00–12:00,,04 Dec 10:00,3.7,68.4,21.5,58.0,2.0
+Yirgachefe Primary Hospital,Gedeo,Yirgachefe town,SNNP,04 Dec 09:00–13:00,,04 Dec 10:00,4.5,122.0,26.7,100.0,28.0
+Jinka General Hospital,South Omo,Jinka town,SNNP,04 Dec 08:00–11:00; 05 Dec 09:00–10:00,,04 Dec 08:00,4.6,92.9,17.1,112.0,0.0
+Laska Primary HospItal,Basketo,Basketo SP Woreda,SNNP,04 Dec 09:00–10:00; 05 Dec 10:00–12:00,,04 Dec 09:00,3.5,130.6,6.8,55.0,33.0
+Dilla General Hospital,Gedeo,Dila town,SNNP,04 Dec 09:00–12:00,,04 Dec 10:00,4.0,101.1,9.2,50.0,3.0
+Selam pirmary Hosiptal,Gedeo,Dila town,SNNP,04 Dec 09:00–12:00,,04 Dec 10:00,4.0,101.1,9.2,18.0,0.0
+Aleta Wondo General Hospital,Sidama,Aleta Wondo town,Sidama,04 Dec 09:00–12:00,,04 Dec 10:00,4.7,89.5,6.5,34.0,3.0
+Kebado Primary Hospital,Sidama,Dara,Sidama,04 Dec 09:00–12:00,,04 Dec 10:00,3.8,85.6,18.6,23.0,0.0
+Yirgalem General hospital,Sidama,Yirgalem town,Sidama,04 Dec 09:00–12:00,,04 Dec 11:00,4.1,76.7,0.6,68.0,6.0
+Bule Primary Hospital,Gedeo,Bule,SNNP,04 Dec 09:00–12:00,,04 Dec 09:00,3.9,67.8,21.7,52.0,9.0
+Chuko Primary Hospital,Sidama,Chuko town,Sidama,04 Dec 10:00–12:00,,04 Dec 10:00,3.9,84.5,20.1,32.0,0.0
+Raaso Primary Hospital,Afder,Raso,Somali,03 Dec 03:00–04:00; 03 Dec 21:00–22:00,,03 Dec 03:00,3.1,77.8,0.7,85.0,59.0
+Hantate Primary Hospital,Sidama,Loka Abaya,Sidama,04 Dec 10:00–12:00,,04 Dec 10:00,3.7,77.4,2.1,24.0,0.0
+Leku General Hospital,Sidama,Leku town,Sidama,04 Dec 12:00–14:00,,04 Dec 13:00,3.6,68.8,6.1,41.0,6.0
+Yirba Primary Hospital,Sidama,Boricha,Sidama,04 Dec 12:00–14:00,,04 Dec 13:00,3.6,68.8,6.1,54.0,0.0
+Wondo Genet Primary Hospital,Sidama,Wondo-Genet,Sidama,04 Dec 10:00–11:00; 04 Dec 13:00–14:00,,04 Dec 13:00,3.5,65.4,8.4,30.0,0.0
+Mejo Primary  Hospital,Sidama,Aroresa,Sidama,04 Dec 12:00–13:00,,04 Dec 12:00,3.5,72.6,17.9,55.0,13.0
+Hula Primary Hospital,Sidama,Hulla,Sidama,04 Dec 11:00–12:00,,04 Dec 11:00,3.3,58.7,13.2,50.0,0.0
+Enyat Primary Hospital,Wolayita,Sodo Town,SNNP,04 Dec 12:00–13:00,,04 Dec 12:00,3.6,58.5,10.4,39.0,0.0
+Kokosa Primary Hospital,West Arsi,Kokosa,Oromia,04 Dec 11:00–12:00,,04 Dec 11:00,3.3,57.1,43.4,23.0,0.0
+Doctor Dawit Primary Hospital,Wolayita,Sodo Town,SNNP,04 Dec 12:00–13:00,,04 Dec 12:00,4.5,51.5,8.8,18.0,0.0
+Grace Primary Hospital,Wolayita,Sodo Town,SNNP,04 Dec 12:00–13:00,,04 Dec 12:00,4.5,51.5,8.8,25.0,0.0
+Wolaita Sodo University Comprehensive Specialized Hospital,Wolayita,Sodo Town,SNNP,04 Dec 12:00–13:00,,04 Dec 12:00,4.5,51.5,8.8,2.0,0.0
+Bedesa Primary Hospital,Wolayita,Damot Woide,SNNP,04 Dec 12:00–13:00,,04 Dec 12:00,3.4,47.3,6.9,24.0,0.0
+Halale Primary Hospital,Wolayita,Kindo Daddaye,SNNP,04 Dec 18:00–19:00,,04 Dec 18:00,3.5,37.2,7.6,29.0,4.0
+Anania Primary Hospital,Wolayita,Areka town,SNNP,04 Dec 12:00–13:00,,04 Dec 12:00,3.2,34.3,9.9,72.0,0.0
+Dubbo Primary Hospital,Wolayita,Areka town,SNNP,04 Dec 12:00–13:00,,04 Dec 12:00,3.2,34.3,9.9,15.0,0.0
+Wadila Primary Hospital,North Wello,Wadla,Amhara,25 Nov 11:00–12:00,,25 Nov 11:00,4.8,34.3,11.3,57.0,13.0
+Taltele Primary Hospital,Borena,Teltale,Oromia,04 Dec 12:00–13:00,,04 Dec 12:00,3.2,20.7,6.1,25.0,0.0

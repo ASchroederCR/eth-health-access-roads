@@ -1,5 +1,5 @@
 {
- "init": "2026-11-23",
+ "init": "2026-11-24",
  "graphhopper": "graphhopper-web-11.1.jar",
  "speed_factors": {
   "Minor": 0.9,
@@ -12,56 +12,56 @@
    "spearman": 0.981,
    "median_added_ours": 0.0,
    "median_added_gh": 0.0,
-   "mean_added_ours": 2.2,
-   "mean_added_gh": 1.7,
-   "within_5min_or_25pct": 0.967,
-   "n30_ours": 69,
-   "n30_gh": 45,
-   "n30_both": 43,
-   "n60_ours": 21,
+   "mean_added_ours": 2.4,
+   "mean_added_gh": 1.8,
+   "within_5min_or_25pct": 0.97,
+   "n30_ours": 78,
+   "n30_gh": 54,
+   "n30_both": 49,
+   "n60_ours": 24,
    "n60_gh": 11
   },
   "w2": {
    "trips": 3552,
-   "spearman": 0.985,
+   "spearman": 0.986,
    "median_added_ours": 0.0,
    "median_added_gh": 0.0,
-   "mean_added_ours": 2.4,
-   "mean_added_gh": 1.8,
-   "within_5min_or_25pct": 0.966,
-   "n30_ours": 80,
-   "n30_gh": 51,
-   "n30_both": 51,
-   "n60_ours": 25,
-   "n60_gh": 13
+   "mean_added_ours": 2.5,
+   "mean_added_gh": 1.9,
+   "within_5min_or_25pct": 0.971,
+   "n30_ours": 84,
+   "n30_gh": 67,
+   "n30_both": 64,
+   "n60_ours": 29,
+   "n60_gh": 14
   },
   "w3": {
    "trips": 3552,
    "spearman": 0.991,
    "median_added_ours": 0.0,
    "median_added_gh": 0.0,
-   "mean_added_ours": 6.6,
-   "mean_added_gh": 4.7,
-   "within_5min_or_25pct": 0.899,
-   "n30_ours": 227,
-   "n30_gh": 143,
-   "n30_both": 142,
-   "n60_ours": 92,
-   "n60_gh": 46
+   "mean_added_ours": 7.3,
+   "mean_added_gh": 5.2,
+   "within_5min_or_25pct": 0.888,
+   "n30_ours": 268,
+   "n30_gh": 171,
+   "n30_both": 169,
+   "n60_ours": 109,
+   "n60_gh": 58
   },
   "worst": {
    "trips": 3552,
-   "spearman": 0.991,
+   "spearman": 0.993,
    "median_added_ours": 0.0,
    "median_added_gh": 0.0,
-   "mean_added_ours": 7.2,
-   "mean_added_gh": 5.1,
-   "within_5min_or_25pct": 0.891,
-   "n30_ours": 252,
-   "n30_gh": 158,
-   "n30_both": 157,
-   "n60_ours": 97,
-   "n60_gh": 49
+   "mean_added_ours": 8.1,
+   "mean_added_gh": 5.8,
+   "within_5min_or_25pct": 0.884,
+   "n30_ours": 289,
+   "n30_gh": 190,
+   "n30_both": 185,
+   "n60_ours": 116,
+   "n60_gh": 58
   },
   "normal_time_spearman": 0.969,
   "normal_time_median_ratio": 1.473,
@@ -70,9 +70,9 @@
   "relative_added_worst": {
    "median_ours": 0.0,
    "median_gh": 0.0,
-   "mean_ours": 0.12,
-   "mean_gh": 0.123,
-   "spearman": 0.993
+   "mean_ours": 0.126,
+   "mean_gh": 0.13,
+   "spearman": 0.995
   },
   "by_region_worst": {
    "Addis Ababa": {
@@ -84,14 +84,14 @@
    "Afar": {
     "n30_ours": 1,
     "n30_gh": 0,
-    "mean_ours": 1.4,
+    "mean_ours": 1.3,
     "mean_gh": 0.9
    },
    "Amhara": {
-    "n30_ours": 67,
-    "n30_gh": 41,
-    "mean_ours": 7.2,
-    "mean_gh": 5.3
+    "n30_ours": 53,
+    "n30_gh": 34,
+    "mean_ours": 5.9,
+    "mean_gh": 4.4
    },
    "Benishangul Gumz": {
     "n30_ours": 0,
@@ -102,14 +102,14 @@
    "Dire Dawa": {
     "n30_ours": 0,
     "n30_gh": 0,
-    "mean_ours": 0.6,
-    "mean_gh": 0.1
+    "mean_ours": 0.0,
+    "mean_gh": 0.0
    },
    "Gambela": {
-    "n30_ours": 3,
-    "n30_gh": 0,
-    "mean_ours": 18.9,
-    "mean_gh": 17.3
+    "n30_ours": 9,
+    "n30_gh": 9,
+    "mean_ours": 28.3,
+    "mean_gh": 25.4
    },
    "Harari": {
     "n30_ours": 0,
@@ -118,40 +118,40 @@
     "mean_gh": 0.0
    },
    "Oromia": {
-    "n30_ours": 51,
-    "n30_gh": 31,
-    "mean_ours": 5.4,
-    "mean_gh": 3.8
+    "n30_ours": 66,
+    "n30_gh": 44,
+    "mean_ours": 6.2,
+    "mean_gh": 4.4
    },
    "SNNP": {
-    "n30_ours": 42,
-    "n30_gh": 25,
-    "mean_ours": 7.5,
-    "mean_gh": 5.1
+    "n30_ours": 45,
+    "n30_gh": 26,
+    "mean_ours": 8.0,
+    "mean_gh": 5.7
    },
    "Sidama": {
     "n30_ours": 7,
     "n30_gh": 3,
-    "mean_ours": 9.5,
-    "mean_gh": 6.4
+    "mean_ours": 10.2,
+    "mean_gh": 7.0
    },
    "Somali": {
-    "n30_ours": 32,
-    "n30_gh": 12,
-    "mean_ours": 11.7,
-    "mean_gh": 7.3
+    "n30_ours": 57,
+    "n30_gh": 28,
+    "mean_ours": 24.7,
+    "mean_gh": 15.9
    },
    "South West Ethiopia": {
-    "n30_ours": 55,
+    "n30_ours": 58,
     "n30_gh": 45,
-    "mean_ours": 40.9,
-    "mean_gh": 29.2
+    "mean_ours": 42.6,
+    "mean_gh": 30.5
    },
    "Tigray": {
     "n30_ours": 1,
     "n30_gh": 1,
     "mean_ours": 0.5,
-    "mean_gh": 0.4
+    "mean_gh": 0.5
    }
   }
  },
@@ -164,10 +164,10 @@
    "mean_added_ours": 0.6,
    "mean_added_gh": 0.4,
    "within_5min_or_25pct": 0.992,
-   "n30_ours": 26,
-   "n30_gh": 8,
-   "n30_both": 6,
-   "n60_ours": 2,
+   "n30_ours": 21,
+   "n30_gh": 5,
+   "n30_both": 4,
+   "n60_ours": 1,
    "n60_gh": 0
   },
   "w2": {
@@ -177,23 +177,23 @@
    "median_added_gh": 0.0,
    "mean_added_ours": 0.6,
    "mean_added_gh": 0.4,
-   "within_5min_or_25pct": 0.991,
-   "n30_ours": 31,
-   "n30_gh": 9,
-   "n30_both": 7,
-   "n60_ours": 2,
+   "within_5min_or_25pct": 0.992,
+   "n30_ours": 22,
+   "n30_gh": 7,
+   "n30_both": 5,
+   "n60_ours": 0,
    "n60_gh": 0
   },
   "w3": {
    "trips": 13744,
-   "spearman": 0.988,
+   "spearman": 0.989,
    "median_added_ours": 0.0,
    "median_added_gh": 0.0,
-   "mean_added_ours": 1.9,
-   "mean_added_gh": 1.3,
-   "within_5min_or_25pct": 0.969,
-   "n30_ours": 89,
-   "n30_gh": 44,
+   "mean_added_ours": 2.1,
+   "mean_added_gh": 1.4,
+   "within_5min_or_25pct": 0.966,
+   "n30_ours": 97,
+   "n30_gh": 42,
    "n30_both": 40,
    "n60_ours": 11,
    "n60_gh": 5
@@ -203,12 +203,12 @@
    "spearman": 0.988,
    "median_added_ours": 0.0,
    "median_added_gh": 0.0,
-   "mean_added_ours": 2.1,
-   "mean_added_gh": 1.4,
-   "within_5min_or_25pct": 0.966,
-   "n30_ours": 97,
-   "n30_gh": 44,
-   "n30_both": 40,
+   "mean_added_ours": 2.3,
+   "mean_added_gh": 1.5,
+   "within_5min_or_25pct": 0.963,
+   "n30_ours": 106,
+   "n30_gh": 45,
+   "n30_both": 42,
    "n60_ours": 11,
    "n60_gh": 5
   },
@@ -219,8 +219,8 @@
   "relative_added_worst": {
    "median_ours": 0.0,
    "median_gh": 0.0,
-   "mean_ours": 0.128,
-   "mean_gh": 0.145,
+   "mean_ours": 0.137,
+   "mean_gh": 0.155,
    "spearman": 0.993
   },
   "by_region_worst": {
@@ -233,14 +233,14 @@
    "Afar": {
     "n30_ours": 0,
     "n30_gh": 0,
-    "mean_ours": 0.4,
-    "mean_gh": 0.4
+    "mean_ours": 0.3,
+    "mean_gh": 0.2
    },
    "Amhara": {
-    "n30_ours": 27,
-    "n30_gh": 6,
-    "mean_ours": 1.9,
-    "mean_gh": 1.2
+    "n30_ours": 22,
+    "n30_gh": 5,
+    "mean_ours": 1.6,
+    "mean_gh": 1.0
    },
    "Benishangul Gumz": {
     "n30_ours": 0,
@@ -251,14 +251,14 @@
    "Dire Dawa": {
     "n30_ours": 0,
     "n30_gh": 0,
-    "mean_ours": 0.4,
-    "mean_gh": 0.2
+    "mean_ours": 0.0,
+    "mean_gh": 0.0
    },
    "Gambela": {
     "n30_ours": 7,
     "n30_gh": 3,
-    "mean_ours": 8.7,
-    "mean_gh": 5.9
+    "mean_ours": 9.1,
+    "mean_gh": 6.0
    },
    "Harari": {
     "n30_ours": 0,
@@ -267,39 +267,39 @@
     "mean_gh": 0.0
    },
    "Oromia": {
-    "n30_ours": 43,
+    "n30_ours": 50,
     "n30_gh": 7,
-    "mean_ours": 1.6,
-    "mean_gh": 0.9
+    "mean_ours": 1.8,
+    "mean_gh": 1.0
    },
    "SNNP": {
-    "n30_ours": 19,
+    "n30_ours": 21,
     "n30_gh": 5,
-    "mean_ours": 2.3,
-    "mean_gh": 1.5
+    "mean_ours": 2.6,
+    "mean_gh": 1.6
    },
    "Sidama": {
     "n30_ours": 1,
     "n30_gh": 1,
-    "mean_ours": 4.3,
-    "mean_gh": 2.7
+    "mean_ours": 4.6,
+    "mean_gh": 2.8
    },
    "Somali": {
-    "n30_ours": 2,
-    "n30_gh": 2,
-    "mean_ours": 1.9,
-    "mean_gh": 1.1
+    "n30_ours": 9,
+    "n30_gh": 4,
+    "mean_ours": 3.3,
+    "mean_gh": 1.8
    },
    "South West Ethiopia": {
-    "n30_ours": 48,
+    "n30_ours": 46,
     "n30_gh": 19,
-    "mean_ours": 9.5,
-    "mean_gh": 6.2
+    "mean_ours": 10.0,
+    "mean_gh": 6.7
    },
    "Tigray": {
     "n30_ours": 0,
     "n30_gh": 1,
-    "mean_ours": 0.0,
+    "mean_ours": 0.1,
     "mean_gh": 0.2
    }
   }
