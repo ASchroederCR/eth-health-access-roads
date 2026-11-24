@@ -8,3 +8,7 @@ __pycache__/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# private inputs: never publish
+tables/priority_*
+docs/data/priority*

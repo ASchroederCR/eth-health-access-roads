@@ -14,7 +14,7 @@
 :root {
   --bg: #f3f4f1; --panel: #fbfbf9; --ink: #1d211f; --ink2: #4a504c; --muted: #737a75; --rule: #dcdfd9;
   --mapbg: #e6e8e3; --chip: #eceee9;
-  --minor: #f2b33d; --elev: #e0701f; --sev: #a8320f; --slip: #1d211f; --flood: #1f5fbf; --fl1: #8fb4ee; --fl2: #2f6fd0; --fl3: #0b2f66; --net: #f2c200; --ctx: #8e9590; --adm: #5d635f;
+  --minor: #f2b33d; --elev: #e0701f; --sev: #a8320f; --slip: #1d211f; --flood: #1f5fbf; --fl1: #8fb4ee; --fl2: #2f6fd0; --fl3: #0b2f66; --net: #f2c200; --ctx: #8e9590; --adm: #5d635f; --pri: #7a3ea8;
   --r1: #e6effa; --r2: #cde2fb; --r3: #9ec5f4; --r4: #6da7ec; --r5: #3987e5; --r6: #256abf;
   --hs-min: 0; --focus: #2a6fb8;
   --outside: #ffffff; --int1: #cdb7e6; --int2: #8656bd;
@@ -29,7 +29,7 @@
   :root:not([data-theme="light"]) {
     --bg: #141716; --panel: #1a1e1c; --ink: #e8ebe7; --ink2: #b8beb9; --muted: #8b928d; --rule: #2d3330;
     --mapbg: #1f2321; --chip: #232826;
-    --minor: #e3a83f; --elev: #f2812f; --sev: #ff5a3c; --slip: #f4f6f3; --flood: #6aa8ff; --fl1: #3f6db0; --fl2: #7fb2ff; --fl3: #d4e6ff; --net: #ffd60a; --ctx: #66706a; --adm: #a2aaa4;
+    --minor: #e3a83f; --elev: #f2812f; --sev: #ff5a3c; --slip: #f4f6f3; --flood: #6aa8ff; --fl1: #3f6db0; --fl2: #7fb2ff; --fl3: #d4e6ff; --net: #ffd60a; --ctx: #66706a; --adm: #a2aaa4; --pri: #c99cf0;
     --r1: #1d2a37; --r2: #213651; --r3: #24456d; --r4: #285b93; --r5: #2f74bd; --r6: #4691dc;
     --pn1: #e0a458; --pn2: #8a6630; --pn3: #3a3f3c; --pn4: #2f6aa8; --pn5: #6aa8ec; --rain-op: 0.8; --pn-op: 0.85; --ctrl-icon: invert(1); --hosp: #f4f6f3; --hs-min: 0.32; --outside: #141716; --int1: #5d4a78; --int2: #b38be0; --d0: #4d5450; --d1: #6e5a24; --d2: #a8661f; --d3: #e27b33; --d4: #ffb07a; --hfring: #141716; --focus: #6aa8ec; color-scheme: dark;
   }
@@ -37,7 +37,7 @@
 :root[data-theme="dark"] {
   --bg: #141716; --panel: #1a1e1c; --ink: #e8ebe7; --ink2: #b8beb9; --muted: #8b928d; --rule: #2d3330;
   --mapbg: #1f2321; --chip: #232826;
-  --minor: #e3a83f; --elev: #f2812f; --sev: #ff5a3c; --slip: #f4f6f3; --flood: #6aa8ff; --fl1: #3f6db0; --fl2: #7fb2ff; --fl3: #d4e6ff; --net: #ffd60a; --ctx: #66706a; --adm: #a2aaa4;
+  --minor: #e3a83f; --elev: #f2812f; --sev: #ff5a3c; --slip: #f4f6f3; --flood: #6aa8ff; --fl1: #3f6db0; --fl2: #7fb2ff; --fl3: #d4e6ff; --net: #ffd60a; --ctx: #66706a; --adm: #a2aaa4; --pri: #c99cf0;
   --r1: #1d2a37; --r2: #213651; --r3: #24456d; --r4: #285b93; --r5: #2f74bd; --r6: #4691dc;
   --pn1: #e0a458; --pn2: #8a6630; --pn3: #3a3f3c; --pn4: #2f6aa8; --pn5: #6aa8ec; --rain-op: 0.8; --pn-op: 0.85; --ctrl-icon: invert(1); --hosp: #f4f6f3; --hs-min: 0.32; --outside: #141716; --int1: #5d4a78; --int2: #b38be0; --d0: #4d5450; --d1: #6e5a24; --d2: #a8661f; --d3: #e27b33; --d4: #ffb07a; --hfring: #141716; --focus: #6aa8ec; color-scheme: dark;
 }
@@ -93,6 +93,28 @@ section { display: flex; flex-direction: column; gap: 6px; }
   box-shadow: 0 1px 3px rgba(0,0,0,.1); }
 .exportbtn:hover { background: var(--panel); }
 .exportbtn:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+.prio-btn { margin: 2px 2px 8px; border: 1px solid var(--pri); border-radius: 7px; background: color-mix(in srgb, var(--pri) 10%, var(--panel)); color: var(--ink);
+  font: inherit; font-size: 13px; font-weight: 500; padding: 6px 11px; cursor: pointer; align-self: flex-start; }
+.prio-btn:hover { background: color-mix(in srgb, var(--pri) 18%, var(--panel)); }
+.prio-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+.report { position: fixed; inset: 0; z-index: 20; background: rgba(0,0,0,.35); display: flex; align-items: stretch; justify-content: center; padding: 24px 16px; }
+.report[hidden] { display: none; }
+.report .rp { background: var(--panel); color: var(--ink); border-radius: 10px; box-shadow: 0 8px 30px rgba(0,0,0,.25); width: min(1100px, 100%); display: flex; flex-direction: column; overflow: hidden; }
+.report .rp-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--rule); }
+.report .rp-bar h2 { margin: 0 auto 0 0; font-size: 15px; }
+.report .rp-bar button { border: 1px solid var(--rule); border-radius: 7px; background: var(--chip); color: var(--ink); font: inherit; font-size: 12.5px; padding: 5px 10px; cursor: pointer; }
+.report .rp-bar button:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+.report .rp-body { overflow: auto; padding: 14px 18px 22px; font-size: 13px; line-height: 1.45; }
+.rpt h1 { font-size: 19px; margin: 0 0 2px; } .rpt .sub { color: var(--muted); font-size: 12.5px; margin: 0 0 12px; }
+.rpt h3 { font-size: 14px; margin: 18px 0 6px; } .rpt p { margin: 0 0 8px; }
+.rpt .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin: 6px 0 10px; }
+.rpt .kpi { border: 1px solid var(--rule); border-radius: 8px; padding: 8px 10px; } .rpt .kpi b { display: block; font-size: 20px; font-variant-numeric: tabular-nums; }
+.rpt .kpi span { color: var(--muted); font-size: 12px; }
+.rpt table { border-collapse: collapse; width: 100%; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.rpt th, .rpt td { text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+.rpt th { color: var(--muted); font-weight: 500; font-size: 11.5px; } .rpt td.n, .rpt th.n { text-align: right; white-space: nowrap; }
+.rpt tr.aff td:first-child { box-shadow: inset 3px 0 0 var(--pri); } .rpt .muted { color: var(--muted); }
+.rpt .notes { color: var(--muted); font-size: 12px; margin-top: 14px; } .rpt .notes p { margin: 0 0 5px; }
 .toast { position: absolute; left: 50%; bottom: 48px; transform: translateX(-50%); background: var(--ink); color: var(--panel); font-size: 12.5px; padding: 6px 12px; border-radius: 999px; z-index: 4; }
 @media (max-width: 760px) { .infocard { top: auto; bottom: 84px; left: max(8px, env(safe-area-inset-left, 0px)); right: max(8px, env(safe-area-inset-right, 0px)); width: auto; max-height: 55%; } }
 .rchart { margin-top: 8px; }
@@ -246,6 +268,8 @@ section { display: flex; flex-direction: column; gap: 6px; }
         <div class="subh">Other layers</div>
         <label class="sw-row" for="opt-int"><span>Intense rain possible<small>Downpours like those observed at ≥ 10 / 20 mm in an hour; follows the forecast window</small></span><input type="checkbox" class="toggle" id="opt-int" checked></label>
         <label class="sw-row" for="opt-hf"><span>Health facilities<small id="hfsub">Added minutes to the nearest hospital; health posts from zoom 7</small></span><input type="checkbox" class="toggle" id="opt-hf" checked></label>
+        <label class="sw-row" for="opt-prio"><span>Priority woredas<small id="priosub">Supplied priority list; on to outline them and open the report</small></span><input type="checkbox" class="toggle" id="opt-prio"></label>
+        <button type="button" class="prio-btn" id="priobtn" hidden>Priority woreda report</button>
         <label class="sw-row" for="opt-rain"><span>Forecast rain<small id="rainsub">15-day total, mm</small></span><input type="checkbox" class="toggle" id="opt-rain" checked></label>
         <div class="seg" role="radiogroup" aria-label="Rain shown as" id="rainseg">
           <button type="button" role="radio" aria-checked="true" data-m="mm">mm</button>
@@ -288,6 +312,13 @@ section { display: flex; flex-direction: column; gap: 6px; }
       <div class="icbody" id="ic-body"></div>
     </aside>
     <div class="toast" id="toast" hidden></div>
+    <div class="report" id="report" hidden role="dialog" aria-modal="true" aria-labelledby="rp-h">
+      <div class="rp"><div class="rp-bar"><h2 id="rp-h">Priority woreda report</h2>
+        <button type="button" id="rp-html" title="Save the report as a web page; open it and print to PDF if needed">Save report (HTML)</button>
+        <button type="button" id="rp-csv" title="The report's three tables in one CSV file">Save tables (CSV)</button>
+        <button type="button" id="rp-close">Close</button></div>
+        <div class="rp-body"><div class="rpt" id="rp-body"></div></div></div>
+    </div>
     <div class="legend" aria-hidden="true">
       <div id="leg-rain">15-day rain, mm (bias-corrected)</div>
       <div class="ramp" id="ramp"></div>
@@ -2211,7 +2242,7 @@ function decode(d) {
   return feats;
 }
 // data files keep fixed names, so tag each request with this build's version: browsers then never mix a new page with old data
-const DATA_VERSION = "202611240907-d9986e";
+const DATA_VERSION = "202611241101-d9986e";
 const dv = u => `${u}?v=${DATA_VERSION}`;
 const getJSON = u => fetch(dv(u), { cache: "no-cache" }).then(r => { if (!r.ok) throw new Error(u + " " + r.status); return r.json(); });
 
@@ -2279,6 +2310,7 @@ function applyTheme() {
   if (has("mask")) map.setPaintProperty("mask", "fill-color", css("--outside"));
   if (has("slip")) map.setPaintProperty("slip", "line-color", css("--slip"));
   if (has("flood")) map.setPaintProperty("flood", "line-color", css("--flood"));
+  if (has("prio-fill")) { map.setPaintProperty("prio-fill", "fill-color", css("--pri")); map.setPaintProperty("prio-line", "line-color", css("--pri")); }
   if (has("xings")) xingImages();
   if (has("net-hull")) map.setPaintProperty("net-hull", "line-color", css("--net"));
   if (has("net-ctr")) map.setPaintProperty("net-ctr", "circle-color", css("--net"));
@@ -2761,6 +2793,7 @@ function legendItems() {
   if (on("opt-river")) L.push({ h: `River flow forecast (GloFAS) · ${W}` }, { dot: css("--panel"), ring: css("--fl2"), l: "No flood signal" },
     { dot: css("--fl1"), l: "2-year flood likely" }, { dot: css("--fl2"), l: "5-year flood likely" }, { dot: css("--fl3"), l: "20-year flood likely" });
   if (on("opt-flood")) L.push({ line: css("--flood"), w: 3, l: "Flood-prone stretch, heavy rain forecast" }, { tri: css("--fl1"), l: "Crossing: 2-year flood or flash flood likely" }, { tri: css("--fl2"), l: "Crossing: 5-year flood likely" }, { tri: css("--fl3"), l: "Crossing: 20-year flood likely" });
+  if (on("opt-prio")) L.push({ line: css("--pri"), w: 2.5, l: "Priority woreda" });
   if (on("opt-ctx")) L.push({ line: css("--ctx"), w: 2, l: map.getZoom() >= LOCAL_Z ? "Road network (main; local roads fainter)" : "Main road network" });
   if (on("opt-int")) L.push({ h: `Intense rain possible · ${W}` }, { box: css("--int1"), l: "≈ 10 mm in an hour (as observed)" }, { box: css("--int2"), l: "≈ 20 mm in an hour (as observed)" });
   if (on("opt-rain")) L.push(...(state.rain === "pn"
@@ -2958,7 +2991,8 @@ async function exportPNG() {
       (state.model !== "fric" && document.getElementById("opt-fric").checked ? " · Travel speed layer: Malaria Atlas Project 2019 friction surface" : "") +
       (state.rain === "pn" && document.getElementById("opt-rain").checked ? " · Normal: CHIRPS v3 1991–2020 (UCSB CHC); forecast put into CHIRPS terms by the regional PARDIG ÷ CHIRPS ratio" : "");
     const foot2 = `Speed factors and thresholds are illustrative. Exported ${new Date().toISOString().slice(0, 16).replace("T", " ")} UTC.`;
-    const footLines = wrap(meas, foot1, mx + mc.width + legendW - 2 * pad).concat([foot2]);
+    const foot1p = foot1 + (document.getElementById("opt-prio").checked && PRIO ? ` · Priority woredas: ${PRIO.src}` : "");
+    const footLines = wrap(meas, foot1p, mx + mc.width + legendW - 2 * pad).concat([foot2]);
     const footH = S(14) + footLines.length * S(14) + S(8);
     const cardW = S(340);
     let card = null;
@@ -3060,6 +3094,174 @@ async function exportPNG() {
   finally { btn.disabled = false; btn.textContent = "Export PNG"; }
 }
 document.getElementById("exportbtn").addEventListener("click", exportPNG);
+// ---- priority woredas (42_): layer, popup and report ----
+let PRIO = null;
+async function loadPrio() { if (!PRIO) PRIO = await getJSON("data/priority.json").catch(() => null); return PRIO; }
+async function ensurePrio() {
+  if (!map || map.getSource("prio")) return;
+  const gj = await getJSON("data/priority.geojson").catch(() => null);
+  if (!gj || map.getSource("prio")) { if (!gj) toast("The priority woredas didn't load"); return; }
+  map.addSource("prio", { type: "geojson", data: gj });
+  const below = ["local", "ctx", "roads"].find(id => map.getLayer(id));
+  map.addLayer({ id: "prio-fill", type: "fill", source: "prio", paint: { "fill-color": css("--pri"), "fill-opacity": 0.09 } }, below);
+  map.addLayer({ id: "prio-line", type: "line", source: "prio", paint: { "line-color": css("--pri"), "line-opacity": 0.9,
+    "line-width": ["interpolate", ["linear"], ["zoom"], 5, 1.2, 10, 2.6] } }, ["hf-hp", "hf-main", "hf-hosp"].find(id => map.getLayer(id)));
+  sync();
+}
+function prioOn() { return document.getElementById("opt-prio").checked; }
+async function prioToggle() {
+  const on = prioOn(); document.getElementById("priobtn").hidden = !on;
+  if (on) { await loadPrio(); await ensurePrio(); }
+  if (map && map.getLayer("prio-fill")) ["prio-fill", "prio-line"].forEach(id => map.setLayoutProperty(id, "visibility", on ? "visible" : "none"));
+}
+document.getElementById("opt-prio").addEventListener("change", prioToggle);
+// the priority list is private data: builds without it (the public page) drop the toggle
+document.getElementById("opt-prio").closest(".sw-row").hidden = true;
+loadPrio().then(P => { if (P && P.units && P.units.length) document.getElementById("opt-prio").closest(".sw-row").hidden = false; });
+
+const PR_K = n => n == null ? "–" : n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e4 ? `${Math.round(n / 1e3)}k` : fmt(Math.round(n));
+// what the forecast does inside each priority woreda and across the hospital / health-centre networks that serve them,
+// for the selected model and window (all 15 days = worst window)
+async function prioStats() {
+  const P = await loadPrio(), N = await loadNets(); if (!P || !HF_ALL.length) return null;
+  const fr = state.model === "fric", w = state.win, key = fr ? "fhid" : "hid", wi = w ? [w - 1] : [0, 1, 2];
+  const byId = new Map(HF_ALL.map(f => [f.properties.id, f]));
+  const addH = q => fr ? (w ? q["fd" + w] : q.fd) : (w ? q["d" + w] : q.d);
+  const addC = q => fr ? (w ? q["fdc" + w] : q.fdc) : (w ? q["dc" + w] : q.dc);
+  const rain = f => { const c = rainCellAt(...f.geometry.coordinates); return !c ? 0 : w ? (c["i" + w] || 0) : Math.max(c.i1 || 0, c.i2 || 0, c.i3 || 0); };
+  const mx = a => Math.max(0, ...wi.map(i => (a && a[i]) || 0));
+  const med = a => { if (!a.length) return null; const b = [...a].sort((x, y) => x - y), m = b.length >> 1; return b.length % 2 ? b[m] : Math.round((b[m - 1] + b[m]) / 2); };
+  const unitOf = new Map(); P.units.forEach(u => u.fac.forEach(id => unitOf.set(id, u.k)));
+  const units = P.units.map(u => {
+    const fs = u.fac.map(id => byId.get(id)).filter(Boolean), r = fs.map(rain);
+    const ad = fs.filter(f => f.properties.ty !== 2 && !f.properties.off).map(f => addH(f.properties)).filter(v => v != null);
+    const o = { u, n: fs.length, nh: fs.filter(f => f.properties.ty === 2).length, nc: fs.filter(f => f.properties.ty === 1).length, np: fs.filter(f => f.properties.ty === 0).length,
+      ri: r.filter(v => v >= 1).length, rv: r.filter(v => v >= 2).length, s30: ad.filter(v => v >= 30).length, smax: ad.length ? Math.max(...ad) : 0,
+      fl: mx(u.fl), fx: mx(u.fx), rvs: mx(u.rv) };
+    o.aff = o.ri > 0 || o.s30 > 0 || o.fl > 0 || o.fx > 0 || o.rvs > 0; return o;
+  });
+  // hospital networks with a linked facility (or the hospital itself) in a priority woreda
+  const mem = new Map();
+  HF_ALL.forEach(f => { const q = f.properties; if (q.ty === 2 || q.off || q[key] == null) return; (mem.get(q[key]) || mem.set(q[key], []).get(q[key])).push(f); });
+  const hosp = [];
+  HF_ALL.forEach(f => { const q = f.properties; if (q.ty !== 2) return;
+    const m = mem.get(q.id) || [], inP = m.filter(x => unitOf.has(x.properties.id));
+    if (!inP.length && !unitOf.has(q.id)) return;
+    const r = m.map(rain), ad = m.map(x => addH(x.properties)).filter(v => v != null), net = N && N.nets && N.nets[key] && N.nets[key][String(q.id)];
+    const ws = new Set(inP.map(x => unitOf.get(x.properties.id))); if (unitOf.has(q.id)) ws.add(unitOf.get(q.id));
+    const o = { q, n: m.length, np: inP.length, wds: [...ws].map(k => P.units[k].nm), ri: r.filter(v => v >= 1).length, rv: r.filter(v => v >= 2).length,
+      s30: ad.filter(v => v >= 30).length, md: med(ad), fk: net ? mx(net.fk) : 0, fx: net ? mx(net.fx) : 0 };
+    o.aff = o.ri > 0 || o.s30 > 0 || o.fk > 0 || o.fx > 0; o.score = o.s30 * 3 + o.rv * 2 + o.ri + o.fx * 5 + o.fk; hosp.push(o); });
+  // health-centre networks: the centre and its health posts
+  const posts = new Map(); Object.entries(P.hc || {}).forEach(([pid, hid]) => { const f = byId.get(+pid); if (f) (posts.get(hid) || posts.set(hid, []).get(hid)).push(f); });
+  const hcs = [];
+  posts.forEach((ps, hid) => { const c = byId.get(hid); if (!c) return;
+    const all = [c, ...ps], r = all.map(rain), inP = all.filter(x => unitOf.has(x.properties.id));
+    const ad = ps.map(x => addC(x.properties)).filter(v => v != null), hh = addH(c.properties);
+    const ws = new Set(inP.map(x => unitOf.get(x.properties.id)));
+    const o = { q: c.properties, n: ps.length, np: inP.filter(x => x !== c).length, cin: unitOf.has(hid), wds: [...ws].map(k => P.units[k].nm),
+      ri: r.filter(v => v >= 1).length, rv: r.filter(v => v >= 2).length, s30: ad.filter(v => v >= 30).length, md: med(ad), hh };
+    o.aff = o.ri > 0 || o.s30 > 0 || (hh || 0) >= 30; o.score = o.s30 * 3 + o.rv * 2 + o.ri + ((hh || 0) >= 30 ? 3 : 0); hcs.push(o); });
+  hosp.sort((a, b) => b.aff - a.aff || b.score - a.score || b.np - a.np);
+  hcs.sort((a, b) => b.aff - a.aff || b.score - a.score || b.np - a.np);
+  return { P, units, hosp, hcs, model: fr ? "MAP friction surface" : "road + slope model" };
+}
+function prioUnitHTML(o) {
+  const u = o.u, pct = v => v == null ? "–" : `${v}%`;
+  return `<div class="pp-h">${esc(u.nm)}</div><div class="pp-sub">Priority woreda · ${esc(u.zone)}, ${esc(u.region)} · ${WIN_TXT()}</div>
+    <div class="pp-grid">
+      <span class="k">Under 1</span><span class="v">${fmt(u.under1_2025)} (2025) of ${fmt(u.total_population_2025)} people</span><span class="s"></span>
+      <span class="k">Zero-dose</span><span class="v">${fmt(u.zero_dose_children)} children (${pct(u.pct_zero_dose)})</span><span class="s"></span>
+      <span class="k">Setting</span><span class="v">${esc(u.archetype || "–")}${u.conflict ? ` · conflict: ${esc(u.conflict)}` : ""}</span><span class="s"></span>
+      <span class="k">Facilities</span><span class="v">${o.nh} hospital${o.nh === 1 ? "" : "s"}, ${o.nc} health centres, ${o.np} health posts</span><span class="s"></span>
+      <span class="k">Intense rain</span><span class="v">${o.ri ? `possible at ${o.ri} facilit${o.ri === 1 ? "y" : "ies"}${o.rv ? ` (very intense at ${o.rv})` : ""}` : "not forecast at its facilities"}</span><span class="s"></span>
+      <span class="k">Access</span><span class="v">${o.s30 ? `${o.s30} facilit${o.s30 === 1 ? "y" : "ies"} 30+ min longer to the hospital (up to +${o.smax} min)` : `no facility 30+ min longer to the hospital${o.smax ? ` (up to +${o.smax} min)` : ""}`}</span><span class="s"></span>
+      <span class="k">Flooding</span><span class="v">${o.fl || o.fx || o.rvs ? [o.fl ? `${o.fl} km low-lying road flagged` : "", o.fx ? `${o.fx} crossing${o.fx > 1 ? "s" : ""} at flood risk` : "", o.rvs ? `${o.rvs} river point${o.rvs > 1 ? "s" : ""} with a flood signal` : ""].filter(Boolean).join(" · ") : "no flood flags"}</span><span class="s"></span>
+    </div>
+    <button type="button" class="prio-btn" style="margin-top:8px" onclick="openPrioReport()">Open the priority woreda report</button>`;
+}
+async function prioPopup(k) { const S = await prioStats(); return S ? prioUnitHTML(S.units[k]) : ""; }
+
+function prioReportHTML(S) {
+  const t = new Date(), U = S.units, H = S.hosp, C = S.hcs;
+  const ua = U.filter(o => o.aff).length, ha = H.filter(o => o.aff), ca = C.filter(o => o.aff);
+  const sum = (a, f) => a.reduce((x, o) => x + (f(o) || 0), 0);
+  const kpi = (v, l) => `<div class="kpi"><b>${v}</b><span>${l}</span></div>`;
+  const fl = o => [o.fl ? `${o.fl} km low-lying` : "", o.fx ? `${o.fx} crossing${o.fx > 1 ? "s" : ""}` : "", o.rvs ? `${o.rvs} river pt${o.rvs > 1 ? "s" : ""}` : ""].filter(Boolean).join(", ") || "–";
+  const rn = o => o.ri ? `${o.ri}${o.rv ? ` (${o.rv})` : ""}` : "–";
+  const wrows = [...U].sort((a, b) => b.aff - a.aff || (b.s30 * 3 + b.rv * 2 + b.ri + b.fl) - (a.s30 * 3 + a.rv * 2 + a.ri + a.fl)).map(o => `<tr${o.aff ? ' class="aff"' : ""}>
+    <td><b>${esc(o.u.nm)}</b><br><span class="muted">${esc(o.u.zone)}, ${esc(o.u.region)}</span></td><td class="n">${PR_K(o.u.under1_2025)}</td><td class="n">${PR_K(o.u.zero_dose_children)}</td>
+    <td class="n">${o.nh} / ${o.nc} / ${o.np}</td><td class="n">${rn(o)}</td><td class="n">${o.s30 || "–"}${o.smax ? ` <span class="muted">(+${o.smax})</span>` : ""}</td><td>${fl(o)}</td></tr>`).join("");
+  const hrows = H.map(o => `<tr${o.aff ? ' class="aff"' : ""}><td><b>${esc(o.q.n)}</b><br><span class="muted">${esc(o.q.a3)}, ${esc(o.q.a1)}</span></td>
+    <td class="n">${o.n} <span class="muted">(${o.np})</span></td><td>${o.wds.map(esc).join(", ")}</td><td class="n">${rn(o)}</td><td class="n">${o.s30 || "–"}</td>
+    <td class="n">${o.md == null ? "–" : "+" + o.md}</td><td>${[o.fk ? `${o.fk} km low-lying` : "", o.fx ? `${o.fx} crossing${o.fx > 1 ? "s" : ""}` : ""].filter(Boolean).join(", ") || "–"}</td></tr>`).join("");
+  const crows = ca.map(o => `<tr class="aff"><td><b>${esc(o.q.n)}</b><br><span class="muted">${esc(o.q.a3)}, ${esc(o.q.a2)}</span></td>
+    <td class="n">${o.n} <span class="muted">(${o.np})</span></td><td>${o.wds.map(esc).join(", ")}</td><td class="n">${rn(o)}</td><td class="n">${o.s30 || "–"}</td>
+    <td class="n">${o.hh == null ? "–" : "+" + o.hh}</td></tr>`).join("");
+  return `<h1>Priority woredas: rain, flooding and health access</h1>
+    <p class="sub">WeatherNext 3 run ${esc(SUMMARY.init)} 00Z · ${esc(SUMMARY.start)} – ${esc(SUMMARY.end)} · ${WIN_TXT()} · travel times: ${S.model} · list: ${esc(S.P.src)} · made ${t.toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}</p>
+    <div class="kpis">${kpi(`${ua} of ${U.length}`, "priority woredas with intense rain, a slowdown or a flood flag")}
+      ${kpi(`${ha.length} of ${H.length}`, "hospital networks serving them affected")}${kpi(`${ca.length} of ${C.length}`, "health-centre networks affected")}
+      ${kpi(fmt(sum(U.filter(o => o.aff), o => o.u.under1_2025)), "children under 1 in the affected woredas")}${kpi(fmt(sum(U.filter(o => o.aff), o => o.u.zero_dose_children)), "zero-dose children in the affected woredas")}</div>
+    <p>Across the ${U.length} priority woredas, intense rain is possible at ${fmt(sum(U, o => o.ri))} health facilities (very intense at ${fmt(sum(U, o => o.rv))});
+      ${fmt(sum(U, o => o.s30))} health centres and posts would take 30+ minutes longer to reach their hospital; ${fmt(Math.round(sum(U, o => o.fl)))} km of low-lying road is flagged for flooding,
+      ${fmt(sum(U, o => o.fx))} road river crossings are at flood risk and ${fmt(sum(U, o => o.rvs))} GloFAS river points show a flood signal.</p>
+    <h3>Priority woredas</h3>
+    <table><thead><tr><th>Woreda</th><th class="n">Under 1</th><th class="n">Zero-dose</th><th class="n">Hosp / HC / HP</th><th class="n">Intense rain at (very)</th><th class="n">+30 min to hospital (max)</th><th>Flood flags</th></tr></thead><tbody>${wrows}</tbody></table>
+    <h3>Hospital networks serving priority woredas (${H.length}; ${ha.length} affected)</h3>
+    <table><thead><tr><th>Hospital</th><th class="n">Linked (in priority)</th><th>Priority woredas served</th><th class="n">Intense rain at (very)</th><th class="n">Linked +30 min</th><th class="n">Median added</th><th>Flood flags in footprint</th></tr></thead><tbody>${hrows}</tbody></table>
+    <h3>Health-centre networks affected (${ca.length} of ${C.length})</h3>
+    ${ca.length ? `<table><thead><tr><th>Health centre</th><th class="n">Posts (in priority)</th><th>Priority woredas</th><th class="n">Intense rain at (very)</th><th class="n">Posts +30 min to centre</th><th class="n">Centre to hospital, added</th></tr></thead><tbody>${crows}</tbody></table>`
+      : `<p class="muted">None of the ${C.length} health-centre networks has intense rain at its facilities or a 30+ minute slowdown in this window.</p>`}
+    ${C.length > ca.length ? `<p class="muted" style="margin-top:6px">${C.length - ca.length} other health-centre networks touch a priority woreda without intense rain or a 30+ minute slowdown; all are in the CSV.</p>` : ""}
+    <div class="notes"><p><b>Affected</b> means at least one of: intense rain possible at one of its facilities (an hour of ≥ 10 mm, very intense ≥ 20 mm), a linked facility taking 30+ minutes longer to reach its hospital (health posts to their health centre, for health-centre networks), or a flood flag (low-lying road under heavy rain, a road river crossing where GloFAS forecasts a flood or a flash flood is likely, a GloFAS river point above its 2-year flood).</p>
+      <p>Facilities are counted in the priority woreda they sit in (OCHA COD-AB 2025 outlines; merged woredas in the list take all their parts). Hospital networks: the health centres and posts whose nearest hospital by road (or MAP friction surface) is that hospital; "in priority" counts those inside a priority woreda. Flood flags for a hospital network are those inside its footprint rectangle. Health posts are linked to the closest health centre of the name in the access table. "All 15 days" takes each facility's worst forecast window.</p>
+      <p>Sources: rain Google WeatherNext 3, bias-corrected to Google PARDIG; river flow GloFAS (Copernicus EMS); roads OpenStreetMap; facilities: Ethiopian health facility register; priority list and population figures as supplied (${esc(S.P.src)}).</p></div>`;
+}
+let PRIO_LAST = null;
+async function openPrioReport() {
+  const btn = document.getElementById("priobtn"); btn.disabled = true; btn.textContent = "Preparing report…";
+  try {
+    const S = await prioStats(); if (!S) { toast("The report data hasn't loaded yet"); return; }
+    PRIO_LAST = S; document.getElementById("rp-body").innerHTML = prioReportHTML(S);
+    document.getElementById("report").hidden = false; document.getElementById("rp-close").focus();
+  } finally { btn.disabled = false; btn.textContent = "Priority woreda report"; }
+}
+async function saveFile(name, blob, ok) {
+  const dl = window.claude?.use ? await window.claude.use("downloads").catch(() => null) : null;
+  if (dl) {
+    try { await dl.save({ filename: name, data: blob }); toast(ok); }
+    catch (e) { toast(e && e.code === "declined" ? "Save cancelled" : e && e.code === "rate_limited" ? "A save is already waiting for you" : "Saving isn't available here"); }
+  } else {
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000); toast(ok);
+  }
+}
+const prioName = ext => `priority-woredas-report-${(SUMMARY.init || "").replace(/ /g, "")}${state.win ? "-days" + ["", "1-3", "4-7", "8-15"][state.win] : ""}${state.model === "fric" ? "-map" : ""}.${ext}`;
+document.getElementById("rp-close").addEventListener("click", () => { document.getElementById("report").hidden = true; document.getElementById("priobtn").focus(); });
+document.getElementById("report").addEventListener("click", e => { if (e.target.id === "report") document.getElementById("report").hidden = true; });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !document.getElementById("report").hidden) document.getElementById("report").hidden = true; });
+document.getElementById("priobtn").addEventListener("click", openPrioReport);
+document.getElementById("rp-html").addEventListener("click", () => {
+  const st = `body{font:13px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#1d211f;background:#fff;margin:24px auto;max-width:1100px;padding:0 16px}
+    :root{--ink:#1d211f;--muted:#6b716d;--rule:#dfe3df;--pri:#7a3ea8}` + [...document.styleSheets].flatMap(ss => { try { return [...ss.cssRules].map(r => r.cssText).filter(c => c.startsWith(".rpt")); } catch (e) { return []; } }).join("\n")
+    + "@media print{body{margin:0}.rpt tr{break-inside:avoid}}";
+  const doc = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Priority woreda report ${esc(SUMMARY.init)}</title><style>${st}</style></head><body><div class="rpt">${document.getElementById("rp-body").innerHTML}</div></body></html>`;
+  saveFile(prioName("html"), new Blob([doc], { type: "text/html" }), "Report saved");
+});
+document.getElementById("rp-csv").addEventListener("click", () => {
+  const S = PRIO_LAST; if (!S) return;
+  const q = v => v == null ? "" : /[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v);
+  const row = a => a.map(q).join(",");
+  const L = [row([`Priority woreda report, WeatherNext 3 run ${SUMMARY.init}, ${WIN_TXT()}, ${S.model}, list ${S.P.src}`]), "", row(["Priority woredas"]),
+    row(["woreda", "zone", "region", "pcodes", "under1_2025", "zero_dose_children", "hospitals", "health_centres", "health_posts", "intense_rain_facilities", "very_intense_rain_facilities", "facilities_30min_plus_to_hospital", "max_added_min", "lowlying_road_km_flagged", "crossings_at_flood_risk", "river_points_flood_signal", "affected"])];
+  S.units.forEach(o => L.push(row([o.u.nm, o.u.zone, o.u.region, o.u.pc.join(" "), o.u.under1_2025, o.u.zero_dose_children, o.nh, o.nc, o.np, o.ri, o.rv, o.s30, o.smax, o.fl, o.fx, o.rvs, o.aff ? 1 : 0])));
+  L.push("", row(["Hospital networks"]), row(["hospital", "woreda", "region", "linked_facilities", "linked_in_priority", "priority_woredas", "intense_rain_facilities", "very_intense_rain_facilities", "linked_30min_plus", "median_added_min", "footprint_lowlying_km", "footprint_crossings_at_risk", "affected"]));
+  S.hosp.forEach(o => L.push(row([o.q.n, o.q.a3, o.q.a1, o.n, o.np, o.wds.join("; "), o.ri, o.rv, o.s30, o.md, o.fk, o.fx, o.aff ? 1 : 0])));
+  L.push("", row(["Health-centre networks"]), row(["health_centre", "woreda", "zone", "health_posts", "posts_in_priority", "centre_in_priority", "priority_woredas", "intense_rain_facilities", "very_intense_rain_facilities", "posts_30min_plus_to_centre", "median_added_min_posts", "centre_to_hospital_added_min", "affected"]));
+  S.hcs.forEach(o => L.push(row([o.q.n, o.q.a3, o.q.a2, o.n, o.np, o.cin ? 1 : 0, o.wds.join("; "), o.ri, o.rv, o.s30, o.md, o.hh, o.aff ? 1 : 0])));
+  saveFile(prioName("csv"), new Blob(["\ufeff" + L.join("\r\n")], { type: "text/csv" }), "Tables saved");
+});
 let openFacility = () => {};
 function wirePopup() {
   const pop = new maplibregl.Popup({ closeButton: true, closeOnClick: false, maxWidth: "340px", offset: 8 });
@@ -3077,7 +3279,9 @@ function wirePopup() {
     if (rv) return { river: rv.properties };
     const rl = ["roads"].filter(id => map.getLayer(id) && map.getLayoutProperty(id, "visibility") !== "none");
     const r = rl.length ? map.queryRenderedFeatures(box(e), { layers: rl }).sort((a, b) => b.properties.t - a.properties.t)[0] : null;
-    return r ? { html: popupHTML(r.properties) } : null;
+    if (r) return { html: popupHTML(r.properties) };
+    const pq = map.getLayer("prio-fill") && map.getLayoutProperty("prio-fill", "visibility") !== "none" ? map.queryRenderedFeatures(e.point, { layers: ["prio-fill"] })[0] : null;
+    return pq ? { prio: pq.properties.k } : null;
   };
   openFacility = (name, x, y) => {
     const f = map.querySourceFeatures("hf", { filter: ["==", ["get", "n"], name] })[0];
@@ -3095,6 +3299,7 @@ function wirePopup() {
     clearNetwork();
     if (f && f.hosp) { pinned = false; pop.remove(); showCard(f.hosp); showNetwork(f.hosp); }
     else if (f && f.river) { pinned = false; pop.remove(); showRiverCard(f.river); }
+    else if (f && f.prio != null) { hideCard(); pinned = true; const ll = e.lngLat; prioPopup(f.prio).then(h => { if (h) pop.setLngLat(ll).setHTML(h).addTo(map); }); }
     else if (f) { hideCard(); pinned = true; pop.setLngLat(e.lngLat).setHTML(f.html).addTo(map); }
     else { hideCard(); pinned = false; pop.remove(); }
   });
