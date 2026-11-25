@@ -2265,7 +2265,7 @@ function decode(d) {
   return feats;
 }
 // data files keep fixed names, so tag each request with this build's version: browsers then never mix a new page with old data
-const DATA_VERSION = "202611251141-519d0f";
+const DATA_VERSION = "202611251149-519d0f";
 const dv = u => `${u}?v=${DATA_VERSION}`;
 const getJSON = u => fetch(dv(u), { cache: "no-cache" }).then(r => { if (!r.ok) throw new Error(u + " " + r.status); return r.json(); });
 
@@ -3247,9 +3247,11 @@ async function prioStats() {
     const o = { u, n: fs.length, nh: fs.filter(f => f.properties.ty === 2).length, nc: fs.filter(f => f.properties.ty === 1).length, np: fs.filter(f => f.properties.ty === 0).length,
       ri: r.filter(v => v >= 1).length, rv: r.filter(v => v >= 2).length, s30: ad.filter(v => v >= 30).length, smax: ad.length ? Math.max(...ad) : 0,
       fl: mx(u.fl), fx: mx(u.fx), rvs: mx(u.rv) };
-    o.pv = pvOf(u);
-    o.aff = o.ri > 0 || o.s30 > 0 || o.fl > 0 || o.fx > 0 || o.rvs > 0; return o;
+    o.pv = pvOf(u); o.pvr = o.pv ? o.pv.l3 : 0;
+    o.aff = o.ri > 0 || o.s30 > 0 || o.fl > 0 || o.fx > 0 || o.rvs > 0 || o.pvr >= PV_MIN; return o;
   });
+  const pvW = ws => [...new Map([...ws].map(k => units[k].pv).filter(Boolean).map(v => [v.i, v.l3])).values()].reduce((a, v) => a + v, 0);
+  const pvA = ws => [...ws].some(k => units[k].pv && units[k].pv.l3 >= PV_MIN);
   // hospital networks with a linked facility (or the hospital itself) in a priority woreda
   const mem = new Map();
   HF_ALL.forEach(f => { const q = f.properties; if (q.ty === 2 || q.off || q[key] == null) return; (mem.get(q[key]) || mem.set(q[key], []).get(q[key])).push(f); });
@@ -3260,8 +3262,8 @@ async function prioStats() {
     const r = m.map(rain), ad = m.map(x => addH(x.properties)).filter(v => v != null), net = N && N.nets && N.nets[key] && N.nets[key][String(q.id)];
     const ws = new Set(inP.map(x => unitOf.get(x.properties.id))); if (unitOf.has(q.id)) ws.add(unitOf.get(q.id));
     const o = { q, n: m.length, np: inP.length, wds: [...ws].map(k => P.units[k].nm), ri: r.filter(v => v >= 1).length, rv: r.filter(v => v >= 2).length,
-      s30: ad.filter(v => v >= 30).length, md: med(ad), fk: net ? mx(net.fk) : 0, fx: net ? mx(net.fx) : 0 };
-    o.aff = o.ri > 0 || o.s30 > 0 || o.fk > 0 || o.fx > 0; o.score = o.s30 * 3 + o.rv * 2 + o.ri + o.fx * 5 + o.fk; hosp.push(o); });
+      s30: ad.filter(v => v >= 30).length, md: med(ad), fk: net ? mx(net.fk) : 0, fx: net ? mx(net.fx) : 0, pvr: pvW(ws), pva: pvA(ws) };
+    o.aff = o.ri > 0 || o.s30 > 0 || o.fk > 0 || o.fx > 0 || o.pva; o.score = o.s30 * 3 + o.rv * 2 + o.ri + o.fx * 5 + o.fk; hosp.push(o); });
   // health-centre networks: the centre and its health posts
   const posts = new Map(); Object.entries(P.hc || {}).forEach(([pid, hid]) => { const f = byId.get(+pid); if (f) (posts.get(hid) || posts.set(hid, []).get(hid)).push(f); });
   const hcs = [];
@@ -3270,8 +3272,8 @@ async function prioStats() {
     const ad = ps.map(x => addC(x.properties)).filter(v => v != null), hh = addH(c.properties);
     const ws = new Set(inP.map(x => unitOf.get(x.properties.id)));
     const o = { q: c.properties, n: ps.length, np: inP.filter(x => x !== c).length, cin: unitOf.has(hid), wds: [...ws].map(k => P.units[k].nm),
-      ri: r.filter(v => v >= 1).length, rv: r.filter(v => v >= 2).length, s30: ad.filter(v => v >= 30).length, md: med(ad), hh };
-    o.aff = o.ri > 0 || o.s30 > 0 || (hh || 0) >= 30; o.score = o.s30 * 3 + o.rv * 2 + o.ri + ((hh || 0) >= 30 ? 3 : 0); hcs.push(o); });
+      ri: r.filter(v => v >= 1).length, rv: r.filter(v => v >= 2).length, s30: ad.filter(v => v >= 30).length, md: med(ad), hh, pvr: pvW(ws), pva: pvA(ws) };
+    o.aff = o.ri > 0 || o.s30 > 0 || (hh || 0) >= 30 || o.pva; o.score = o.s30 * 3 + o.rv * 2 + o.ri + ((hh || 0) >= 30 ? 3 : 0); hcs.push(o); });
   hosp.sort((a, b) => b.aff - a.aff || b.score - a.score || b.np - a.np);
   hcs.sort((a, b) => b.aff - a.aff || b.score - a.score || b.np - a.np);
   return { P, units, hosp, hcs, model: fr ? "MAP friction surface" : "road + slope model" };
@@ -3336,6 +3338,7 @@ function prioRainTS(S) {
     <p>${any.length ? `Intense rain is possible in <b>${any.length} of ${P.units.length}</b> priority woredas at some point${peaks.length ? `; it is most widespread on ${pk} UTC (up to ${mx} woredas at once)` : ""}. ${any.length < P.units.length ? `The other ${P.units.length - any.length} have no intense rain forecast in the 15 days.` : ""}` : "No intense rain is forecast in any priority woreda in the next 15 days."}</p>
     ${hm ? `<div style="overflow-x:auto">${hm}</div><p class="muted" style="font-size:11.5px;margin-top:4px">Each square is one forecast day (UTC date shown): the highest level in any of the woreda's 0.1° rain cells that day. Hover for details.</p>` : ""}`;
 }
+const PV_MIN = 3; // ACLED events in a zone over the last three months for "recent political violence" to count as affected
 const pvL3 = () => { if (!CF.d) return ""; const n = CF.d.months.length; return `${cfMonth(Math.max(0, n - 3))}–${cfMonth(n - 1)}`; };
 const pvSince = () => CF.d ? `January – ${cfMonth(CF.d.months.length - 1, true)}${cfLast()}` : "";
 function prioPV(S) {
@@ -3357,19 +3360,21 @@ function prioReportHTML(S) {
   const sum = (a, f) => a.reduce((x, o) => x + (f(o) || 0), 0);
   const kpi = (v, l) => `<div class="kpi"><b>${v}</b><span>${l}</span></div>`;
   const fl = o => [o.fl ? `${o.fl} km low-lying` : "", o.fx ? `${o.fx} crossing${o.fx > 1 ? "s" : ""}` : "", o.rvs ? `${o.rvs} river pt${o.rvs > 1 ? "s" : ""}` : ""].filter(Boolean).join(", ") || "–";
+  const pvc = o => CF.d ? `<td class="n">${o.pvr ? fmt(o.pvr) : "–"}</td>` : "";
+  const pvh = CF.d ? `<th class="n">Violence in zone, ${pvL3()}</th>` : "";
   const rn = o => o.ri ? `${o.ri}${o.rv ? ` (${o.rv})` : ""}` : "–";
   const wrows = [...U].sort((a, b) => b.aff - a.aff || (b.s30 * 3 + b.rv * 2 + b.ri + b.fl) - (a.s30 * 3 + a.rv * 2 + a.ri + a.fl)).map(o => `<tr${o.aff ? ' class="aff"' : ""}>
     <td><b>${esc(o.u.nm)}</b><br><span class="muted">${esc(o.u.zone)}, ${esc(o.u.region)}</span></td><td class="n">${PR_K(o.u.under1_2025)}</td><td class="n">${PR_K(o.u.zero_dose_children)}</td>
     <td class="n">${o.nh} / ${o.nc} / ${o.np}</td><td class="n">${rn(o)}</td><td class="n">${o.s30 || "–"}${o.smax ? ` <span class="muted">(+${o.smax})</span>` : ""}</td><td>${fl(o)}</td><td class="n">${o.pv ? `${fmt(o.pv.l3)} <span class="muted">(${fmt(o.pv.te)} in 2026)</span>` : `<span class="muted">not covered</span>`}</td></tr>`).join("");
   const hrows = H.map(o => `<tr${o.aff ? ' class="aff"' : ""}><td><b>${esc(o.q.n)}</b><br><span class="muted">${esc(o.q.a3)}, ${esc(o.q.a1)}</span></td>
     <td class="n">${o.n} <span class="muted">(${o.np})</span></td><td>${o.wds.map(esc).join(", ")}</td><td class="n">${rn(o)}</td><td class="n">${o.s30 || "–"}</td>
-    <td class="n">${o.md == null ? "–" : "+" + o.md}</td><td>${[o.fk ? `${o.fk} km low-lying` : "", o.fx ? `${o.fx} crossing${o.fx > 1 ? "s" : ""}` : ""].filter(Boolean).join(", ") || "–"}</td></tr>`).join("");
+    <td class="n">${o.md == null ? "–" : "+" + o.md}</td><td>${[o.fk ? `${o.fk} km low-lying` : "", o.fx ? `${o.fx} crossing${o.fx > 1 ? "s" : ""}` : ""].filter(Boolean).join(", ") || "–"}</td>${pvc(o)}</tr>`).join("");
   const crows = ca.map(o => `<tr class="aff"><td><b>${esc(o.q.n)}</b><br><span class="muted">${esc(o.q.a3)}, ${esc(o.q.a2)}</span></td>
     <td class="n">${o.n} <span class="muted">(${o.np})</span></td><td>${o.wds.map(esc).join(", ")}</td><td class="n">${rn(o)}</td><td class="n">${o.s30 || "–"}</td>
-    <td class="n">${o.hh == null ? "–" : "+" + o.hh}</td></tr>`).join("");
+    <td class="n">${o.hh == null ? "–" : "+" + o.hh}</td>${pvc(o)}</tr>`).join("");
   return `<h1>Priority woredas: rain, flooding and health access</h1>
     <p class="sub">WeatherNext 3 run ${esc(SUMMARY.init)} 00Z · ${esc(SUMMARY.start)} – ${esc(SUMMARY.end)} · ${WIN_TXT()} · travel times: ${S.model} · list: ${esc(S.P.src)} · made ${t.toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}</p>
-    <div class="kpis">${kpi(`${ua} of ${U.length}`, "priority woredas with intense rain, a slowdown or a flood flag")}
+    <div class="kpis">${kpi(`${ua} of ${U.length}`, `priority woredas with intense rain, a slowdown, a flood flag${CF.d ? " or recent political violence" : ""}`)}
       ${kpi(`${ha.length} of ${H.length}`, "hospital networks serving them affected")}${kpi(`${ca.length} of ${C.length}`, "health-centre networks affected")}
       ${kpi(fmt(sum(U.filter(o => o.aff), o => o.u.under1_2025)), "children under 1 in the affected woredas")}${kpi(fmt(sum(U.filter(o => o.aff), o => o.u.zero_dose_children)), "zero-dose children in the affected woredas")}
       ${CF.d ? kpi(fmt([...new Map(U.filter(o => o.pv).map(o => [o.pv.i, o.pv])).values()].reduce((a, v) => a + v.te, 0)), `political violence events in their zones, ${pvSince()} (ACLED)`) : ""}</div>
@@ -3383,14 +3388,14 @@ function prioReportHTML(S) {
     <h3>Priority woredas</h3>
     <table><thead><tr><th>Woreda</th><th class="n">Under 1</th><th class="n">Zero-dose</th><th class="n">Hosp / HC / HP</th><th class="n">Intense rain at (very)</th><th class="n">+30 min to hospital (max)</th><th>Flood flags</th><th class="n">Political violence in zone${CF.d ? `, ${pvL3()}` : ""}</th></tr></thead><tbody>${wrows}</tbody></table>
     <h3>Hospital networks serving priority woredas (${H.length}; ${ha.length} affected)</h3>
-    <table><thead><tr><th>Hospital</th><th class="n">Linked (in priority)</th><th>Priority woredas served</th><th class="n">Intense rain at (very)</th><th class="n">Linked +30 min</th><th class="n">Median added</th><th>Flood flags in footprint</th></tr></thead><tbody>${hrows}</tbody></table>
+    <table><thead><tr><th>Hospital</th><th class="n">Linked (in priority)</th><th>Priority woredas served</th><th class="n">Intense rain at (very)</th><th class="n">Linked +30 min</th><th class="n">Median added</th><th>Flood flags in footprint</th>${pvh}</tr></thead><tbody>${hrows}</tbody></table>
     <h3>Health-centre networks affected (${ca.length} of ${C.length})</h3>
-    ${ca.length ? `<table><thead><tr><th>Health centre</th><th class="n">Posts (in priority)</th><th>Priority woredas</th><th class="n">Intense rain at (very)</th><th class="n">Posts +30 min to centre</th><th class="n">Centre to hospital, added</th></tr></thead><tbody>${crows}</tbody></table>`
-      : `<p class="muted">None of the ${C.length} health-centre networks has intense rain at its facilities or a 30+ minute slowdown in this window.</p>`}
-    ${C.length > ca.length ? `<p class="muted" style="margin-top:6px">${C.length - ca.length} other health-centre networks touch a priority woreda without intense rain or a 30+ minute slowdown; all are in the CSV.</p>` : ""}
-    <div class="notes"><p><b>Affected</b> means at least one of: intense rain possible at one of its facilities (an hour of ≥ 10 mm, very intense ≥ 20 mm), a linked facility taking 30+ minutes longer to reach its hospital (health posts to their health centre, for health-centre networks), or a flood flag (low-lying road under heavy rain, a road river crossing where GloFAS forecasts a flood or a flash flood is likely, a GloFAS river point above its 2-year flood).</p>
+    ${ca.length ? `<table><thead><tr><th>Health centre</th><th class="n">Posts (in priority)</th><th>Priority woredas</th><th class="n">Intense rain at (very)</th><th class="n">Posts +30 min to centre</th><th class="n">Centre to hospital, added</th>${pvh}</tr></thead><tbody>${crows}</tbody></table>`
+      : `<p class="muted">None of the ${C.length} health-centre networks has intense rain at its facilities, a 30+ minute slowdown or recent political violence in its zones in this window.</p>`}
+    ${C.length > ca.length ? `<p class="muted" style="margin-top:6px">${C.length - ca.length} other health-centre networks touch a priority woreda without intense rain, a 30+ minute slowdown or recent political violence; all are in the CSV.</p>` : ""}
+    <div class="notes"><p><b>Affected</b> means at least one of: intense rain possible at one of its facilities (an hour of ≥ 10 mm, very intense ≥ 20 mm), a linked facility taking 30+ minutes longer to reach its hospital (health posts to their health centre, for health-centre networks), or a flood flag (low-lying road under heavy rain, a road river crossing where GloFAS forecasts a flood or a flash flood is likely, a GloFAS river point above its 2-year flood), or recent political violence: ${PV_MIN} or more ACLED political violence events in ${CF.d ? pvL3() : "the last three months"} in the zone of the woreda (for networks, in any zone of the priority woredas they serve).</p>
       <p><b>Intense-rain series:</b> for each 3-hour step, a priority woreda counts if any of its 0.1° rain cells has an hour of WeatherNext 3's wet end (hourly 90th percentile) at or above the window's intense-rain threshold, calibrated to PARDIG's observed hourly rates (≥ 10 mm in an hour; very intense ≥ 20 mm). It covers the whole woreda, so it can flag woredas where no facility's own cell is flagged.</p>
-      <p><b>Political violence:</b> ACLED's monthly counts of political violence events and fatalities by zone (aggregated by HDX, data to ${CF.d ? esc(CF.d.asof || "") : "–"}), for the zone each priority woreda lies in, so a zone's figures repeat for every priority woreda in it and are not woreda counts. The HDX file has no events for Central and South Ethiopia and a few newer zones (not covered). Not part of "affected".</p>
+      <p><b>Political violence:</b> ACLED's monthly counts of political violence events and fatalities by zone (aggregated by HDX, data to ${CF.d ? esc(CF.d.asof || "") : "–"}), for the zone each priority woreda lies in, so a zone's figures repeat for every priority woreda in it and are not woreda counts. The HDX file has no events for Central and South Ethiopia and a few newer zones (not covered); those woredas can't be flagged for violence. Recent violence (${PV_MIN}+ events in the zone in the last three months) counts towards "affected"; violence doesn't change with the forecast window.</p>
       <p>Facilities are counted in the priority woreda they sit in (OCHA COD-AB 2025 outlines; merged woredas in the list take all their parts). Hospital networks: the health centres and posts whose nearest hospital by road (or MAP friction surface) is that hospital; "in priority" counts those inside a priority woreda. Flood flags for a hospital network are those inside its footprint rectangle. Health posts are linked to the closest health centre of the name in the access table. "All 15 days" takes each facility's worst forecast window.</p>
       <p>Sources: rain Google WeatherNext 3, bias-corrected to Google PARDIG; river flow GloFAS (Copernicus EMS); political violence: Armed Conflict Location & Event Data (ACLED), www.acleddata.com, via HDX; roads OpenStreetMap; facilities: Ethiopian health facility register; priority list and population figures as supplied (${esc(S.P.src)}).</p></div>`;
 }
@@ -3436,10 +3441,10 @@ document.getElementById("rp-csv").addEventListener("click", () => {
     L.push("", row([`Political violence by zone (ACLED via HDX, data to ${CF.d.asof}): events / fatalities per month`]),
       row(["zone", "region", "measure", ...CF.d.months, "total"]));
     zs.forEach(z => { L.push(row([z.zone, z.region, "events", ...z.ev, z.te])); L.push(row([z.zone, z.region, "fatalities", ...z.fa, z.tf])); }); }
-  L.push("", row(["Hospital networks"]), row(["hospital", "woreda", "region", "linked_facilities", "linked_in_priority", "priority_woredas", "intense_rain_facilities", "very_intense_rain_facilities", "linked_30min_plus", "median_added_min", "footprint_lowlying_km", "footprint_crossings_at_risk", "affected"]));
-  S.hosp.forEach(o => L.push(row([o.q.n, o.q.a3, o.q.a1, o.n, o.np, o.wds.join("; "), o.ri, o.rv, o.s30, o.md, o.fk, o.fx, o.aff ? 1 : 0])));
-  L.push("", row(["Health-centre networks"]), row(["health_centre", "woreda", "zone", "health_posts", "posts_in_priority", "centre_in_priority", "priority_woredas", "intense_rain_facilities", "very_intense_rain_facilities", "posts_30min_plus_to_centre", "median_added_min_posts", "centre_to_hospital_added_min", "affected"]));
-  S.hcs.forEach(o => L.push(row([o.q.n, o.q.a3, o.q.a2, o.n, o.np, o.cin ? 1 : 0, o.wds.join("; "), o.ri, o.rv, o.s30, o.md, o.hh, o.aff ? 1 : 0])));
+  L.push("", row(["Hospital networks"]), row(["hospital", "woreda", "region", "linked_facilities", "linked_in_priority", "priority_woredas", "intense_rain_facilities", "very_intense_rain_facilities", "linked_30min_plus", "median_added_min", "footprint_lowlying_km", "footprint_crossings_at_risk", "zone_pv_events_last3_months", "affected"]));
+  S.hosp.forEach(o => L.push(row([o.q.n, o.q.a3, o.q.a1, o.n, o.np, o.wds.join("; "), o.ri, o.rv, o.s30, o.md, o.fk, o.fx, o.pvr, o.aff ? 1 : 0])));
+  L.push("", row(["Health-centre networks"]), row(["health_centre", "woreda", "zone", "health_posts", "posts_in_priority", "centre_in_priority", "priority_woredas", "intense_rain_facilities", "very_intense_rain_facilities", "posts_30min_plus_to_centre", "median_added_min_posts", "centre_to_hospital_added_min", "zone_pv_events_last3_months", "affected"]));
+  S.hcs.forEach(o => L.push(row([o.q.n, o.q.a3, o.q.a2, o.n, o.np, o.cin ? 1 : 0, o.wds.join("; "), o.ri, o.rv, o.s30, o.md, o.hh, o.pvr, o.aff ? 1 : 0])));
   if (S.P.t0 && S.P.units.some(u => u.it)) {
     const t0 = new Date(S.P.t0 + ":00:00Z"), n = S.P.units.find(u => u.it).it.length;
     L.push("", row(["Intense rain by 3-hour step (0 none, 1 intense possible, 2 very intense possible)"]),
