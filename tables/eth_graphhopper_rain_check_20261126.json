@@ -1,0 +1,307 @@
+{
+ "init": "2026-11-26",
+ "graphhopper": "graphhopper-web-11.1.jar",
+ "speed_factors": {
+  "Minor": 0.9,
+  "Elevated": 0.75,
+  "Severe": 0.5
+ },
+ "hospital": {
+  "w1": {
+   "trips": 3552,
+   "spearman": 0.971,
+   "median_added_ours": 0.0,
+   "median_added_gh": 0.0,
+   "mean_added_ours": 2.3,
+   "mean_added_gh": 1.7,
+   "within_5min_or_25pct": 0.965,
+   "n30_ours": 65,
+   "n30_gh": 42,
+   "n30_both": 41,
+   "n60_ours": 14,
+   "n60_gh": 5
+  },
+  "w2": {
+   "trips": 3552,
+   "spearman": 0.968,
+   "median_added_ours": 0.0,
+   "median_added_gh": 0.0,
+   "mean_added_ours": 1.8,
+   "mean_added_gh": 1.4,
+   "within_5min_or_25pct": 0.971,
+   "n30_ours": 57,
+   "n30_gh": 35,
+   "n30_both": 32,
+   "n60_ours": 16,
+   "n60_gh": 5
+  },
+  "w3": {
+   "trips": 3552,
+   "spearman": 0.995,
+   "median_added_ours": 0.0,
+   "median_added_gh": 0.0,
+   "mean_added_ours": 8.4,
+   "mean_added_gh": 6.0,
+   "within_5min_or_25pct": 0.866,
+   "n30_ours": 303,
+   "n30_gh": 191,
+   "n30_both": 186,
+   "n60_ours": 127,
+   "n60_gh": 69
+  },
+  "worst": {
+   "trips": 3552,
+   "spearman": 0.989,
+   "median_added_ours": 0.1,
+   "median_added_gh": 0.1,
+   "mean_added_ours": 9.4,
+   "mean_added_gh": 6.7,
+   "within_5min_or_25pct": 0.854,
+   "n30_ours": 343,
+   "n30_gh": 214,
+   "n30_both": 210,
+   "n60_ours": 133,
+   "n60_gh": 74
+  },
+  "normal_time_spearman": 0.969,
+  "normal_time_median_ratio": 1.473,
+  "no_route": 64,
+  "no_route_median_road_gap_km": 3.89,
+  "relative_added_worst": {
+   "median_ours": 0.019,
+   "median_gh": 0.019,
+   "mean_ours": 0.156,
+   "mean_gh": 0.162,
+   "spearman": 0.991
+  },
+  "by_region_worst": {
+   "Addis Ababa": {
+    "n30_ours": 0,
+    "n30_gh": 0,
+    "mean_ours": 0.0,
+    "mean_gh": 0.0
+   },
+   "Afar": {
+    "n30_ours": 4,
+    "n30_gh": 2,
+    "mean_ours": 4.2,
+    "mean_gh": 2.9
+   },
+   "Amhara": {
+    "n30_ours": 35,
+    "n30_gh": 17,
+    "mean_ours": 4.1,
+    "mean_gh": 3.0
+   },
+   "Benishangul Gumz": {
+    "n30_ours": 0,
+    "n30_gh": 0,
+    "mean_ours": 0.3,
+    "mean_gh": 0.2
+   },
+   "Dire Dawa": {
+    "n30_ours": 0,
+    "n30_gh": 0,
+    "mean_ours": 1.6,
+    "mean_gh": 0.8
+   },
+   "Gambela": {
+    "n30_ours": 3,
+    "n30_gh": 2,
+    "mean_ours": 24.5,
+    "mean_gh": 22.4
+   },
+   "Harari": {
+    "n30_ours": 0,
+    "n30_gh": 0,
+    "mean_ours": 0.0,
+    "mean_gh": 0.0
+   },
+   "Oromia": {
+    "n30_ours": 114,
+    "n30_gh": 72,
+    "mean_ours": 9.6,
+    "mean_gh": 6.7
+   },
+   "SNNP": {
+    "n30_ours": 58,
+    "n30_gh": 38,
+    "mean_ours": 10.2,
+    "mean_gh": 7.2
+   },
+   "Sidama": {
+    "n30_ours": 19,
+    "n30_gh": 5,
+    "mean_ours": 13.9,
+    "mean_gh": 9.3
+   },
+   "Somali": {
+    "n30_ours": 49,
+    "n30_gh": 27,
+    "mean_ours": 21.4,
+    "mean_gh": 14.2
+   },
+   "South West Ethiopia": {
+    "n30_ours": 66,
+    "n30_gh": 51,
+    "mean_ours": 47.7,
+    "mean_gh": 34.9
+   },
+   "Tigray": {
+    "n30_ours": 1,
+    "n30_gh": 0,
+    "mean_ours": 0.2,
+    "mean_gh": 0.2
+   }
+  }
+ },
+ "centre": {
+  "w1": {
+   "trips": 13744,
+   "spearman": 0.979,
+   "median_added_ours": 0.0,
+   "median_added_gh": 0.0,
+   "mean_added_ours": 0.7,
+   "mean_added_gh": 0.5,
+   "within_5min_or_25pct": 0.994,
+   "n30_ours": 16,
+   "n30_gh": 3,
+   "n30_both": 2,
+   "n60_ours": 1,
+   "n60_gh": 0
+  },
+  "w2": {
+   "trips": 13744,
+   "spearman": 0.978,
+   "median_added_ours": 0.0,
+   "median_added_gh": 0.0,
+   "mean_added_ours": 0.5,
+   "mean_added_gh": 0.3,
+   "within_5min_or_25pct": 0.995,
+   "n30_ours": 8,
+   "n30_gh": 2,
+   "n30_both": 2,
+   "n60_ours": 0,
+   "n60_gh": 0
+  },
+  "w3": {
+   "trips": 13744,
+   "spearman": 0.99,
+   "median_added_ours": 0.0,
+   "median_added_gh": 0.0,
+   "mean_added_ours": 2.6,
+   "mean_added_gh": 1.7,
+   "within_5min_or_25pct": 0.955,
+   "n30_ours": 138,
+   "n30_gh": 60,
+   "n30_both": 59,
+   "n60_ours": 22,
+   "n60_gh": 11
+  },
+  "worst": {
+   "trips": 13744,
+   "spearman": 0.99,
+   "median_added_ours": 0.0,
+   "median_added_gh": 0.0,
+   "mean_added_ours": 2.8,
+   "mean_added_gh": 1.9,
+   "within_5min_or_25pct": 0.952,
+   "n30_ours": 150,
+   "n30_gh": 66,
+   "n30_both": 63,
+   "n60_ours": 22,
+   "n60_gh": 11
+  },
+  "normal_time_spearman": 0.931,
+  "normal_time_median_ratio": 1.755,
+  "no_route": 1629,
+  "no_route_median_road_gap_km": 2.69,
+  "relative_added_worst": {
+   "median_ours": 0.016,
+   "median_gh": 0.018,
+   "mean_ours": 0.171,
+   "mean_gh": 0.193,
+   "spearman": 0.992
+  },
+  "by_region_worst": {
+   "Addis Ababa": {
+    "n30_ours": 0,
+    "n30_gh": 0,
+    "mean_ours": 0.0,
+    "mean_gh": 0.0
+   },
+   "Afar": {
+    "n30_ours": 1,
+    "n30_gh": 1,
+    "mean_ours": 1.8,
+    "mean_gh": 1.3
+   },
+   "Amhara": {
+    "n30_ours": 15,
+    "n30_gh": 4,
+    "mean_ours": 1.1,
+    "mean_gh": 0.7
+   },
+   "Benishangul Gumz": {
+    "n30_ours": 0,
+    "n30_gh": 0,
+    "mean_ours": 0.0,
+    "mean_gh": 0.0
+   },
+   "Dire Dawa": {
+    "n30_ours": 0,
+    "n30_gh": 0,
+    "mean_ours": 1.5,
+    "mean_gh": 1.0
+   },
+   "Gambela": {
+    "n30_ours": 13,
+    "n30_gh": 8,
+    "mean_ours": 11.1,
+    "mean_gh": 7.6
+   },
+   "Harari": {
+    "n30_ours": 0,
+    "n30_gh": 0,
+    "mean_ours": 0.0,
+    "mean_gh": 0.0
+   },
+   "Oromia": {
+    "n30_ours": 79,
+    "n30_gh": 20,
+    "mean_ours": 2.7,
+    "mean_gh": 1.6
+   },
+   "SNNP": {
+    "n30_ours": 28,
+    "n30_gh": 5,
+    "mean_ours": 3.2,
+    "mean_gh": 2.0
+   },
+   "Sidama": {
+    "n30_ours": 2,
+    "n30_gh": 1,
+    "mean_ours": 6.5,
+    "mean_gh": 4.0
+   },
+   "Somali": {
+    "n30_ours": 10,
+    "n30_gh": 4,
+    "mean_ours": 3.7,
+    "mean_gh": 2.0
+   },
+   "South West Ethiopia": {
+    "n30_ours": 60,
+    "n30_gh": 23,
+    "mean_ours": 11.3,
+    "mean_gh": 7.7
+   },
+   "Tigray": {
+    "n30_ours": 0,
+    "n30_gh": 0,
+    "mean_ours": 0.1,
+    "mean_gh": 0.1
+   }
+  }
+ }
+}
