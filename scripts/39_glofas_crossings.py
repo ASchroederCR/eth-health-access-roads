@@ -16,6 +16,12 @@ issues a 51-member ensemble of daily river discharge every day. For each crossin
 Needs: access to the CEMS Early Warning Data Store (EWDS) with the key in ~/.cdsapirc (terms of use accepted), and the
 GloFAS v4 threshold and upstream-area files (downloaded once from ECMWF's GloFAS auxiliary-data page, clipped here).
 
+GloFAS v5 (EWDS form change from 10 December 2026): the request is built from the dataset's live form each run (see
+request()), so it works with both the v4 form and the v5 one (renamed variable "average_river_discharge_in_the_last_24_hours",
+new "timespan", system versions "version_4_x" / "version_5_x", an IFS / AIFS forcing choice, an AIFS single-forecast
+product). It asks for GloFAS v4 while the form offers it, because the flood thresholds here are v4's; set GLOFAS_VERSION=5
+(and fetch the v5 threshold and upstream-area files) to switch. If v4 is gone it takes v5 and warns.
+
 Outputs
   data/raw/glofas/glofas_static_eth.npz                       thresholds and upstream area, clipped (once)
   data/raw/glofas/glofas_xings_<YYYYMMDD>.npz                 forecast at the matched cells (cache)
@@ -39,6 +45,8 @@ MIN_UPA, MATCH_RAD, MATCH_RATIO = 250.0, 2, 2.0
 MIN_RL2 = 10.0                                   # m3/s: below this the 2-year "flood" is a trickle in a mostly dry bed
 WINDOWS = [(1, 3), (4, 7), (8, 15)]
 P_FLAG = 0.30                                    # share of members above a threshold that counts as a flood signal
+FORM = "https://ewds.climate.copernicus.eu/api/retrieve/v1/processes/cems-glofas-forecast"
+WANT_V = os.environ.get("GLOFAS_VERSION", "4")   # GloFAS version to ask for; must match the threshold files (v4 now)
 RIV_UPA, RIV_BLK = 2000.0, 5                     # river forecast points: rivers draining >= 2,000 km2, one per 5x5 cells (0.25 deg)
 
 
@@ -110,6 +118,62 @@ def match(X, S):
     return rr, cc
 
 
+def request(day):
+    """The forecast request, built from the dataset's live download form so it survives the v5 form change: every key the
+    form offers gets a value chosen by rule, and anything it can't place raises with the form's options in the message."""
+    import requests
+    try: form = requests.get(FORM, timeout=60).json()["inputs"]
+    except Exception as e:                                       # form unreadable: the v4-era request
+        print(f"GloFAS form not readable ({str(e)[:120]}); using the v4 request", flush=True)
+        return {"system_version": ["operational"], "hydrological_model": ["lisflood"], "product_type": ["control_forecast", "ensemble_perturbed_forecasts"],
+                "variable": "river_discharge_in_the_last_24_hours", "year": [f"{day:%Y}"], "month": [f"{day:%m}"], "day": [f"{day:%d}"],
+                "leadtime_hour": [str(24 * L) for L in range(1, 17)], "data_format": "netcdf", "download_format": "unarchived",
+                "area": [BOX[3], BOX[0], BOX[2], BOX[1]]}
+    opts = {k: [str(x) for x in (v.get("schema", {}).get("items") or v.get("schema", {})).get("enum", [])] for k, v in form.items()}
+    note = []
+    def need(k, v):
+        if opts.get(k) and v not in opts[k]: raise RuntimeError(f"GloFAS form: {k} has no {v!r}; offers {opts[k]}")
+        return v
+    req = {}
+    for k, o in opts.items():
+        if k in ("year", "month", "day"): req[k] = [need(k, f"{day:%Y}" if k == "year" else f"{day:%m}" if k == "month" else f"{day:%d}")]
+        elif k == "leadtime_hour": req[k] = [need(k, str(24 * L)) for L in range(1, 17)]
+        elif k == "area": req[k] = [BOX[3], BOX[0], BOX[2], BOX[1]]
+        elif k == "data_format": req[k] = need(k, "netcdf")
+        elif k == "download_format": req[k] = need(k, "unarchived")
+        elif k == "variable":
+            v = [x for x in o if x.endswith("river_discharge_in_the_last_24_hours")]
+            if not v: raise RuntimeError(f"GloFAS form: no river discharge variable; offers {o}")
+            req[k] = sorted(v, key=lambda x: not x.startswith("average"))[0]
+        elif k == "timespan":
+            req[k] = [need(k, "time_mean") if "time_mean" in o else o[0]]; note.append(f"timespan {req[k][0]}")
+        elif k == "system_version":
+            mine = sorted([x for x in o if x.startswith(f"version_{WANT_V}_")])
+            if mine: req[k] = [mine[-1]]
+            elif "operational" in o and not any(x.startswith("version_5") for x in o): req[k] = ["operational"]   # v4-era form
+            else:
+                alt = sorted(x for x in o if x.startswith("version_"))
+                if not alt: raise RuntimeError(f"GloFAS form: no usable system_version; offers {o}")
+                req[k] = [alt[-1]]
+                print(f"WARNING: GloFAS v{WANT_V} is no longer offered; using {alt[-1]} with the v{WANT_V} flood thresholds "
+                      f"until the matching threshold files are set up (GLOFAS_VERSION)", flush=True)
+            note.append(req[k][0])
+        elif k == "hydrological_model": req[k] = [need(k, "lisflood")]
+        elif k == "product_type":
+            v = [x for x in o if x in ("control_forecast", "ensemble_perturbed_forecasts")]
+            if len(v) < 2: raise RuntimeError(f"GloFAS form: control + perturbed ensemble not offered; offers {o}")
+            req[k] = v
+        elif any("ifs" in x.lower() for x in o):          # forcing (new in v5): the IFS ensemble, not AIFS
+            v = [x for x in o if "ifs" in x.lower() and "aifs" not in x.lower()]
+            if not v: raise RuntimeError(f"GloFAS form: {k} has no IFS option; offers {o}")
+            req[k] = [v[0]]; note.append(f"{k} {v[0]}")
+        elif form[k].get("schema", {}).get("default") is not None:
+            req[k] = form[k]["schema"]["default"]; note.append(f"{k} {req[k]} (form default)")
+        else: raise RuntimeError(f"GloFAS form: new option {k!r} with no rule; offers {o}")
+    print(f"GloFAS request: {req['variable']}" + (f"; {', '.join(note)}" if note else ""), flush=True)
+    return req
+
+
 def fetch_forecast(day, cells, S):
     """Ensemble daily discharge [member, lead day 1..16, cell] for forecast issued on `day` (00 UTC)."""
     cache = os.path.join(RAW, f"glofas_xings_{day:%Y%m%d}.npz")
@@ -121,14 +185,7 @@ def fetch_forecast(day, cells, S):
     c = cdsapi.Client(url="https://ewds.climate.copernicus.eu/api", key=key, quiet=True, timeout=600)
     tmp = os.path.join(DL, f"glofas_fc_{day:%Y%m%d}.nc")
     if not os.path.exists(tmp):
-        c.retrieve("cems-glofas-forecast", {
-            "system_version": ["operational"], "hydrological_model": ["lisflood"],
-            "product_type": ["control_forecast", "ensemble_perturbed_forecasts"],
-            "variable": "river_discharge_in_the_last_24_hours",
-            "year": [f"{day:%Y}"], "month": [f"{day:%m}"], "day": [f"{day:%d}"],
-            "leadtime_hour": [str(24 * k) for k in range(1, 17)],
-            "data_format": "netcdf", "download_format": "unarchived",
-            "area": [BOX[3], BOX[0], BOX[2], BOX[1]]}, tmp + ".part")
+        c.retrieve("cems-glofas-forecast", request(day), tmp + ".part")
         os.replace(tmp + ".part", tmp)
     # control and ensemble members come back as two netCDFs in a zip (their structures differ)
     import zipfile, tempfile, shutil
@@ -140,7 +197,7 @@ def fetch_forecast(day, cells, S):
     blocks, la, lo = [], None, None
     for f_ in parts:
         with xr.open_dataset(f_) as ds:
-            da = ds[[k for k in ds.data_vars if k.lower().startswith("dis")][0]]
+            da = ds[[k for k in ds.data_vars if "dis" in k.lower()][0]]          # dis24 (v4), avg_dis24 or similar (v5)
             lat = "latitude" if "latitude" in da.dims else "lat"; lon = "longitude" if "longitude" in da.dims else "lon"
             step = "forecast_period" if "forecast_period" in da.dims else "step"
             da = da.squeeze([d for d in da.dims if d not in (lat, lon, step, "number") and da.sizes[d] == 1])
