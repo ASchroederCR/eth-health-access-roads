@@ -1,0 +1,15 @@
+name,zone,woreda,region,intense_periods_utc,very_intense_periods_utc,wettest_hour_utc,wettest_hour_wet_end_mm,forecast_15d_mm_corrected,observed_last_10d_mm,linked_facilities,linked_30min_plus
+Gazer Primary Hospital,South Omo,South Ari,SNNP,04 Dec 08:00–11:00; 05 Dec 08:00–11:00; 06 Dec 09:00–11:00; 07 Dec 08:00–11:00,,04 Dec 08:00,6.0,201.3,11.5,40.0,31.0
+Mizan Teppi university Teaching Hospital,Bench Sheko,Mizan Aman town,South West Ethiopia,04 Dec 10:00–12:00; 05 Dec 09:00–12:00; 06 Dec 09:00–12:00; 07 Dec 09:00–12:00,,05 Dec 10:00,4.5,167.6,32.7,118.0,59.0
+Maji Primary Hospital,Mirab Omo,Maji,South West Ethiopia,04 Dec 09:00–12:00; 05 Dec 09:00–12:00; 06 Dec 09:00–11:00; 07 Dec 09:00–10:00,,04 Dec 11:00,5.9,209.6,4.8,34.0,23.0
+Jinka General Hospital,South Omo,Jinka town,SNNP,04 Dec 08:00–11:00; 05 Dec 09:00–11:00; 06 Dec 09:00–10:00; 07 Dec 08:00–10:00,,04 Dec 09:00,5.7,135.7,9.7,112.0,14.0
+Laska Primary HospItal,Basketo,Basketo SP Woreda,SNNP,04 Dec 10:00–12:00; 05 Dec 09:00–11:00,,04 Dec 10:00,4.6,145.2,15.4,55.0,33.0
+Bule Primary Hospital,Gedeo,Bule,SNNP,04 Dec 10:00–12:00; 07 Dec 11:00–12:00,,04 Dec 11:00,4.5,108.7,27.4,52.0,26.0
+Kamba Primary Hospital,Gamo,Kemba,SNNP,05 Dec 09:00–10:00; 05 Dec 11:00–12:00,,04 Dec 10:00,4.0,180.2,10.1,42.0,37.0
+Siz Primary Hospital,Bench Sheko,Size town,South West Ethiopia,05 Dec 10:00–11:00; 06 Dec 11:00–12:00,,06 Dec 11:00,3.5,101.9,8.6,38.0,16.0
+Aleta Wondo General Hospital,Sidama,Aleta Wondo town,Sidama,04 Dec 11:00–12:00; 05 Dec 11:00–12:00,,04 Dec 11:00,5.3,84.1,27.7,34.0,3.0
+Yirgachefe Primary Hospital,Gedeo,Yirgachefe town,SNNP,06 Dec 11:00–12:00,,04 Dec 11:00,4.1,141.5,26.3,100.0,33.0
+Laha Primary Hospital,Gofa,Melekoza,SNNP,04 Dec 11:00–12:00,,04 Dec 11:00,4.5,108.4,11.5,45.0,32.0
+Kelle Primary Hospital,Amaro,Amaro,SNNP,05 Dec 11:00–12:00,,04 Dec 10:00,3.1,79.9,6.5,48.0,9.0
+Wacha Primary Hosiptal,Kefa,Wacha,South West Ethiopia,06 Dec 11:00–12:00,,06 Dec 11:00,3.7,66.8,9.7,113.0,34.0
+Raaso Primary Hospital,Afder,Raso,Somali,03 Dec 20:00–21:00,,03 Dec 20:00,4.2,59.6,0.0,85.0,59.0
